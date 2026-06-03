@@ -1,0 +1,54 @@
+# openspec/config.yaml
+schema: spec-driven
+
+context: |
+  Project: GuitarHub — native cross-platform desktop/mobile app for
+  aggregating guitar gear listings from multiple online stores.
+
+  Tech stack:
+  - App: Tauri 2 + Svelte 5 (frontend) + Rust (backend)
+  - Local DB: SQLite + FTS5 (trigram tokenizer)
+  - Scraper: Python 3.12 (Ports & Adapters / Hexagonal Architecture)
+  - Catalog hosting: GitHub Pages (free static CDN)
+  - CI/CD: GitHub Actions (scrape cron every 6h, release builds)
+  - Landing page: Astro (static site)
+  - Packaging: AppImage, .deb, .msi, APK, AUR, Flathub, F-Droid
+  - Licenses: GPL-3.0 (app) + MIT (scraper)
+
+  Architecture: Clean Architecture with Ports & Adapters. Scraper uses
+  domain/use_cases/ports/adapters. App backend uses commands/services/
+  repository traits + sqlite impls. Zero server costs — no backend.
+
+  Testing:
+  - Python: pytest (unit, contract, integration layers), ruff (linter),
+    mypy --strict (type checker)
+  - Rust: cargo test (unit + integration --ignored), clippy (linter),
+    rustfmt (formatter), tauri-driver + WebDriver (E2E, weekly)
+
+  Style: Conventional Commits, explicit contracts, security by design,
+  offline-first, observable by default, governed from day one.
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - State zero-cost implications for any infrastructure change
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Reference SCHEMA.md for any schema changes
+  design:
+    - Include architecture decision records for significant choices
+    - Document security implications per the Security Model
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    - Follow existing code patterns
+    tdd: false
+    test_command: ""
+  verify:
+    test_command: "cargo test && pytest scraper/tests/unit scraper/tests/contract -v"
+    build_command: "cargo build"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas

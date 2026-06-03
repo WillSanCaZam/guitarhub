@@ -1,11 +1,24 @@
+pub mod commands;
 pub mod repository;
+pub mod services;
 
 use repository::sqlite::migrations::MigrationRunner;
+use services::image_cache::ImageCacheService;
 use sqlx::sqlite::SqlitePoolOptions;
 
-/// Initialize the database connection and run pending migrations.
-/// Called during app startup to ensure the local SQLite schema is up-to-date.
-pub async fn initialize_database(db_path: &str) -> anyhow::Result<sqlx::SqlitePool> {
+/// Shared application state injected into Tauri commands.
+///
+/// Clone is safe: `SqlitePool` and `ImageCacheService` are both
+/// internally `Arc`-based.
+#[derive(Clone)]
+pub struct AppState {
+    pub pool: sqlx::SqlitePool,
+    pub image_cache_service: ImageCacheService,
+}
+
+/// Initialize the database connection, run pending migrations, and
+/// return an `AppState` ready for Tauri or direct use.
+pub async fn initialize_database(db_path: &str) -> anyhow::Result<AppState> {
     let pool = SqlitePoolOptions::new()
         .max_connections(1)
         .connect(db_path)
@@ -21,5 +34,10 @@ pub async fn initialize_database(db_path: &str) -> anyhow::Result<sqlx::SqlitePo
     let runner = MigrationRunner::new(pool.clone(), migrations_dir);
     runner.run().await?;
 
-    Ok(pool)
+    let image_cache_service = ImageCacheService::new_default(pool.clone());
+
+    Ok(AppState {
+        pool,
+        image_cache_service,
+    })
 }

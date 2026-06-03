@@ -7,7 +7,7 @@ async fn main() -> anyhow::Result<()> {
     let db_path = std::env::var("GUITARHUB_DB_PATH")
         .unwrap_or_else(|_| "guitarhub.db".to_string());
 
-    let _pool = guitarhub_lib::initialize_database(&db_path)
+    let _state = guitarhub_lib::initialize_database(&db_path)
         .await
         .context("Failed to initialize database on startup")?;
 
