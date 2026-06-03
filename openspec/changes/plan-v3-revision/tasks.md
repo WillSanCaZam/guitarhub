@@ -50,11 +50,11 @@ Units 3–5 are independent and can merge in any order after 1.
 
 ## Phase 3: Dev Experience
 
-- [ ] **T12** — Create `.devcontainer/devcontainer.json` + Dockerfile — **Area**: docs — **Effort**: S — **Depends**: — — **Files**: `.devcontainer/devcontainer.json`, `.devcontainer/Dockerfile` — **AC**: VS Code "Reopen in Container" installs Rust, Python 3.12, Node, and system deps
-- [ ] **T13** — Create `.env.example` documenting all scraper env vars — **Area**: docs — **Effort**: S — **Depends**: — — **Files**: `.env.example` — **AC**: every env var referenced in `scraper/` code has a documented entry with description
-- [ ] **T14** — Create `Makefile` with dev/build/test/clean targets — **Area**: docs — **Effort**: S — **Depends**: — — **Files**: `Makefile` — **AC**: `make dev`, `make build`, `make test`, `make clean` all succeed on clean checkout
-- [ ] **T15** — Create `.pre-commit-config.yaml` with ruff, mypy, clippy hooks — **Area**: docs — **Effort**: S — **Depends**: — — **Files**: `.pre-commit-config.yaml` — **AC**: `pre-commit run --all-files` passes lint and type checks
-- [ ] **T16** — Deduplicate `CONTRIBUTING.md` — **Area**: docs — **Effort**: S — **Depends**: — — **Files**: `docs/CONTRIBUTING.md` — **AC**: single `CONTRIBUTING.md` living in `docs/` (Phase 0 owns it, remove any Phase 2 duplicate)
+- [x] **T12** — Create `.devcontainer/devcontainer.json` + Dockerfile — **Area**: docs — **Effort**: S — **Depends**: — — **Files**: `.devcontainer/devcontainer.json`, `.devcontainer/Dockerfile` — **AC**: VS Code "Reopen in Container" installs Rust, Python 3.12, Node, and system deps
+- [x] **T13** — Create `.env.example` documenting all scraper env vars — **Area**: docs — **Effort**: S — **Depends**: — — **Files**: `.env.example` — **AC**: every env var referenced in `scraper/` code has a documented entry with description
+- [x] **T14** — Create `Makefile` with dev/build/test/clean targets — **Area**: docs — **Effort**: S — **Depends**: — — **Files**: `Makefile` — **AC**: `make dev`, `make build`, `make test`, `make clean` all succeed on clean checkout
+- [x] **T15** — Create `.pre-commit-config.yaml` with ruff, mypy, clippy hooks — **Area**: docs — **Effort**: S — **Depends**: — — **Files**: `.pre-commit-config.yaml` — **AC**: `pre-commit run --all-files` passes lint and type checks
+- [x] **T16** — Deduplicate `CONTRIBUTING.md` — **Area**: docs — **Effort**: S — **Depends**: — — **Files**: `docs/CONTRIBUTING.md` — **AC**: single `CONTRIBUTING.md` living in `docs/` (Phase 0 owns it, remove any Phase 2 duplicate)
 
 ## Phase 4: Data/Logging
 

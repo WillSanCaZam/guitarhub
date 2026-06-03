@@ -1,0 +1,29 @@
+{
+  "name": "GuitarHub",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "postCreateCommand": "pre-commit install && [ -f scraper/requirements.txt ] && pip3 install -r scraper/requirements.txt || true",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "rust-lang.rust-analyzer",
+        "tamasfe.even-better-toml",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.mypy-type-checker",
+        "charliermarsh.ruff",
+        "svelte.svelte-vscode",
+        "tauri-apps.tauri-vscode",
+        "eamodio.gitlens",
+        "github.vscode-github-actions"
+      ]
+    }
+  },
+  "forwardPorts": [1420, 5173],
+  "remoteUser": "root",
+  "mounts": [
+    "source=${localWorkspaceFolderBasename}-cargo-target,target=/workspace/src-tauri/target,type=volume"
+  ]
+}

@@ -1,0 +1,47 @@
+# See https://pre-commit.com for docs
+repos:
+  # ── Standard fixers ──────────────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: [--maxkb=500]
+
+  # ── Python linting ───────────────────────────────────────────────────────
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.0
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^scraper/
+
+  # ── Python type checking ─────────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.2
+    hooks:
+      - id: mypy
+        args: [--strict]
+        files: ^scraper/
+        additional_dependencies: []
+
+  # ── Rust hooks (local) ───────────────────────────────────────────────────
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt
+        description: Check Rust formatting with rustfmt
+        entry: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+      - id: cargo-clippy
+        name: cargo clippy
+        description: Lint Rust code with clippy
+        entry: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+        language: system
+        types: [rust]
+        pass_filenames: false
