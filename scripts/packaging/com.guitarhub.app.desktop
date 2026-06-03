@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=GuitarHub
+Comment=Aggregated guitar, amp, and pedal catalog
+Categories=AudioVideo;Music;
+Icon=com.guitarhub.app
+Exec=guitarhub
+Terminal=false
+StartupNotify=true
+MimeType=

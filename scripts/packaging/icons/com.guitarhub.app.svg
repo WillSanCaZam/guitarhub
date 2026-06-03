@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <rect width="128" height="128" rx="24" fill="#1a1a2e"/>
+  <!-- Stylized guitar body -->
+  <g transform="translate(64, 64)" fill="none" stroke="#e94560" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Neck -->
+    <line x1="0" y1="-56" x2="0" y2="4" stroke="#e94560"/>
+    <!-- Headstock -->
+    <rect x="-8" y="-72" width="16" height="20" rx="3" fill="#e94560" stroke="none"/>
+    <!-- Tuning pegs -->
+    <circle cx="-10" cy="-68" r="2" fill="#fff" stroke="none"/>
+    <circle cx="10" cy="-68" r="2" fill="#fff" stroke="none"/>
+    <circle cx="-10" cy="-60" r="2" fill="#fff" stroke="none"/>
+    <circle cx="10" cy="-60" r="2" fill="#fff" stroke="none"/>
+    <!-- Frets -->
+    <line x1="-6" y1="-50" x2="6" y2="-50" stroke="#e94560" opacity="0.5"/>
+    <line x1="-6" y1="-40" x2="6" y2="-40" stroke="#e94560" opacity="0.5"/>
+    <line x1="-6" y1="-30" x2="6" y2="-30" stroke="#e94560" opacity="0.5"/>
+    <line x1="-6" y1="-20" x2="6" y2="-20" stroke="#e94560" opacity="0.5"/>
+    <line x1="-6" y1="-10" x2="6" y2="-10" stroke="#e94560" opacity="0.5"/>
+    <!-- Sound hole / strings -->
+    <ellipse cx="0" cy="12" rx="10" ry="6" fill="none" stroke="#e94560" stroke-width="2"/>
+    <!-- Body outline -->
+    <path d="M-4,4 C-32,4 -38,20 -32,32 C-26,44 -14,48 0,48 C14,48 26,44 32,32 C38,20 32,4 4,4" fill="rgba(233,69,96,0.1)" stroke="#e94560" stroke-width="3"/>
+    <!-- Bridge -->
+    <line x1="-12" y1="38" x2="12" y2="38" stroke="#e94560" stroke-width="2"/>
+    <!-- Strings -->
+    <line x1="-5" y1="-55" x2="-5" y2="38" stroke="#fff" stroke-width="0.8" opacity="0.6"/>
+    <line x1="-2.5" y1="-55" x2="-2.5" y2="38" stroke="#fff" stroke-width="0.8" opacity="0.6"/>
+    <line x1="0" y1="-55" x2="0" y2="38" stroke="#fff" stroke-width="0.8" opacity="0.6"/>
+    <line x1="2.5" y1="-55" x2="2.5" y2="38" stroke="#fff" stroke-width="0.8" opacity="0.6"/>
+    <line x1="5" y1="-55" x2="5" y2="38" stroke="#fff" stroke-width="0.8" opacity="0.6"/>
+  </g>
+</svg>

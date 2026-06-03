@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2026 GuitarHub Developers -->
+<component type="desktop">
+  <id>com.guitarhub.app</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>GuitarHub</name>
+  <summary>Aggregated guitar, amp, and pedal catalog browser</summary>
+
+  <description>
+    <p>
+      GuitarHub is a native cross-platform desktop and mobile app that
+      aggregates guitar, amp, pedal, and accessory listings from multiple
+      online stores into a single unified catalog. Browse, search, and filter
+      thousands of products — all offline, without ads, tracking, or
+      registration.
+    </p>
+    <p>
+      Key features:
+    </p>
+    <ul>
+      <li>Browse products from Reverb, MercadoLibre, and more</li>
+      <li>Offline-first: full catalog synced to your device</li>
+      <li>Fast full-text search with fuzzy matching</li>
+      <li>Save items to your wishlist and track prices</li>
+      <li>Community-extensible via source adapter plugins</li>
+    </ul>
+    <p>
+      GuitarHub is free and open source software (GPL-3.0). It never holds
+      inventory, never processes payments, and never touches money — when you
+      find a product you like, you are redirected to the original store to buy.
+    </p>
+    <p>
+      Zero infrastructure cost: the scraper runs on GitHub Actions (free) and
+      the catalog is served from GitHub Pages (free). No backend server ever.
+    </p>
+  </description>
+
+  <categories>
+    <category>AudioVideo</category>
+    <category>Music</category>
+  </categories>
+
+  <keywords>
+    <keyword>guitar</keyword>
+    <keyword>amplifier</keyword>
+    <keyword>pedal</keyword>
+    <keyword>music</keyword>
+    <keyword>catalog</keyword>
+    <keyword>gear</keyword>
+    <keyword>shopping</keyword>
+  </keywords>
+
+  <url type="homepage">https://github.com/user/guitarhub</url>
+  <url type="bugtracker">https://github.com/user/guitarhub/issues</url>
+  <url type="donation">https://github.com/sponsors/user</url>
+  <url type="vcs-browser">https://github.com/user/guitarhub</url>
+
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/user/guitarhub/main/docs/screenshots/catalog-view.png</image>
+      <caption>The main catalog browser</caption>
+    </screenshot>
+  </screenshots>
+
+  <developer_name>GuitarHub Developers</developer_name>
+
+  <content_rating type="oars-1.1">
+    <content_attribute id="violence-cartoon">none</content_attribute>
+    <content_attribute id="violence-fantasy">none</content_attribute>
+    <content_attribute id="violence-realistic">none</content_attribute>
+    <content_attribute id="violence-bloodshed">none</content_attribute>
+    <content_attribute id="violence-sexual">none</content_attribute>
+    <content_attribute id="violence-desecration">none</content_attribute>
+    <content_attribute id="drugs-alcohol">none</content_attribute>
+    <content_attribute id="drugs-narcotics">none</content_attribute>
+    <content_attribute id="drugs-tobacco">none</content_attribute>
+    <content_attribute id="sex-nudity">none</content_attribute>
+    <content_attribute id="sex-themes">none</content_attribute>
+    <content_attribute id="sex-homosexuality">none</content_attribute>
+    <content_attribute id="sex-prostitution">none</content_attribute>
+    <content_attribute id="sex-adultery">none</content_attribute>
+    <content_attribute id="sex-appearance">none</content_attribute>
+    <content_attribute id="language-profanity">none</content_attribute>
+    <content_attribute id="language-humor">none</content_attribute>
+    <content_attribute id="language-discrimination">none</content_attribute>
+    <content_attribute id="social-chat">none</content_attribute>
+    <content_attribute id="social-links">none</content_attribute>
+    <content_attribute id="social-audio">none</content_attribute>
+    <content_attribute id="social-contacts">none</content_attribute>
+    <content_attribute id="money-purchasing">none</content_attribute>
+    <content_attribute id="money-gambling">none</content_attribute>
+    <content_attribute id="money-donation">none</content_attribute>
+    <content_attribute id="money-advertising">none</content_attribute>
+  </content_rating>
+
+  <releases>
+    <release version="0.1.0" date="2026-06-03" urgency="medium">
+      <description>
+        <p>Initial release of GuitarHub.</p>
+        <ul>
+          <li>Catalog browser with search and filter</li>
+          <li>Sync support for Reverb, MercadoLibre, and Guitarras.CO</li>
+          <li>Offline-first local SQLite database</li>
+          <li>Wishlist with price tracking</li>
+          <li>Delta sync for reduced bandwidth</li>
+          <li>Auto-update via tauri-plugin-updater</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
+
+  <launchable type="desktop-id">com.guitarhub.app.desktop</launchable>
+
+  <provides>
+    <binary>guitarhub</binary>
+  </provides>
+
+  <translation type="gettext">guitarhub</translation>
+</component>

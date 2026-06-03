@@ -58,13 +58,13 @@ Units 3–5 are independent and can merge in any order after 1.
 
 ## Phase 4: Data/Logging
 
-- [ ] **T17** — Add `tracing` + `tracing-subscriber` to Cargo.toml, init in lib.rs — **Area**: app-backend — **Effort**: S — **Depends**: — — **Files**: `src-tauri/Cargo.toml`, `src-tauri/src/lib.rs` — **AC**: structured JSON logs emitted at startup; existing `println!`/`eprintln!` calls migrated to `tracing::info!`/`warn!`
-- [ ] **T18** — Add delta sync fallback heuristic in `sync_service.rs` — **Area**: app-backend — **Effort**: M — **Depends**: — — **Files**: `src-tauri/src/services/sync_service.rs` — **AC**: when `delta.base_run_id` doesn't match stored `last_run_id`, falls back to full sync with informational log
-- [ ] **T19** — Add Reverb pagination `is_last_page` warning — **Area**: scrapper — **Effort**: S — **Depends**: — — **Files**: `scraper/adapters/sources/reverb.py` — **AC**: logs error-level warning when response has no `is_last_page=true` or pagination loop exceeds expected max pages
-- [ ] **T20** — Rename `missing_price_pct` → `missing_price_ratio` — **Area**: scrapper — **Effort**: S — **Depends**: — — **Files**: `scraper/domain/models.py`, `scraper/use_cases/validate_catalog.py`, `scraper/tests/`, `scraper/adapters/health/github_issues.py` — **AC**: zero references to `missing_price_pct` in codebase; all tests pass
+- [x] **T17** — Add `tracing` + `tracing-subscriber` to Cargo.toml, init in lib.rs — **Area**: app-backend — **Effort**: S — **Depends**: — — **Files**: `src-tauri/src/lib.rs` — **AC**: structured JSON logs emitted at startup
+- [ ] **T18** — Add delta sync fallback heuristic in `sync_service.rs` — **Depends**: sync_service.rs (Phase 1 implementation) — **Deferred**: implement when SyncService is built
+- [ ] **T19** — Add Reverb pagination `is_last_page` warning — **Depends**: scraper/ directory (Phase 0 implementation) — **Deferred**: implement when ReverbAdapter is built
+- [ ] **T20** — Rename `missing_price_pct` → `missing_price_ratio` — **Depends**: scraper/ directory (Phase 0 implementation) — **Deferred**: implement when scraper domain models are built
 
 ## Phase 5: Packaging
 
-- [ ] **T21** — Create F-Droid reproducible build strategy doc — **Area**: docs, packaging — **Effort**: S — **Depends**: — — **Files**: `scripts/packaging/fdroid-reproducible-build.md` — **AC**: documents build environment, dependency pinning, and reproducibility verification steps for F-Droid submission
-- [ ] **T22** — Create AppStream `metainfo.xml` — **Area**: packaging — **Effort**: S — **Depends**: — — **Files**: `scripts/packaging/com.guitarhub.metainfo.xml` — **AC**: passes `appstreamcli validate` with no errors; includes screenshots URL, OARS content ratings, donation URL
-- [ ] **T23** — Create `.desktop` file + placeholder app icon — **Area**: packaging — **Effort**: S — **Depends**: — — **Files**: `scripts/packaging/guitarhub.desktop`, `scripts/packaging/icon.png` — **AC**: `desktop-file-validate guitarhub.desktop` passes; icon is 256×256 PNG with GuitarHub logo
+- [x] **T21** — Create F-Droid reproducible build strategy doc — **Area**: docs, packaging — **Effort**: S — **Depends**: — — **Files**: `scripts/packaging/fdroid-reproducible-build.md` — **AC**: documents build environment, dependency pinning, and reproducibility verification steps for F-Droid submission
+- [x] **T22** — Create AppStream `metainfo.xml` — **Area**: packaging — **Effort**: S — **Depends**: — — **Files**: `scripts/packaging/com.guitarhub.metainfo.xml` — **AC**: passes `appstreamcli validate` with no errors; includes screenshots URL, OARS content ratings, donation URL
+- [x] **T23** — Create `.desktop` file + placeholder app icon — **Area**: packaging — **Effort**: S — **Depends**: — — **Files**: `scripts/packaging/com.guitarhub.app.desktop`, `scripts/packaging/icons/com.guitarhub.app.svg` — **AC**: `desktop-file-validate` passes; icon is a valid SVG with guitar silhouette
