@@ -1,0 +1,22 @@
+# Rust build artifacts
+target/
+
+# Environment / secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+
+# Node (future frontend)
+node_modules/
+
+# SvelteKit build output
+build/
+.svelte-kit/
+
+# AI tool internal cache
+.atl/
+
+# macOS
+.DS_Store

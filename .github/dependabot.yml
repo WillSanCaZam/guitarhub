@@ -4,7 +4,8 @@ updates:
     directory: "/src-tauri"
     schedule:
       interval: "weekly"
-  - package-ecosystem: "pip"
-    directory: "/scraper"
-    schedule:
-      interval: "weekly"
+  # TODO(scraper): Re-add pip ecosystem when scraper/ exists (requirements.txt).
+  # - package-ecosystem: "pip"
+  #   directory: "/scraper"
+  #   schedule:
+  #     interval: "weekly"

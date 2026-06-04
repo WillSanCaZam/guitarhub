@@ -1,0 +1,20 @@
+# TODO(scraper): Re-enable integration + E2E tests when scraper/ exists and
+# tauri-driver + WebDriver are configured for the Rust E2E test suite.
+name: E2E
+on:
+  workflow_dispatch:
+
+jobs:
+  check-scraper:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check if scraper exists
+        run: |
+          if [ -d "scraper" ]; then
+            echo "scraper/ found — enable the full workflow"
+          else
+            echo "scraper/ not found — this workflow is disabled until the scraper is implemented"
+            exit 1
+          fi

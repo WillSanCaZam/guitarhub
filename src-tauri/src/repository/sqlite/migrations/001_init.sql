@@ -11,12 +11,38 @@ ON CONFLICT(key) DO UPDATE SET value = excluded.value;
 
 CREATE VIRTUAL TABLE IF NOT EXISTS products_fts USING fts5(
   sku, source_id, name, brand, model, category, subcategory, specs_json,
-  tokenize = 'trigram'
+  tokenize = 'trigram',
+  content = 'products_meta',
+  content_rowid = 'rowid'
 );
+
+-- Triggers keep the FTS index (tokenizer data) in sync with products_meta.
+-- FTS5 external content mode reads the actual column values from products_meta at query time,
+-- so the triggers only need to maintain the index, not duplicate the content.
+CREATE TRIGGER IF NOT EXISTS products_fts_ai AFTER INSERT ON products_meta BEGIN
+  INSERT INTO products_fts(rowid, sku, source_id, name, brand, model, category, subcategory, specs_json)
+  VALUES (new.rowid, new.sku, new.source_id, new.name, new.brand, new.model, new.category, new.subcategory, new.specs_json);
+END;
+CREATE TRIGGER IF NOT EXISTS products_fts_ad AFTER DELETE ON products_meta BEGIN
+  INSERT INTO products_fts(products_fts, rowid, sku, source_id, name, brand, model, category, subcategory, specs_json)
+  VALUES ('delete', old.rowid, old.sku, old.source_id, old.name, old.brand, old.model, old.category, old.subcategory, old.specs_json);
+END;
+CREATE TRIGGER IF NOT EXISTS products_fts_au AFTER UPDATE ON products_meta BEGIN
+  INSERT INTO products_fts(products_fts, rowid, sku, source_id, name, brand, model, category, subcategory, specs_json)
+  VALUES ('delete', old.rowid, old.sku, old.source_id, old.name, old.brand, old.model, old.category, old.subcategory, old.specs_json);
+  INSERT INTO products_fts(rowid, sku, source_id, name, brand, model, category, subcategory, specs_json)
+  VALUES (new.rowid, new.sku, new.source_id, new.name, new.brand, new.model, new.category, new.subcategory, new.specs_json);
+END;
 
 CREATE TABLE IF NOT EXISTS products_meta (
   sku          TEXT PRIMARY KEY,
   source_id    TEXT NOT NULL,
+  name         TEXT NOT NULL DEFAULT '',
+  brand        TEXT NOT NULL DEFAULT '',
+  model        TEXT NOT NULL DEFAULT '',
+  category     TEXT NOT NULL DEFAULT '',
+  subcategory  TEXT NOT NULL DEFAULT '',
+  specs_json   TEXT NOT NULL DEFAULT '{}',
   price        REAL,
   currency     TEXT,
   condition    TEXT CHECK(condition IN ('new','used','refurbished','unknown')),

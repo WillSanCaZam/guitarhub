@@ -12,14 +12,24 @@ sqlx = { version = "0.7", features = ["runtime-tokio", "sqlite"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync"] }
 thiserror = "1"
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 anyhow = "1"
-tauri = { version = "2", default-features = false, features = [] }
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+tauri = { version = "2", default-features = false, features = ["wry"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 dashmap = "6"
 sha2 = "0.10"
 base64 = "0.22"
-infer = "0.18"
+url = "2"
+zip = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-notification = "2"
+async-trait = "0.1"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
 
 [dev-dependencies]
 httpmock = "0.7"
+tempfile = "3"

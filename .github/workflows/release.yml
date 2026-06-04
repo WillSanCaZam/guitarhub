@@ -3,8 +3,13 @@ on:
   push:
     tags: ['v*']
 
+concurrency:
+  group: gh-pages-publish
+  cancel-in-progress: false
+
 jobs:
   build:
+    timeout-minutes: 30
     strategy:
       matrix:
         include:
@@ -31,10 +36,16 @@ jobs:
   publish-update-endpoint:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
           ref: gh-pages
       - run: python scripts/generate_latest_json.py ${{ github.ref_name }}
-      - run: git commit -am "chore: update latest.json to ${{ github.ref_name }}"
-      - run: git push
+      - run: 'git commit -am "chore: update latest.json to ${{ github.ref_name }}"'
+      - name: Push with retry
+        run: |
+          for i in 1 2 3; do
+            git pull --rebase && git push && break
+            sleep 5
+          done

@@ -1,50 +1,20 @@
+# TODO(scraper): Re-enable this workflow when scraper/ directory is implemented.
+# The scraper pipeline (Python Ports & Adapters) is not yet built.
 name: Scrape
 on:
-  schedule:
-    - cron: '0 */6 * * *'
   workflow_dispatch:
 
 jobs:
-  scrape:
+  check-scraper:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    strategy:
-      matrix:
-        source: [reverb, mercadolibre, guitarras_co]
-      fail-fast: false
+    timeout-minutes: 1
     steps:
       - uses: actions/checkout@v4
-      - run: pip install -r scraper/requirements.txt --break-system-packages
-      - run: python scraper/run_all.py --source ${{ matrix.source }} --output-dir artifacts/
-        env:
-          GITHUB_RUN_ID: ${{ github.run_id }}
-      - run: pip install pip-audit --break-system-packages
-      - run: pip-audit -r scraper/requirements.txt
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: catalog-${{ matrix.source }}
-          path: artifacts/
-
-  publish:
-    needs: scrape
-    if: always()
-    concurrency:
-      group: gh-pages-publish
-      cancel-in-progress: false
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pages: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-      - uses: actions/download-artifact@v4
-        with:
-          path: incoming/
-      - run: python scraper/run_all.py --publish-index --input-dir incoming/
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
+      - name: Check if scraper exists
+        run: |
+          if [ -d "scraper" ]; then
+            echo "scraper/ found — enable the full workflow"
+          else
+            echo "scraper/ not found — this workflow is disabled until the scraper is implemented"
+            exit 1
+          fi

@@ -544,6 +544,190 @@ mod tests {
         );
     }
 
+    // ── Migration 004 tests ─────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn migration_004_adds_source_id_and_index() {
+        let pool = make_memory_pool().await;
+        let dir = temp_dir_with_files(&["004_add_price_source.sql"]);
+
+        // Write the migration file
+        std::fs::write(
+            dir.join("004_add_price_source.sql"),
+            include_str!("../migrations/004_add_price_source.sql"),
+        )
+        .unwrap();
+
+        // Set up schema as it would be after migration 003
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS schema_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+        sqlx::query("INSERT OR REPLACE INTO schema_meta VALUES ('db_version', '3')")
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        // Create price_history table as defined in 001_init.sql
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS price_history (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                sku         TEXT NOT NULL,
+                price       REAL NOT NULL,
+                recorded_at INTEGER NOT NULL
+            )",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+        sqlx::query(
+            "CREATE INDEX IF NOT EXISTS idx_price_history_sku ON price_history(sku)",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        // Seed old-format data (no source_id column yet)
+        sqlx::query(
+            "INSERT INTO price_history (sku, price, recorded_at) VALUES ('SKU001', 100.0, 1000)",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+        sqlx::query(
+            "INSERT INTO price_history (sku, price, recorded_at) VALUES ('SKU001', 200.0, 2000)",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        // Apply migration 004
+        let runner = MigrationRunner::new(pool.clone(), dir.clone());
+        runner.run().await.unwrap();
+        assert_eq!(runner.current_version().await.unwrap(), 4);
+
+        // Verify source_id column exists and defaults to ''
+        let rows: Vec<(i64, String)> = sqlx::query_as(
+            "SELECT id, source_id FROM price_history ORDER BY id",
+        )
+        .fetch_all(&pool)
+        .await
+        .unwrap();
+        assert_eq!(rows.len(), 2, "expected 2 rows");
+        assert_eq!(rows[0].1, "", "existing row should get default source_id ''");
+        assert_eq!(rows[1].1, "", "existing row should get default source_id ''");
+
+        // Verify we can insert with explicit source_id
+        sqlx::query(
+            "INSERT INTO price_history (sku, price, recorded_at, source_id) VALUES ('SKU002', 150.0, 3000, 'reverb')",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        let fetched: String = sqlx::query_scalar(
+            "SELECT source_id FROM price_history WHERE sku = 'SKU002'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(fetched, "reverb");
+
+        // Verify the index exists via sqlite_master
+        let idx_name: Option<String> = sqlx::query_scalar(
+            "SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_price_history_sku_recorded'",
+        )
+        .fetch_optional(&pool)
+        .await
+        .unwrap();
+        assert!(
+            idx_name.is_some(),
+            "Expected index 'idx_price_history_sku_recorded' to exist"
+        );
+        assert_eq!(idx_name.unwrap(), "idx_price_history_sku_recorded");
+
+        // Verify idempotent re-apply
+        let runner3 = MigrationRunner::new(pool.clone(), dir);
+        runner3.run().await.unwrap();
+        assert_eq!(
+            runner3.current_version().await.unwrap(),
+            4,
+            "version should remain 4 after re-apply"
+        );
+    }
+
+    #[tokio::test]
+    async fn migration_005_creates_settings_table() {
+        let pool = make_memory_pool().await;
+        let dir = temp_dir_with_files(&["005_add_settings.sql"]);
+
+        // Write the migration file
+        std::fs::write(
+            dir.join("005_add_settings.sql"),
+            include_str!("../migrations/005_add_settings.sql"),
+        )
+        .unwrap();
+
+        // Set up schema as it would be after migration 004
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS schema_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+        sqlx::query("INSERT OR REPLACE INTO schema_meta VALUES ('db_version', '4')")
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        // Apply migration 005
+        let runner = MigrationRunner::new(pool.clone(), dir.clone());
+        runner.run().await.unwrap();
+        assert_eq!(runner.current_version().await.unwrap(), 5);
+
+        // Verify INSERT round-trip
+        sqlx::query("INSERT INTO settings (key, value) VALUES ('alert_channel', 'app')")
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        let val: String = sqlx::query_scalar("SELECT value FROM settings WHERE key = 'alert_channel'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(val, "app");
+
+        // Verify UPSERT (INSERT OR REPLACE)
+        sqlx::query("INSERT OR REPLACE INTO settings (key, value) VALUES ('alert_channel', 'ntfy')")
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        let val2: String = sqlx::query_scalar("SELECT value FROM settings WHERE key = 'alert_channel'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(val2, "ntfy");
+
+        // Verify idempotent re-apply
+        let runner3 = MigrationRunner::new(pool.clone(), dir);
+        runner3.run().await.unwrap();
+        assert_eq!(
+            runner3.current_version().await.unwrap(),
+            5,
+            "version should remain 5 after re-apply"
+        );
+
+        // Table still works after re-apply
+        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM settings")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(count, 1, "settings table should still have data after re-apply");
+    }
+
     // ── Helpers ─────────────────────────────────────────────────────────
 
     fn temp_dir_with_files(files: &[&str]) -> PathBuf {

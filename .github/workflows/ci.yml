@@ -1,19 +1,28 @@
 name: CI
 on: [pull_request]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  python:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: pip install ruff mypy pytest pytest-asyncio jsonschema pip-audit --break-system-packages
-      - run: ruff check scraper/
-      - run: mypy scraper/ --strict
-      - run: pytest scraper/tests/unit scraper/tests/contract -v
-      - run: pip-audit -r scraper/requirements.txt
+  # TODO(scraper): Re-add Python job (ruff, mypy, pytest, pip-audit) when
+  # scraper/ directory is implemented. Currently blocked by missing scraper.
+  #
+  # python:
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 10
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - run: pip install -r requirements-dev.txt --break-system-packages
+  #     - run: ruff check scraper/
+  #     - run: mypy scraper/ --strict
+  #     - run: pip-audit -r scraper/requirements.txt
+  #     - run: pytest scraper/tests/unit scraper/tests/contract -v
 
   rust:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable

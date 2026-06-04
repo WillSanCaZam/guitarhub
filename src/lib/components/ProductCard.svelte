@@ -1,18 +1,27 @@
 <script>
   import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
+  import PriceBadge from './PriceBadge.svelte';
 
   let { product } = $props();
 
   let imageData = $state('');
   let imageError = $state(false);
+  let priceInsight = $state(null);
 
   onMount(async () => {
+    // Load image first
     try {
       imageData = await invoke('get_product_image', { imageUrl: product.image_url });
     } catch (e) {
       console.error('Failed to load product image:', e);
       imageError = true;
+    }
+    // Fetch price insight after product loads (avoid cascading)
+    try {
+      priceInsight = await invoke('get_price_insight', { sku: product.sku });
+    } catch (e) {
+      // silent fail — badge is optional
     }
   });
 </script>
@@ -35,7 +44,12 @@
       <p class="brand">{product.brand}</p>
     {/if}
     {#if product.price}
-      <p class="price">{product.price} {product.currency ?? ''}</p>
+      <p class="price">
+        {product.price} {product.currency ?? ''}
+        {#if priceInsight && priceInsight.level !== 'hidden'}
+          <PriceBadge level={priceInsight.level} pct={priceInsight.pct} />
+        {/if}
+      </p>
     {/if}
   </div>
 </div>

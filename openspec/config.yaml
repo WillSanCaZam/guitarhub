@@ -1,6 +1,8 @@
 # openspec/config.yaml
 schema: spec-driven
 
+strict_tdd: true
+
 context: |
   Project: GuitarHub — native cross-platform desktop/mobile app for
   aggregating guitar gear listings from multiple online stores.
@@ -44,8 +46,10 @@ rules:
     - Keep tasks completable in one session
   apply:
     - Follow existing code patterns
-    tdd: false
-    test_command: ""
+    - STRICT TDD: write failing test (RED) before any implementation code
+    - Run tests after every change; never commit without a passing test suite
+    tdd: true
+    test_command: "make test"
   verify:
     test_command: "cargo test && pytest scraper/tests/unit scraper/tests/contract -v"
     build_command: "cargo build"

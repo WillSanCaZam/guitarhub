@@ -171,9 +171,7 @@ impl ImageCacheService {
                 let is_stale = age_secs > 0 && {
                     // We need the TTL for this entry to determine staleness.
                     // Query it from the DB.
-                    let ttl = self.get_ttl(hash).await.unwrap_or_else(|| {
-                        self.default_ttl.as_secs() as i64
-                    });
+                    let ttl = self.get_ttl(hash).await.unwrap_or(self.default_ttl.as_secs() as i64);
                     age_secs > ttl
                 };
 
@@ -301,16 +299,18 @@ impl ImageCacheService {
             });
         }
 
-        // Detect MIME type: prefer Content-Type header, fall back to byte sniffing
-        let mime_type = content_type
-            .filter(|m| m.starts_with("image/"))
-            .unwrap_or_else(|| detect_mime_from_bytes(&bytes));
+        // Strict MIME allowlist — only known image types
+        let mime_type = content_type.ok_or_else(|| {
+            ImageCacheError::DownloadFailed("Missing Content-Type header".to_string())
+        })?;
 
-        // Validate it's an image
-        if !mime_type.starts_with("image/") {
-            return Err(ImageCacheError::DownloadFailed(format!(
-                "URL returned non-image content type: {mime_type}"
-            )));
+        match mime_type.as_str() {
+            "image/jpeg" | "image/png" | "image/webp" | "image/avif" | "image/gif" => {}
+            _ => {
+                return Err(ImageCacheError::DownloadFailed(format!(
+                    "Rejected Content-Type '{mime_type}': not in image allowlist"
+                )));
+            }
         }
 
         Ok((bytes, mime_type))
@@ -359,16 +359,6 @@ fn chrono_now() -> i64 {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs() as i64
-}
-
-/// Detect image MIME type from raw bytes using the `infer` crate.
-fn detect_mime_from_bytes(bytes: &[u8]) -> String {
-    if let Some(kind) = infer::get(bytes) {
-        if kind.mime_type().starts_with("image/") {
-            return kind.mime_type().to_string();
-        }
-    }
-    "image/jpeg".to_string()
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────

@@ -1,5 +1,10 @@
 # Contributing to GuitarHub
 
+> **⚠️ Note:** The `scraper/` directory (Python scraper pipeline) is not yet
+> implemented. Sections below that reference `scraper/ports/`, `scraper/tests/`,
+> or `scraper/run_all.py` describe the **planned architecture** and will work
+> once the scraper is built. The Rust backend and Svelte frontend are active.
+
 Thanks for your interest! GuitarHub is an offline-first guitar gear catalog
 aggregator. This guide covers the full contributor workflow.
 

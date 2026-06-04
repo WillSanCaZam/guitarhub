@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0",
+  "source_id": "reverb",
+  "generated_at": "2026-06-01T12:00:00Z",
+  "run_id": "sync-2026-06-01-001",
+  "products": [
+    {
+      "sku": "FENDER-STRAT-001",
+      "name": "Fender American Professional II Stratocaster",
+      "brand": "Fender",
+      "model": "American Professional II",
+      "category": "Electric Guitars",
+      "subcategory": "Solid Body",
+      "price": 1599.99,
+      "currency": "USD",
+      "condition": "new",
+      "availability": "in_stock",
+      "url": "https://reverb.com/item/fender-strat-001",
+      "image_url": "https://images.reverb.com/fender-strat.jpg",
+      "specs_json": "{\"body_wood\": \"alder\", \"pickups\": \"V-Mod II\"}",
+      "seller": "Reverb Bazaar",
+      "location": "USA"
+    },
+    {
+      "sku": "GIBSON-LP-001",
+      "name": "Gibson Les Paul Standard '60s",
+      "brand": "Gibson",
+      "model": "Les Paul Standard '60s",
+      "category": "Electric Guitars",
+      "subcategory": "Solid Body",
+      "price": 2499.99,
+      "currency": "USD",
+      "condition": "new",
+      "availability": "in_stock",
+      "url": "https://reverb.com/item/gibson-lp-001",
+      "image_url": "https://images.reverb.com/gibson-lp.jpg",
+      "specs_json": "{\"body_wood\": \"mahogany\", \"pickups\": \"Burstbucker\"}",
+      "seller": "Gibson Official",
+      "location": "USA"
+    },
+    {
+      "sku": "PRS-C24-001",
+      "name": "PRS Custom 24-08",
+      "brand": "PRS",
+      "model": "Custom 24-08",
+      "category": "Electric Guitars",
+      "subcategory": "Solid Body",
+      "price": 3299.99,
+      "currency": "USD",
+      "condition": "new",
+      "availability": "in_stock",
+      "url": "https://reverb.com/item/prs-c24-001",
+      "image_url": "https://images.reverb.com/prs-c24.jpg",
+      "specs_json": "{\"body_wood\": \"swamp_ash\", \"pickups\": \"85/15\"}",
+      "seller": "PRS Guitars",
+      "location": "USA"
+    }
+  ]
+}
