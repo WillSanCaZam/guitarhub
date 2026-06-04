@@ -85,6 +85,8 @@ pub enum AppError {
     Network(String),
     #[error("internal error: {0}")]
     Internal(String),
+    #[error("sync already in progress")]
+    SyncInProgress,
 }
 
 impl serde::Serialize for AppError {
