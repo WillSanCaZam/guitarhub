@@ -35,25 +35,25 @@ Chain strategy: stacked-to-main
 
 ## Phase 2: SearchService (PR 2)
 
-- [ ] 2.1 RED: Write failing tests for `FtsSearchService` — sanitize (strip+quote), filter (category/price/source), paginate (limit/offset), all SortOrder variants
-- [ ] 2.2 Implement `FtsSearchService` in `src/services/search.rs` — FTS5 MATCH sanitization, WHERE/ORDER BY/LIMIT/OFFSET generation
-- [ ] 2.3 Create `search_command.rs` `#[tauri::command] search_products`, add `pub mod search_command;` and register in `lib.rs`, add `pub mod search;` to `services/mod.rs`
-- [ ] 2.4 GREEN: `cargo test` passes (sanitize, all sort orders, filter combos, no-results, pagination boundaries)
+- [x] 2.1 RED: Write failing tests for `FtsSearchService` — sanitize (strip+quote), filter (category/price/source), paginate (limit/offset), all SortOrder variants
+- [x] 2.2 Implement `FtsSearchService` in `src/services/search.rs` — FTS5 MATCH sanitization, WHERE/ORDER BY/LIMIT/OFFSET generation
+- [x] 2.3 Create `search_command.rs` `#[tauri::command] search_products`, add `pub mod search_command;` and register in `main.rs`, add `pub mod search;` to `services/mod.rs`
+- [x] 2.4 GREEN: `cargo test` passes (sanitize, all sort orders, filter combos, no-results, pagination boundaries)
 
 ## Phase 3: Frontend (PR 3)
 
-- [ ] 3.1 Wire `+page.svelte` — search bar invokes `search_products`, ProductCard grid, loading spinner/empty/error states
-- [ ] 3.2 Wire `+layout.svelte` — nav with sync button invoking `sync_catalog`, progress indicator during sync
-- [ ] 3.3 Add "Load more" pagination — limit/offset params, button disabled when all results shown
+- [x] 3.1 Wire `+page.svelte` — search bar invokes `search_products`, ProductCard grid, loading spinner/empty/error states
+- [x] 3.2 Wire `+layout.svelte` — nav with sync button invoking `sync_catalog`, progress indicator during sync
+- [x] 3.3 Add "Load more" pagination — limit/offset params, button disabled when all results shown
 
 ## Phase 4: Scraper (PR 4)
 
-- [ ] 4.1 Create `scraper/` package — `pyproject.toml`, `requirements.txt`, `ports.py` with `ScraperPort` Protocol
-- [ ] 4.2 Implement `ReverbAdapter(ScraperPort)` — HTTP with retry+backoff, HTML parse → CatalogProduct field mapping
-- [ ] 4.3 Create `cli.py` — `scraper --adapter reverb --output catalog.json --validate` entry point
-- [ ] 4.4 Create `scraper/tests/unit/` (HTML fixture extraction) + `tests/contract/` (Protocol conformance via mypy/pytest)
-- [ ] 4.5 Create `.github/workflows/scrape.yml` — cron `0 */6 * * *`, pip-audit gate before scrape, schema validation after
-- [ ] 4.6 `pytest scraper/tests/unit scraper/tests/contract -v` passes
+- [x] 4.1 Create `scraper/` package — `pyproject.toml`, `requirements.txt`, `ports.py` with `ScraperPort` Protocol
+- [x] 4.2 Implement `ReverbAdapter(ScraperPort)` — HTTP with retry+backoff, HTML parse → CatalogProduct field mapping
+- [x] 4.3 Create `cli.py` — `scraper --adapter reverb --output catalog.json --validate` entry point
+- [x] 4.4 Create `scraper/tests/unit/` (HTML fixture extraction) + `tests/contract/` (Protocol conformance via mypy/pytest)
+- [x] 4.5 Create `.github/workflows/scrape.yml` — cron `0 */6 * * *`, pip-audit gate before scrape, schema validation after
+- [x] 4.6 `pytest scraper/tests/unit scraper/tests/contract -v` passes
 
 ## Phase 5: Repo Docs (PR 5)
 

@@ -1,20 +1,65 @@
-# TODO(scraper): Re-enable this workflow when scraper/ directory is implemented.
-# The scraper pipeline (Python Ports & Adapters) is not yet built.
 name: Scrape
+
 on:
+  schedule:
+    - cron: "0 */6 * * *"
   workflow_dispatch:
 
+env:
+  PYTHON_VERSION: "3.12"
+
 jobs:
-  check-scraper:
+  scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 1
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        source: [reverb]
+      fail-fast: false
+
     steps:
       - uses: actions/checkout@v4
-      - name: Check if scraper exists
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: scraper/requirements.txt
+
+      - name: Install dependencies
         run: |
-          if [ -d "scraper" ]; then
-            echo "scraper/ found — enable the full workflow"
-          else
-            echo "scraper/ not found — this workflow is disabled until the scraper is implemented"
-            exit 1
-          fi
+          python -m pip install --upgrade pip
+          pip install -r scraper/requirements.txt
+          pip install pip-audit
+
+      - name: Security audit
+        run: pip-audit
+
+      - name: Run scraper
+        run: |
+          python -m scraper \
+            --adapter "${{ matrix.source }}" \
+            --output "catalog-${{ matrix.source }}.json" \
+            --validate
+
+      - name: Validate JSON envelope
+        run: |
+          python -c "
+          import json
+          with open('catalog-${{ matrix.source }}.json') as f:
+              data = json.load(f)
+          assert data['schema_version'] == '1.0', 'schema_version mismatch'
+          assert data['source_id'] == '${{ matrix.source }}', 'source_id mismatch'
+          assert 'generated_at' in data, 'missing generated_at'
+          assert data['run_id'].startswith('${{ matrix.source }}-'), 'run_id format'
+          assert isinstance(data['products'], list), 'products must be a list'
+          print(f'VALID: {len(data[\"products\"])} products in catalog-{data[\"source_id\"]}.json')
+          "
+
+      - name: Upload catalog artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalog-${{ matrix.source }}
+          path: catalog-${{ matrix.source }}.json
+          retention-days: 7
