@@ -73,7 +73,7 @@
 
 </script>
 
-<div class="settings">
+<div class="settings" data-testid="settings-form">
   <h2>Settings</h2>
 
   <fieldset class="channel-section">
@@ -136,6 +136,8 @@
         {testResult.success ? 'Sent!' : 'Failed: ' + testResult.message}
       </p>
     {/if}
+
+    <button type="submit" onclick={(e) => e.preventDefault()}>Save</button>
   </fieldset>
 
   <fieldset class="export-section">

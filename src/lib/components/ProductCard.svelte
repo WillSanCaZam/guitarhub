@@ -75,6 +75,7 @@
         onclick={handleAdd}
         disabled={adding}
         aria-label={added ? 'Added to collection' : 'Add to collection'}
+        data-testid="add-to-collection"
       >
         {#if added}
           Added ✓

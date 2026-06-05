@@ -26,8 +26,8 @@
 <nav class="nav">
   <a href="/" class="nav-title">GuitarHub</a>
   <div class="nav-actions">
-    <a href="#settings" class="nav-link">Settings</a>
-    <button onclick={handleSync} disabled={syncing} class="sync-btn">
+    <a href="/settings" class="nav-link">Settings</a>
+    <button onclick={handleSync} disabled={syncing} class="sync-btn" data-testid="sync-button">
       {syncing ? 'Syncing\u2026' : 'Sync Catalog'}
     </button>
     {#if syncError}

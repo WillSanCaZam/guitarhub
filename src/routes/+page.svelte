@@ -115,11 +115,13 @@
             placeholder="Search guitars, basses, amps... (min. 3 characters)"
             disabled={loading}
             class="search-input"
+            data-testid="search-input"
           />
           <button
             onclick={handleSearch}
             disabled={loading || query.trim().length < 3}
             class="search-btn"
+            data-testid="search-button"
           >
             Search
           </button>
@@ -242,7 +244,7 @@
     </div>
 
     <!-- Cell 8: Standard (Collection Stats) -->
-    <div class="cell cell-standard">
+    <div class="cell cell-standard" data-testid="collection-cell">
       <a href="/collection" class="cell-link">
         <DashboardCell
           title="Collection"
