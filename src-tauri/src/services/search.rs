@@ -87,8 +87,8 @@ impl FtsSearchService {
         }
 
         // Clamp page and page_size
-        let limit = page_size.max(1).min(100) as i64;
-        let offset = (page.saturating_sub(1) * page_size as u32) as i64;
+        let limit = page_size.clamp(1, 100) as i64;
+        let offset = (page.saturating_sub(1) * page_size) as i64;
 
         // ── Build SQL with sequential ? params ──────────────────────────
 

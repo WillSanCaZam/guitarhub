@@ -13,6 +13,8 @@ Provide FTS5-powered product search with input sanitization, multi-dimensional f
 
 The system MUST provide `#[tauri::command] search_products(query: String, state: State<'_, AppState>, filters: Option<SearchFilters>, sort: Option<SortOrder>, limit: Option<u32>, offset: Option<u32>) -> Result<SearchResult, AppError>`.
 
+The frontend MUST invoke this command using field names that match the Rust `SearchFilters` and `SearchResult` serde serialization: `price_min`, `price_max`, `source`, `category` (not `priceMin`, `priceMax`, `sourceId`, `categoryId`); and read `products`, `total`, `offset`, `limit` from the response (not `items`, `page`). Pagination MUST be derived as `page = (offset / limit) + 1` from the response, and the next page request MUST use `offset + limit`.
+
 | Case | Precondition | Action | Outcome |
 |------|-------------|--------|---------|
 | Basic text search | FTS5 index has 10 guitars | `search_products("guitar")` | Returns matching products from `products_fts` |
@@ -20,10 +22,13 @@ The system MUST provide `#[tauri::command] search_products(query: String, state:
 | Query too short | 1-char string | Search with "a" | Returns `AppError::InvalidInput` (min 3 chars) |
 | Special chars sanitized | Query "Fender!@#" | Search executes | Special chars stripped/escaped before FTS5 MATCH |
 | No results | Query "xyznonexistent" | Search | `total: 0`, `products: []` |
+| Frontend reads `products` array | Response received | Frontend processes result | Reads `res.products` (not `res.items`) to populate the results list |
+| Frontend sends `offset` and `limit` | User requests page 2, size 20 | `invoke` called | Sends `offset: 20`, `limit: 20` (not `page: 2, pageSize: 20`) |
+| Frontend derives page from offset | Response has `offset: 20, limit: 20` | Frontend renders | Computes `page = (20 / 20) + 1 = 2` |
 
 ### Requirement: Search MUST filter by category, price, and source
 
-The `SearchFilters` struct SHALL support optional `category: Option<String>`, `price_min: Option<f64>`, `price_max: Option<f64>`, and `source: Option<String>`.
+The `SearchFilters` struct SHALL support optional `category: Option<String>`, `price_min: Option<f64>`, `price_max: Option<f64>`, and `source: Option<String>`. The frontend MUST use these exact field names (snake_case) when constructing filter objects to match the Rust serde deserialization.
 
 | Case | Precondition | Action | Outcome |
 |------|-------------|--------|---------|

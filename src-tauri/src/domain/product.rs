@@ -54,7 +54,7 @@ impl SyncState {
     }
 
     /// Parse a `SyncState` from its SQL representation.
-    pub fn from_str(s: &str) -> Option<Self> {
+    pub fn from_label(s: &str) -> Option<Self> {
         match s {
             "idle" => Some(SyncState::Idle),
             "downloading" => Some(SyncState::Downloading),
@@ -242,7 +242,7 @@ mod tests {
             SyncState::FailedDb,
         ] {
             let s = state.as_str();
-            let parsed = SyncState::from_str(s).unwrap_or_else(|| panic!("expected Some for {s}"));
+            let parsed = SyncState::from_label(s).unwrap_or_else(|| panic!("expected Some for {s}"));
             assert_eq!(&parsed, state);
         }
     }

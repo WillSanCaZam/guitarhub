@@ -76,7 +76,7 @@ impl CatalogSyncService {
         .map_err(|e| AppError::Database(e.to_string()))?;
 
         if let Some(ref s) = status {
-            if let Some(state) = SyncState::from_str(s) {
+            if let Some(state) = SyncState::from_label(s) {
                 if state.is_running() {
                     return Err(AppError::SyncInProgress);
                 }
