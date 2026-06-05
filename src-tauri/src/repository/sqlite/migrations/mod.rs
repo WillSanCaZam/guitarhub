@@ -86,7 +86,7 @@ impl MigrationRunner {
             })?;
 
             // Execute each statement in the migration file.
-            for statement in sql.split(';') {
+            for statement in split_statements(&sql) {
                 let trimmed = statement.trim();
                 if trimmed.is_empty() {
                     continue;
@@ -222,6 +222,72 @@ fn extract_version(filename: &str) -> Option<u32> {
     let stem = Path::new(filename).file_stem()?.to_str()?;
     let prefix = stem.split('_').next()?;
     prefix.parse::<u32>().ok()
+}
+
+/// Split SQL text into individual statements, respecting `BEGIN...END` blocks.
+///
+/// A naive `split(';')` breaks `CREATE TRIGGER` bodies that contain
+/// semicolons inside `BEGIN...END`. This function tracks `BEGIN`/`END`
+/// depth so that semicolons inside trigger/procedure bodies are preserved.
+fn split_statements(sql: &str) -> Vec<String> {
+    let mut statements = Vec::new();
+    let mut current = String::new();
+    let mut depth: u32 = 0;
+
+    for token in tokenize_sql(sql) {
+        match token.to_uppercase().as_str() {
+            "BEGIN" => {
+                depth += 1;
+                current.push_str(&token);
+            }
+            "END" if depth > 0 => {
+                depth = depth.saturating_sub(1);
+                current.push_str(&token);
+                // If we just closed a block and hit ';', flush
+            }
+            ";" if depth == 0 => {
+                let trimmed = current.trim().to_string();
+                if !trimmed.is_empty() {
+                    statements.push(trimmed);
+                }
+                current.clear();
+            }
+            _ => {
+                current.push_str(&token);
+            }
+        }
+    }
+
+    // Flush any trailing statement without a trailing semicolon
+    let trimmed = current.trim().to_string();
+    if !trimmed.is_empty() {
+        statements.push(trimmed);
+    }
+
+    statements
+}
+
+/// Tokenize SQL into words and separators, preserving whitespace within
+/// the current statement but splitting on word boundaries for keyword detection.
+fn tokenize_sql(sql: &str) -> Vec<String> {
+    let mut tokens = Vec::new();
+    let mut word = String::new();
+
+    for ch in sql.chars() {
+        if ch.is_alphanumeric() || ch == '_' {
+            word.push(ch);
+        } else {
+            if !word.is_empty() {
+                tokens.push(std::mem::take(&mut word));
+            }
+            tokens.push(ch.to_string());
+        }
+    }
+    if !word.is_empty() {
+        tokens.push(word);
+    }
+
+    tokens
 }
 
 /// Check whether a sqlx error is caused by a missing table (fresh database).
@@ -542,6 +608,85 @@ mod tests {
             version, "1",
             "Expected version 1 after 001 succeeded and 002 rolled back"
         );
+    }
+
+    // ── split_statements() ─────────────────────────────────────────────
+
+    #[test]
+    fn split_statements_handles_trigger_with_begin_end() {
+        let sql = "\
+CREATE TABLE t1 (id INTEGER PRIMARY KEY, val TEXT);
+CREATE TRIGGER t1_ai AFTER INSERT ON t1 BEGIN
+  INSERT INTO log(msg) VALUES (new.val);
+  INSERT INTO log(msg) VALUES ('done');
+END;
+CREATE TABLE t2 (id INTEGER PRIMARY KEY);";
+
+        let stmts = split_statements(sql);
+        assert_eq!(stmts.len(), 3, "expected 3 statements, got {}: {:?}", stmts.len(), stmts);
+        assert!(stmts[0].starts_with("CREATE TABLE t1"), "first stmt: {}", stmts[0]);
+        assert!(stmts[1].contains("CREATE TRIGGER"), "second stmt should be the trigger: {}", stmts[1]);
+        assert!(stmts[1].contains("END"), "trigger stmt must include END: {}", stmts[1]);
+        assert!(stmts[2].starts_with("CREATE TABLE t2"), "third stmt: {}", stmts[2]);
+    }
+
+    #[test]
+    fn split_statements_plain_semicolon_statements() {
+        let sql = "CREATE TABLE a (id INT); INSERT INTO a VALUES (1); CREATE TABLE b (id INT);";
+        let stmts = split_statements(sql);
+        assert_eq!(stmts.len(), 3, "expected 3 plain statements, got {}", stmts.len());
+        assert!(stmts[0].contains("CREATE TABLE a"));
+        assert!(stmts[1].contains("INSERT INTO a"));
+        assert!(stmts[2].contains("CREATE TABLE b"));
+    }
+
+    #[test]
+    fn split_statements_skips_empty_and_whitespace() {
+        let sql = "  ;  CREATE TABLE x (id INT) ;  ;  ";
+        let stmts = split_statements(sql);
+        assert_eq!(stmts.len(), 1);
+        assert!(stmts[0].contains("CREATE TABLE x"));
+    }
+
+    // ── run() — trigger migration integration ─────────────────────────
+
+    #[tokio::test]
+    async fn run_applies_migration_with_trigger_begin_end() {
+        let pool = make_memory_pool().await;
+        let dir = temp_dir_with_files(&["001_init.sql", "002_triggers.sql"]);
+
+        std::fs::write(
+            dir.join("001_init.sql"),
+            "CREATE TABLE schema_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+             INSERT INTO schema_meta VALUES ('db_version', '1');
+             CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT);
+             CREATE TABLE log (id INTEGER PRIMARY KEY AUTOINCREMENT, msg TEXT);",
+        )
+        .unwrap();
+
+        std::fs::write(
+            dir.join("002_triggers.sql"),
+            "CREATE TRIGGER products_ai AFTER INSERT ON products BEGIN
+  INSERT INTO log(msg) VALUES ('inserted: ' || new.name);
+  INSERT INTO log(msg) VALUES ('done');
+END;",
+        )
+        .unwrap();
+
+        let runner = MigrationRunner::new(pool.clone(), dir);
+        runner.run().await.unwrap();
+
+        // Verify the trigger was created and works
+        sqlx::query("INSERT INTO products (name) VALUES ('guitar')")
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM log")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(count, 2, "trigger should have inserted 2 log rows");
     }
 
     // ── Migration 004 tests ─────────────────────────────────────────────
