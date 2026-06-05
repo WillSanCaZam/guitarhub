@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Ports for the scraper — Ports & Adapters pattern."""
 
 from typing import Protocol, runtime_checkable

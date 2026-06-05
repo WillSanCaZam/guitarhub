@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Domain models for catalog products matching Rust RawProduct schema."""
 
 from datetime import datetime, timezone

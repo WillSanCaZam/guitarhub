@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Contract tests: verify adapter conforms to ScraperPort protocol.
 
 These tests verify at runtime that adapters satisfy the ScraperPort

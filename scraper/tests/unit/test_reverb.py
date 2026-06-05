@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Unit tests for ReverbAdapter — HTML extraction and URL generation."""
 
 from pathlib import Path

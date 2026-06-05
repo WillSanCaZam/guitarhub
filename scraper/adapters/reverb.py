@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Reverb.com marketplace scraper adapter.
 
 Ports & Adapters: implements ScraperPort protocol.

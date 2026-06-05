@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Unit tests for scraper domain models."""
 
 from datetime import datetime, timezone
