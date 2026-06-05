@@ -1,20 +1,35 @@
-# TODO(scraper): Re-enable integration + E2E tests when scraper/ exists and
-# tauri-driver + WebDriver are configured for the Rust E2E test suite.
-name: E2E
+name: E2E Tests
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * 6'  # Weekly Saturday
 
 jobs:
-  check-scraper:
+  e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 1
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - name: Check if scraper exists
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install system dependencies
         run: |
-          if [ -d "scraper" ]; then
-            echo "scraper/ found — enable the full workflow"
-          else
-            echo "scraper/ not found — this workflow is disabled until the scraper is implemented"
-            exit 1
-          fi
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev xvfb
+
+      - run: npm ci
+
+      - run: cargo install tauri-driver --locked
+
+      - run: cargo tauri build --debug --no-bundle
+
+      - run: xvfb-run --auto-servernum npm run test:e2e

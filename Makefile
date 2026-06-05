@@ -1,4 +1,4 @@
-.PHONY: setup dev build test test-app test-scraper lint lint-rust lint-py clean audit help
+.PHONY: setup dev build test test-app test-scraper test-e2e lint lint-rust lint-py clean audit help
 
 CARGO = cd src-tauri && cargo
 
@@ -28,7 +28,7 @@ build:
 # ── Test ─────────────────────────────────────────────────────────────────────
 
 ## Run all tests (Rust + Python + Frontend)
-test: test-app test-scraper test-frontend
+test: test-app test-scraper test-frontend test-e2e
 
 ## Run only frontend tests
 ## Run only frontend tests
@@ -45,6 +45,14 @@ test-scraper:
 		cd "$(SCRAPER_DIR)" && python -m pytest tests/unit tests/contract -v; \
 	else \
 		echo "No $(SCRAPER_DIR)/ directory found — skipping Python tests"; \
+	fi
+
+## Run E2E tests (requires cargo tauri build --debug --no-bundle first)
+test-e2e:
+	@if command -v tauri-driver >/dev/null 2>&1 && [ -f "./src-tauri/target/debug/guitarhub" ]; then \
+		npm run test:e2e; \
+	else \
+		echo "tauri-driver or debug binary not found — skipping E2E tests. Run: cargo install tauri-driver && cargo tauri build --debug --no-bundle"; \
 	fi
 
 # ── Lint ─────────────────────────────────────────────────────────────────────
