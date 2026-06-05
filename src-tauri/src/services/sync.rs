@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use crate::domain::product::{CatalogFile, RawProduct, SyncState};
 use crate::AppError;
 use sqlx::SqlitePool;

@@ -57,7 +57,7 @@ Chain strategy: stacked-to-main
 
 ## Phase 5: Repo Docs (PR 5)
 
-- [ ] 5.1 Create `README.md` — project desc, prerequisites (Rust/Node/Python), `make build`/`make dev`/`make test`, screenshot placeholder, tech stack summary
-- [ ] 5.2 Create `LICENSE` — GPL-3.0 full text as published by FSF
-- [ ] 5.3 Create `CHANGELOG.md` — Keep a Changelog format, `[Unreleased]` with Added/Changed/Fixed sections
-- [ ] 5.4 Add `SPDX-License-Identifier: GPL-3.0-or-later` headers to all new Rust and Python source files
+- [x] 5.1 Create `README.md` — project desc, prerequisites (Rust/Node/Python), `make build`/`make dev`/`make test`, screenshot placeholder, tech stack summary
+- [x] 5.2 Create `LICENSE` — GPL-3.0 full text as published by FSF
+- [x] 5.3 Create `CHANGELOG.md` — Keep a Changelog format, `[Unreleased]` with Added/Changed/Fixed sections
+- [x] 5.4 Add `SPDX-License-Identifier: GPL-3.0-or-later` headers to all new Rust and Python source files

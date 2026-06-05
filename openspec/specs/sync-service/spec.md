@@ -1,43 +1,47 @@
 # Sync Service Specification
 
-> **Status**: New capability (stub)  
-> **Change**: fix-critical-fallas
+> **Status**: Stable  
+> **Change**: mvp-completion (upgraded from stub to remote catalog sync)
 
 ## Purpose
 
-Provide a contract and stub implementation for loading product catalog data from JSON fixtures into the SQLite database, enabling E2E data flow for demo and test scenarios.
+Provide a remote catalog download service with a full sync state machine, SQLite upsert, and Tauri IPC command. The service fetches a `CatalogFile` JSON from a remote URL (GitHub Pages), transitions through lifecycle states, and upserts products into `products_meta`.
 
 ## Requirements
 
 ### Requirement: SyncService trait MUST be defined
 
-The system MUST define a `SyncService` trait in `src-tauri/src/services/sync.rs` with at least one method `async fn sync_from_json(&self, path: &str) -> Result<SyncResult, AppError>`. `SyncResult` MUST contain `products_loaded: u32` and `products_updated: u32`.
-
-#### Scenarios
+The system MUST define a `SyncService` trait with method `async fn sync_catalog(&self, url: &str) -> Result<SyncResult, AppError>`. `SyncResult` MUST contain `products_loaded: u32`, `products_updated: u32`, `state: SyncState`, and `progress: f32`.
 
 | Case | Precondition | Action | Outcome |
 |------|-------------|--------|---------|
-| Trait compiles | `SyncService` defined with `sync_from_json` | `cargo build` | Compilation succeeds |
-| SyncResult returned | Valid JSON fixture | `sync_from_json(path)` | Returns `SyncResult` with counts |
+| Trait compiles | Trait with `sync_catalog` defined | `cargo build` | Compiles successfully |
+| Real catalog upsert | Valid URL with 50 products | `sync_catalog(url)` | 50 rows in `products_meta`; `loaded: 50` |
 
-### Requirement: JsonFixtureLoader MUST upsert products
+### Requirement: sync_catalog Tauri command MUST accept URL
 
-The system MUST provide `JsonFixtureLoader` implementing `SyncService`. It MUST parse a `CatalogFile` JSON schema (`{ products: Vec<CatalogProduct> }`) and upsert each product into `products_meta`. A test fixture JSON with at least 2 sample products MUST exist.
-
-#### Scenarios
+`#[tauri::command] sync_catalog(url: String, state: State<'_, AppState>) -> Result<SyncResult, AppError>` SHALL replace the previous path-based command.
 
 | Case | Precondition | Action | Outcome |
 |------|-------------|--------|---------|
-| Empty DB load | No products in `products_meta` | `sync_from_json(valid_fixture)` | 2 rows inserted; `sync_state` updated |
-| Duplicate upsert | Product "P001" exists at price 100.0 | Load fixture with same SKU, price 150.0 | 1 row for "P001"; price updated to 150.0 |
-| Malformed JSON | Fixture file has invalid JSON | `sync_from_json(path)` | Returns `AppError::InvalidInput` |
+| IPC with URL | Command registered | `invoke('sync_catalog', { url })` | Real sync runs, `SyncResult` returned |
+| Missing URL arg | No `url` provided | Frontend calls without url | Tauri returns deserialization error |
 
-### Requirement: sync_catalog Tauri command MUST exist
+### Requirement: Sync state machine MUST track lifecycle
 
-The system MUST provide `#[tauri::command] sync_catalog(path: String, state: State<'_, AppState>) -> Result<SyncResult, AppError>` registered in `main.rs` invoke handler.
-
-#### Scenarios
+The `sync_state` table MUST transition through `idle → downloading → validating → sanitizing → inserting → done | failed`. Each transition SHALL update `started_at`, `completed_at`, and `error_message` on failure.
 
 | Case | Precondition | Action | Outcome |
 |------|-------------|--------|---------|
-| IPC trigger | `sync_catalog` registered | Frontend `invoke('sync_catalog', { path })` | SQLite upserts, `SyncResult` returned |
+| Full lifecycle succeeds | sync_state is `idle` | Catalog sync runs successfully | Transitions through all states, ends at `done` |
+| Network failure mid-sync | sync_state is `downloading` | HTTP fetch fails | sync_state set to `failed` with error message |
+| Concurrent sync rejected | sync_state is `downloading` | New sync request arrives | Returns `AppError::SyncInProgress` |
+
+### Requirement: SyncResult MUST include progress and state
+
+`SyncResult` MUST add `progress: f32` (0.0–1.0) and `state: SyncState` fields.
+
+| Case | Precondition | Action | Outcome |
+|------|-------------|--------|---------|
+| Partial progress | 100 products to insert | 50 inserted | `progress` SHALL be ~0.5 |
+| State reported | Sync in `validating` phase | Check `SyncResult` | `state` SHALL be `validating` |

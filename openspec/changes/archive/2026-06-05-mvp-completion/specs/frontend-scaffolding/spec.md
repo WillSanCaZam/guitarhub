@@ -1,33 +1,9 @@
-# Frontend Scaffolding Specification
+# Delta for frontend-scaffolding
 
-> **Status**: Stable  
-> **Change**: mvp-completion (upgraded from empty route shells to live IPC-connected search UI)
+> **Change**: mvp-completion  
+> **Status**: Modified — empty route shells upgraded to live IPC-connected search UI
 
-## Purpose
-
-Provide the SvelteKit project structure required by Tauri 2, with routes wired to Tauri IPC commands for real-time search and catalog sync. The 5 existing `.svelte` components (`ProductCard`, `PriceBadge`, `PriceChart`, `Settings`, `ProductDetail`) are connected to live data via `@tauri-apps/api/core` invoke calls.
-
-## Requirements
-
-### Requirement: SvelteKit scaffold files MUST exist
-
-The system MUST provide under `src/`: `package.json` (deps: `@sveltejs/kit`, `@sveltejs/adapter-static`, `svelte`, `vite`, `typescript`), `svelte.config.js` (with `adapter-static`, no prerender), `vite.config.ts` (SvelteKit plugin), `tsconfig.json` (strict mode), and `src/app.html` (minimal `<html>` entry point with `%sveltekit.head%` and `%sveltekit.body%`).
-
-#### Scenarios
-
-| Case | Precondition | Action | Outcome |
-|------|-------------|--------|---------|
-| npm install succeeds | `package.json` with correct deps | `npm install` | exit 0, `node_modules/` created |
-| Static build succeeds | All scaffold files present | `npm run build` | exit 0, `build/` directory with `index.html` |
-| Dev server starts | All scaffold files present | `npm run dev` | Vite serves on localhost:5173, no compile errors |
-
-### Requirement: Routes MUST reference IPC-connected components
-
-`+page.svelte` and `+layout.svelte` SHALL import `@tauri-apps/api/core` and wire Tauri commands. The existing component imports are retained but now receive real data instead of static props.
-
-| Case | Precondition | Action | Outcome |
-|------|-------------|--------|---------|
-| Components render with real data | Search returns 10 products | Page renders | `ProductCard` receives real product data from IPC |
+## ADDED Requirements
 
 ### Requirement: +page.svelte MUST provide search UI
 
@@ -66,3 +42,14 @@ The result grid SHALL support pagination via `limit` and `offset` params passed 
 |------|-------------|--------|---------|
 | Load more | 20 results total, 10 displayed | Click "Load more" | Next 10 products appended |
 | No more results | All 10 results displayed | Click "Load more" | Button disabled, no duplicate fetch |
+
+## MODIFIED Requirements
+
+### Requirement: Routes MUST reference IPC-connected components
+
+`+page.svelte` and `+layout.svelte` SHALL import `@tauri-apps/api/core` and wire Tauri commands. The existing component imports are retained but now receive real data instead of static props.
+(Previously: Routes imported components with static/mock props only)
+
+| Case | Precondition | Action | Outcome |
+|------|-------------|--------|---------|
+| Components render with real data | Search returns 10 products | Page renders | `ProductCard` receives real product data from IPC |
