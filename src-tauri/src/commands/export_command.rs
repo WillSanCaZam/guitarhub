@@ -31,43 +31,66 @@ pub async fn export_data(
 mod tests {
     use super::*;
     use crate::AppError;
+    use crate::repository::sqlite::migrations::MigrationRunner;
 
-    async fn test_pool() -> sqlx::SqlitePool {
+    /// Create an in-memory pool using the REAL migration chain (001→006).
+    ///
+    /// Mirrors the helper in `services::export_service::tests` — using the
+    /// real schema here means command-level tests validate the same contract
+    /// as the service, and any future migration that breaks export will be
+    /// caught at this layer too.
+    async fn migrated_pool() -> sqlx::SqlitePool {
+        use std::path::PathBuf;
+
         let pool = sqlx::SqlitePool::connect("sqlite::memory:").await.unwrap();
 
-        sqlx::query(
-            "CREATE TABLE IF NOT EXISTS wishlist (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                sku TEXT, name TEXT, brand TEXT, price REAL,
-                currency TEXT, image_url TEXT, product_url TEXT,
-                notes TEXT, added_at INTEGER
-            )",
+        let dir = std::env::temp_dir().join(format!(
+            "guitarhub-exportcmd-mig-{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(
+            dir.join("001_init.sql"),
+            include_str!("../repository/sqlite/migrations/001_init.sql"),
         )
-        .execute(&pool)
-        .await
+        .unwrap();
+        std::fs::write(
+            dir.join("002_add_url_validation.sql"),
+            include_str!("../repository/sqlite/migrations/002_add_url_validation.sql"),
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("003_add_image_cache.sql"),
+            include_str!("../repository/sqlite/migrations/003_add_image_cache.sql"),
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("004_add_price_source.sql"),
+            include_str!("../repository/sqlite/migrations/004_add_price_source.sql"),
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("005_add_settings.sql"),
+            include_str!("../repository/sqlite/migrations/005_add_settings.sql"),
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("006_wishlist_schema.sql"),
+            include_str!("../repository/sqlite/migrations/006_wishlist_schema.sql"),
+        )
         .unwrap();
 
-        sqlx::query(
-            "CREATE TABLE IF NOT EXISTS price_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                sku TEXT NOT NULL, price REAL NOT NULL,
-                recorded_at INTEGER NOT NULL, source_id TEXT NOT NULL DEFAULT ''
-            )",
-        )
-        .execute(&pool)
-        .await
-        .unwrap();
-
-        sqlx::query(
-            "CREATE TABLE IF NOT EXISTS settings (
-                key TEXT PRIMARY KEY, value TEXT NOT NULL
-            )",
-        )
-        .execute(&pool)
-        .await
-        .unwrap();
-
+        let runner = MigrationRunner::new(pool.clone(), PathBuf::from(&dir));
+        runner.run().await.expect("real migration chain should apply cleanly");
         pool
+    }
+
+    /// Test pool backed by the real migration chain (not inline CREATE TABLE).
+    async fn test_pool() -> sqlx::SqlitePool {
+        migrated_pool().await
     }
 
     #[tokio::test]
@@ -117,6 +140,35 @@ mod tests {
 
         let result = export_data_cmd(&pool, &path).await.unwrap();
         assert!(result.success);
+        assert_eq!(result.file_count, 3);
+    }
+
+    /// Validates the command layer against the REAL migration schema.
+    /// Triangulates the contract: if a future migration breaks the schema
+    /// the service expects, this test will fail with a clear query error
+    /// rather than the divergence silently passing.
+    #[tokio::test]
+    async fn export_data_cmd_works_against_real_migration_chain() {
+        let pool = migrated_pool().await;
+        // Seed a real-schema wishlist row to prove SELECT * works.
+        sqlx::query(
+            "INSERT INTO wishlist (sku, name, brand, price, currency) VALUES (?1, ?2, ?3, ?4, ?5)",
+        )
+        .bind("REALSCHEMA-001")
+        .bind("Real Schema Guitar")
+        .bind("TestBrand")
+        .bind(1500.0f64)
+        .bind("USD")
+        .execute(&pool)
+        .await
+        .expect("INSERT into real-schema wishlist should succeed");
+
+        let tmp = tempfile::NamedTempFile::new().unwrap();
+        let path = tmp.path().to_str().unwrap().to_string();
+
+        let result = export_data_cmd(&pool, &path).await.unwrap();
+        assert!(result.success, "command must succeed against real schema");
+        assert!(result.size_bytes > 0);
         assert_eq!(result.file_count, 3);
     }
 }

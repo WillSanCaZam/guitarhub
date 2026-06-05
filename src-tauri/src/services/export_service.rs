@@ -161,57 +161,71 @@ struct SettingRow {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::repository::sqlite::migrations::MigrationRunner;
     use std::io::Read as _;
 
-    /// Create an in-memory pool with all tables needed for export.
-    async fn test_pool() -> SqlitePool {
+    /// Create an in-memory pool using the REAL migration chain (001→006).
+    ///
+    /// This is the source of truth for the export service: it ensures tests
+    /// validate against the actual schema the app uses at runtime, so a
+    /// future migration that drops or renames a column will be caught here.
+    async fn migrated_pool() -> SqlitePool {
+        use std::path::PathBuf;
+
         let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
 
-        // Create wishlist table
-        sqlx::query(
-            "CREATE TABLE IF NOT EXISTS wishlist (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                sku         TEXT,
-                name        TEXT,
-                brand       TEXT,
-                price       REAL,
-                currency    TEXT,
-                image_url   TEXT,
-                product_url TEXT,
-                notes       TEXT,
-                added_at    INTEGER
-            )",
+        // Materialise the real migration files into a temp dir for the runner.
+        let dir = std::env::temp_dir().join(format!(
+            "guitarhub-export-mig-{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(
+            dir.join("001_init.sql"),
+            include_str!("../repository/sqlite/migrations/001_init.sql"),
         )
-        .execute(&pool)
-        .await
+        .unwrap();
+        std::fs::write(
+            dir.join("002_add_url_validation.sql"),
+            include_str!("../repository/sqlite/migrations/002_add_url_validation.sql"),
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("003_add_image_cache.sql"),
+            include_str!("../repository/sqlite/migrations/003_add_image_cache.sql"),
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("004_add_price_source.sql"),
+            include_str!("../repository/sqlite/migrations/004_add_price_source.sql"),
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("005_add_settings.sql"),
+            include_str!("../repository/sqlite/migrations/005_add_settings.sql"),
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("006_wishlist_schema.sql"),
+            include_str!("../repository/sqlite/migrations/006_wishlist_schema.sql"),
+        )
         .unwrap();
 
-        // Create price_history table
-        sqlx::query(
-            "CREATE TABLE IF NOT EXISTS price_history (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                sku         TEXT NOT NULL,
-                price       REAL NOT NULL,
-                recorded_at INTEGER NOT NULL,
-                source_id   TEXT NOT NULL DEFAULT ''
-            )",
-        )
-        .execute(&pool)
-        .await
-        .unwrap();
-
-        // Create settings table
-        sqlx::query(
-            "CREATE TABLE IF NOT EXISTS settings (
-                key   TEXT PRIMARY KEY,
-                value TEXT NOT NULL
-            )",
-        )
-        .execute(&pool)
-        .await
-        .unwrap();
-
+        let runner = MigrationRunner::new(pool.clone(), PathBuf::from(&dir));
+        runner.run().await.expect("real migration chain should apply cleanly");
         pool
+    }
+
+    /// Create an in-memory pool with all tables needed for export.
+    ///
+    /// Uses the REAL migration chain (001→006) so tests validate against the
+    /// same schema the app uses at runtime. This catches future migrations
+    /// that drop or rename columns the export service depends on.
+    async fn test_pool() -> SqlitePool {
+        migrated_pool().await
     }
 
     /// Seed the pool with sample data for testing.
@@ -421,5 +435,50 @@ mod tests {
         // Verify file exists on disk and is non-empty
         let metadata = std::fs::metadata(&path).unwrap();
         assert!(metadata.len() > 0, "file should exist and be non-empty");
+    }
+
+    /// RED: Validate that the export service works against the REAL migration
+    /// schema (001→006), not an inline CREATE TABLE. Catches drift between
+    /// migrations and service expectations.
+    #[tokio::test]
+    async fn export_works_against_real_migration_chain() {
+        let pool = migrated_pool().await;
+        seed_data(&pool).await;
+        let svc = ExportService::new(pool);
+
+        let tmp = tempfile::NamedTempFile::new().unwrap();
+        let path = tmp.path().to_str().unwrap().to_string();
+
+        let result = svc.export_to(&path).await.unwrap();
+        assert!(result.success, "export must succeed against real schema");
+        assert!(result.size_bytes > 0, "ZIP should have content");
+        assert_eq!(result.file_count, 3);
+
+        // Read back the ZIP and inspect the wishlist JSON — it should
+        // reflect the real 10-column schema (id, sku, name, brand, price,
+        // currency, image_url, product_url, notes, added_at).
+        let zip_bytes = std::fs::read(&path).unwrap();
+        let reader = std::io::Cursor::new(zip_bytes);
+        let mut archive = zip::ZipArchive::new(reader).unwrap();
+
+        let mut file = archive.by_name("wishlist.json").unwrap();
+        let mut content = String::new();
+        file.read_to_string(&mut content).unwrap();
+        let items: Vec<serde_json::Value> =
+            serde_json::from_str(&content).expect("valid JSON");
+
+        assert_eq!(items.len(), 2, "expected 2 wishlist items");
+
+        // The first item should expose the 10 real-schema column names
+        let first = &items[0];
+        for col in &[
+            "id", "sku", "name", "brand", "price", "currency",
+            "image_url", "product_url", "notes", "added_at",
+        ] {
+            assert!(
+                first.get(col).is_some(),
+                "wishlist JSON missing real-schema column '{col}', got: {first}"
+            );
+        }
     }
 }
