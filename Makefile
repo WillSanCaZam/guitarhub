@@ -1,6 +1,6 @@
 .PHONY: setup dev build test test-app test-scraper lint lint-rust lint-py clean audit help
 
-CARGO = cargo --manifest-path src-tauri/Cargo.toml
+CARGO = cd src-tauri && cargo
 
 # Dirs for scraper operations
 SCRAPER_DIR = scraper
