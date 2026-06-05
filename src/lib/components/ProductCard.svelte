@@ -26,7 +26,8 @@
   });
 </script>
 
-<div class="product-card">
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+<div class="product-card" tabindex="0">
   {#if imageData}
     <img src={imageData} alt={product.name} class="product-image" />
   {:else}
@@ -64,6 +65,10 @@
   }
   .product-card:hover {
     box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  }
+  .product-card:focus-visible {
+    outline: 2px solid #4a90d9;
+    outline-offset: 2px;
   }
   .product-image {
     width: 100%;

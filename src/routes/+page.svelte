@@ -8,6 +8,7 @@
   import type { SearchResult } from '$lib/types/search';
   import { syncResult } from '$lib/stores/sync';
   import { dashboardStats } from '$lib/stores/dashboard';
+  import pkg from '../../package.json';
 
   let query = $state('');
   let results = $state([]);
@@ -93,13 +94,16 @@
 
   let drops = $derived($syncResult?.drops ?? []);
   let dropsSent = $derived($syncResult?.drops_sent ?? 0);
+
+  let featuredProduct = $derived(results.length > 0 ? results[0] : null);
+  let appVersion = pkg.version;
 </script>
 
 <div class="page">
   <div class="bento-grid">
     <!-- Cell 1: Hero (Search Results) -->
     <div class="cell cell-hero">
-      <DashboardCell title="Search" icon="🔍" loading={false} empty={false}>
+      <DashboardCell title="Search" icon="🔍" loading={false} empty={!searched} emptyMessage="Search to find guitar deals" emptyIcon="🔍">
         <div class="search-bar">
           <input
             type="text"
@@ -151,17 +155,13 @@
               </button>
             </div>
           {/if}
-        {:else if !searched}
-          <div class="welcome-state">
-            <p>Enter a search term above to find guitar gear listings.</p>
-          </div>
         {/if}
       </DashboardCell>
     </div>
 
     <!-- Cell 2: Wide (Sync Status) -->
     <div class="cell cell-wide">
-      <DashboardCell title="Sync Status" icon="🔄" loading={false} empty={drops.length === 0}>
+      <DashboardCell title="Sync Status" icon="🔄" loading={false} empty={drops.length === 0} emptyMessage="Sync catalog to see price drops" emptyIcon="🔄">
         {#if drops.length > 0}
           <div class="sync-toast">
             {drops.length} price drop(s) detected
@@ -188,7 +188,7 @@
 
     <!-- Cell 3: Standard (Total Products) -->
     <div class="cell cell-standard">
-      <DashboardCell title="Products" icon="🎸" loading={$dashboardStats.loading} empty={$dashboardStats.totalProducts === 0}>
+      <DashboardCell title="Products" icon="🎸" loading={$dashboardStats.loading} empty={$dashboardStats.totalProducts === 0} emptyMessage="No products in catalog yet" emptyIcon="🎸">
         {#if !$dashboardStats.loading}
           <div class="stat-value">{$dashboardStats.totalProducts.toLocaleString()}</div>
           <div class="stat-label">in catalog</div>
@@ -198,7 +198,7 @@
 
     <!-- Cell 4: Standard (Wishlist Count) -->
     <div class="cell cell-standard">
-      <DashboardCell title="Wishlist" icon="❤️" loading={$dashboardStats.loading} empty={$dashboardStats.wishlistCount === 0}>
+      <DashboardCell title="Wishlist" icon="❤️" loading={$dashboardStats.loading} empty={$dashboardStats.wishlistCount === 0} emptyMessage="Wishlist is empty" emptyIcon="❤️">
         {#if !$dashboardStats.loading}
           <div class="stat-value">{$dashboardStats.wishlistCount.toLocaleString()}</div>
           <div class="stat-label">items saved</div>
@@ -208,7 +208,7 @@
 
     <!-- Cell 5: Standard (Recent Searches) -->
     <div class="cell cell-standard">
-      <DashboardCell title="Recent Searches" icon="🕓" loading={$dashboardStats.loading} empty={$dashboardStats.recentSearches.length === 0}>
+      <DashboardCell title="Recent Searches" icon="🕓" loading={$dashboardStats.loading} empty={$dashboardStats.recentSearches.length === 0} emptyMessage="Start searching to see history" emptyIcon="🕓">
         {#if !$dashboardStats.loading && $dashboardStats.recentSearches.length > 0}
           <ul class="recent-list">
             {#each $dashboardStats.recentSearches as search}
@@ -219,22 +219,40 @@
       </DashboardCell>
     </div>
 
-    <!-- Cells 6-9: placeholders for PR 2 -->
+    <!-- Cell 6: Wide (Featured Deal) -->
     <div class="cell cell-wide">
-      <DashboardCell title="Featured Deal" icon="⭐" loading={false} empty={true}></DashboardCell>
+      <DashboardCell title="Featured Deal" icon="⭐" loading={false} empty={!featuredProduct} emptyMessage="No featured deal available" emptyIcon="⭐">
+        {#if featuredProduct}
+          <ProductCard product={featuredProduct} />
+        {/if}
+      </DashboardCell>
     </div>
+
+    <!-- Cell 7: Standard (Settings Shortcut) -->
     <div class="cell cell-standard">
       <DashboardCell title="Quick Settings" icon="⚙️" loading={false} empty={false}>
         <button class="settings-shortcut" onclick={() => document.getElementById('settings')?.scrollIntoView({ behavior: 'smooth' })}>
-          Open Settings
+          <span class="shortcut-icon" aria-hidden="true">⚙️</span>
+          <span>Open Settings</span>
         </button>
       </DashboardCell>
     </div>
+
+    <!-- Cell 8: Standard (Price Trends Placeholder) -->
     <div class="cell cell-standard">
-      <DashboardCell title="Price Trends" icon="📈" loading={false} empty={true}></DashboardCell>
+      <DashboardCell title="Price Trends" icon="📈" loading={false} empty={true} emptyMessage="Price trends coming soon" emptyIcon="📈"></DashboardCell>
     </div>
+
+    <!-- Cell 9: Standard (App Info) -->
     <div class="cell cell-standard">
-      <DashboardCell title="About" icon="ℹ️" loading={false} empty={true}></DashboardCell>
+      <DashboardCell title="About" icon="ℹ️" loading={false} empty={false}>
+        <div class="app-info">
+          <p class="app-name">GuitarHub</p>
+          <p class="app-version">v{appVersion}</p>
+          <a class="app-link" href="https://github.com/user/guitarhub" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <p class="app-stack">Built with Tauri + Svelte 5</p>
+        </div>
+      </DashboardCell>
     </div>
   </div>
 
@@ -270,10 +288,6 @@
     grid-column: span 2;
   }
 
-  .cell-tall {
-    grid-row: span 2;
-  }
-
   .cell-standard {
     grid-column: span 1;
     grid-row: span 1;
@@ -286,7 +300,6 @@
 
     .cell-hero,
     .cell-wide,
-    .cell-tall,
     .cell-standard {
       grid-column: span 1;
       grid-row: span 1;
@@ -382,13 +395,6 @@
   .empty-hint {
     font-size: 0.9rem !important;
     color: #999;
-  }
-
-  .welcome-state {
-    text-align: center;
-    padding: 48px 0;
-    color: #999;
-    font-size: 1rem;
   }
 
   .results-meta {
@@ -530,6 +536,47 @@
     background: #2a2a4e;
   }
 
+  .shortcut-icon {
+    margin-right: 6px;
+  }
+
+  /* App info */
+  .app-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .app-name {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #1a1a2e;
+    margin: 0;
+  }
+
+  .app-version {
+    font-size: 0.85rem;
+    color: #666;
+    margin: 0;
+  }
+
+  .app-link {
+    font-size: 0.85rem;
+    color: #4a90d9;
+    text-decoration: none;
+    margin: 0;
+  }
+
+  .app-link:hover {
+    text-decoration: underline;
+  }
+
+  .app-stack {
+    font-size: 0.8rem;
+    color: #999;
+    margin: 0;
+  }
+
   @media (prefers-color-scheme: dark) {
     .search-input {
       background: rgba(30, 30, 40, 0.6);
@@ -575,6 +622,42 @@
 
     .sync-idle {
       color: #aaa;
+    }
+
+    .app-name {
+      color: #e8e8f0;
+    }
+
+    .app-version {
+      color: #aaa;
+    }
+
+    .app-link {
+      color: #7ab8e8;
+    }
+
+    .app-stack {
+      color: #888;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .search-btn,
+    .load-more-btn,
+    .settings-shortcut {
+      min-height: 44px;
+    }
+
+    .recent-item {
+      padding: 10px 8px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+    }
+
+    .drop-item {
+      padding: 10px 8px;
+      min-height: 44px;
     }
   }
 </style>

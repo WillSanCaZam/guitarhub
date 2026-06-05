@@ -4,13 +4,29 @@
     icon?: string;
     loading?: boolean;
     empty?: boolean;
+    emptyMessage?: string;
+    emptyIcon?: string;
     children?: import('svelte').Snippet;
   }
 
-  let { title, icon = '', loading = false, empty = false, children }: Props = $props();
+  let {
+    title,
+    icon = '',
+    loading = false,
+    empty = false,
+    emptyMessage = 'No data yet',
+    emptyIcon = '📭',
+    children
+  }: Props = $props();
 </script>
 
-<div class="dashboard-cell" role="region" aria-label={title} tabindex="0">
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+<div
+  class="dashboard-cell"
+  role="region"
+  aria-label={title}
+  tabindex="0"
+>
   <div class="cell-header">
     {#if icon}
       <span class="cell-icon" aria-hidden="true">{icon}</span>
@@ -25,8 +41,8 @@
       </div>
     {:else if empty}
       <div class="empty-wrap">
-        <span class="empty-icon" aria-hidden="true">📭</span>
-        <p class="empty-text">No data yet</p>
+        <span class="empty-icon" aria-hidden="true">{emptyIcon}</span>
+        <p class="empty-text">{emptyMessage}</p>
       </div>
     {:else}
       {@render children?.()}
@@ -36,22 +52,34 @@
 
 <style>
   .dashboard-cell {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border-radius: 12px;
     padding: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.25);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     display: flex;
     flex-direction: column;
     min-height: 120px;
-    transition: box-shadow 0.2s ease, transform 0.15s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
     outline: none;
+    cursor: default;
   }
 
-  .dashboard-cell:focus-visible {
-    box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.25);
+  .dashboard-cell:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  }
+
+  .dashboard-cell:active {
+    transform: translateY(0);
+  }
+
+  .dashboard-cell:focus-visible,
+  .dashboard-cell:focus-within {
+    outline: 2px solid #4a90d9;
+    outline-offset: 2px;
   }
 
   .cell-header {
@@ -79,6 +107,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-height: 0;
   }
 
   .loading-wrap {
@@ -112,11 +141,11 @@
     flex: 1;
     color: #999;
     text-align: center;
+    gap: 6px;
   }
 
   .empty-icon {
     font-size: 1.5rem;
-    margin-bottom: 6px;
     opacity: 0.6;
   }
 
@@ -127,9 +156,13 @@
 
   @media (prefers-color-scheme: dark) {
     .dashboard-cell {
-      background: rgba(30, 30, 40, 0.6);
-      border-color: rgba(255, 255, 255, 0.08);
+      background: rgba(20, 20, 30, 0.55);
+      border-color: rgba(255, 255, 255, 0.1);
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.25);
+    }
+
+    .dashboard-cell:hover {
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
     }
 
     .cell-title {
@@ -147,6 +180,12 @@
 
     .empty-wrap {
       color: #888;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .dashboard-cell {
+      min-height: 88px;
     }
   }
 </style>
