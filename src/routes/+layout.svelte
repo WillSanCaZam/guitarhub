@@ -1,5 +1,6 @@
 <script>
   import { invoke } from '@tauri-apps/api/core';
+  import { syncResult } from '$lib/stores/sync';
 
   let { children } = $props();
   let syncing = $state(false);
@@ -9,9 +10,10 @@
     syncing = true;
     syncError = null;
     try {
-      await invoke('sync_catalog', {
+      const result = await invoke('sync_catalog', {
         url: 'https://pages.guitarhub.app/catalog.json'
       });
+      syncResult.set(result);
     } catch (e) {
       syncError = String(e);
       setTimeout(() => { syncError = null; }, 5000);
