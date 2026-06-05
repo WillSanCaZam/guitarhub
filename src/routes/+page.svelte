@@ -4,6 +4,7 @@
   import Settings from '$lib/components/Settings.svelte';
   import { pageFromOffset } from '$lib/types/search';
   import type { SearchResult } from '$lib/types/search';
+  import { syncResult } from '$lib/stores/sync';
 
   let query = $state('');
   let results = $state([]);
@@ -85,6 +86,15 @@
       </button>
     </div>
   </div>
+
+  {#if $syncResult?.drops?.length > 0}
+    <div class="sync-toast">
+      {$syncResult.drops.length} price drop(s) detected
+      {#if $syncResult.drops_sent > 0}
+        , {$syncResult.drops_sent} sent
+      {/if}
+    </div>
+  {/if}
 
   {#if error}
     <div class="error-banner" role="alert">
@@ -262,5 +272,14 @@
   .load-more-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+  .sync-toast {
+    padding: 12px 16px;
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-size: 0.95rem;
   }
 </style>
