@@ -2,12 +2,15 @@
   import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
   import PriceBadge from './PriceBadge.svelte';
+  import { addToCollection } from '$lib/stores/collection';
 
-  let { product } = $props();
+  let { product, inCollection = false } = $props();
 
   let imageData = $state('');
   let imageError = $state(false);
   let priceInsight = $state(null);
+  let adding = $state(false);
+  let added = $state(false);
 
   onMount(async () => {
     // Load image first
@@ -24,6 +27,20 @@
       // silent fail — badge is optional
     }
   });
+
+  async function handleAdd() {
+    if (adding || added) return;
+    adding = true;
+    try {
+      await addToCollection(product);
+      added = true;
+      setTimeout(() => { added = false; }, 2000);
+    } catch (e) {
+      console.error('Failed to add to collection:', e);
+    } finally {
+      adding = false;
+    }
+  }
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
@@ -51,6 +68,22 @@
           <PriceBadge level={priceInsight.level} pct={priceInsight.pct} confidence={priceInsight.confidence} />
         {/if}
       </p>
+    {/if}
+    {#if !inCollection}
+      <button
+        class="add-btn"
+        onclick={handleAdd}
+        disabled={adding}
+        aria-label={added ? 'Added to collection' : 'Add to collection'}
+      >
+        {#if added}
+          Added ✓
+        {:else if adding}
+          Adding...
+        {:else}
+          Add to collection
+        {/if}
+      </button>
     {/if}
   </div>
 </div>
@@ -101,5 +134,38 @@
   .price {
     font-weight: 600;
     margin: 0;
+  }
+
+  .add-btn {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: #1a1a2e;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.15s;
+  }
+
+  .add-btn:hover:not(:disabled) {
+    background: #2a2a4e;
+  }
+
+  .add-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .add-btn {
+      background: #4a90d9;
+      color: #fff;
+    }
+
+    .add-btn:hover:not(:disabled) {
+      background: #3a7bc8;
+    }
   }
 </style>

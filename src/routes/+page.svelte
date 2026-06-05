@@ -8,6 +8,7 @@
   import type { SearchResult } from '$lib/types/search';
   import { syncResult } from '$lib/stores/sync';
   import { dashboardStats } from '$lib/stores/dashboard';
+  import { collectionStore, loadCollection, loadCollectionStats } from '$lib/stores/collection';
   import pkg from '../../package.json';
 
   let query = $state('');
@@ -37,6 +38,8 @@
     } catch (e) {
       dashboardStats.update(s => ({ ...s, loading: false, error: String(e) }));
     }
+    loadCollectionStats();
+    loadCollection();
   }
 
   onMount(() => {
@@ -145,7 +148,7 @@
           </div>
           <div class="product-grid">
             {#each results as item (item.sku)}
-              <ProductCard product={item} />
+              <ProductCard product={item} inCollection={$collectionStore.collectedSkus.has(item.sku)} />
             {/each}
           </div>
           {#if hasMore}
@@ -223,7 +226,7 @@
     <div class="cell cell-wide">
       <DashboardCell title="Featured Deal" icon="⭐" loading={false} empty={!featuredProduct} emptyMessage="No featured deal available" emptyIcon="⭐">
         {#if featuredProduct}
-          <ProductCard product={featuredProduct} />
+          <ProductCard product={featuredProduct} inCollection={$collectionStore.collectedSkus.has(featuredProduct.sku)} />
         {/if}
       </DashboardCell>
     </div>
@@ -238,9 +241,36 @@
       </DashboardCell>
     </div>
 
-    <!-- Cell 8: Standard (Price Trends Placeholder) -->
+    <!-- Cell 8: Standard (Collection Stats) -->
     <div class="cell cell-standard">
-      <DashboardCell title="Price Trends" icon="📈" loading={false} empty={true} emptyMessage="Price trends coming soon" emptyIcon="📈"></DashboardCell>
+      <a href="/collection" class="cell-link">
+        <DashboardCell
+          title="Collection"
+          icon="🎸"
+          loading={$collectionStore.loading}
+          empty={!$collectionStore.stats || $collectionStore.stats.total_items === 0}
+          emptyMessage="Start adding gear to track your collection value"
+          emptyIcon="🎸"
+        >
+          {#if $collectionStore.stats && $collectionStore.stats.total_items > 0}
+            <div class="collection-stats">
+              <div class="stat">
+                <span class="stat-value">{$collectionStore.stats.total_items}</span>
+                <span class="stat-label">items</span>
+              </div>
+              <div class="stat">
+                <span class="stat-value">${$collectionStore.stats.total_value.toFixed(0)}</span>
+                <span class="stat-label">total value</span>
+              </div>
+              {#if $collectionStore.stats.top_item_name}
+                <div class="top-item">
+                  Top: {$collectionStore.stats.top_item_name} (${$collectionStore.stats.top_item_value.toFixed(0)})
+                </div>
+              {/if}
+            </div>
+          {/if}
+        </DashboardCell>
+      </a>
     </div>
 
     <!-- Cell 9: Standard (App Info) -->
@@ -540,6 +570,25 @@
     margin-right: 6px;
   }
 
+  /* Collection cell */
+  .cell-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .collection-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .top-item {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 4px;
+  }
+
   /* App info */
   .app-info {
     display: flex;
@@ -638,6 +687,10 @@
 
     .app-stack {
       color: #888;
+    }
+
+    .top-item {
+      color: #aaa;
     }
   }
 
