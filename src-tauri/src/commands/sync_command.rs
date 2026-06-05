@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 use crate::services::sync::{CatalogSyncService, SyncResult, SyncService};
 use crate::AppState;
 use tauri::State;
