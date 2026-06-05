@@ -6,6 +6,7 @@
     "moduleResolution": "bundler",
     "target": "ESNext",
     "module": "ESNext",
+    "types": ["vitest/globals", "@testing-library/jest-dom"],
     "paths": {
       "$lib": ["./src/lib"],
       "$lib/*": ["./src/lib/*"]

@@ -27,8 +27,13 @@ build:
 
 # ── Test ─────────────────────────────────────────────────────────────────────
 
-## Run all tests (Rust + Python)
-test: test-app test-scraper
+## Run all tests (Rust + Python + Frontend)
+test: test-app test-scraper test-frontend
+
+## Run only frontend tests
+## Run only frontend tests
+test-frontend:
+	npm run test
 
 ## Run only Rust tests
 test-app:
