@@ -9,6 +9,26 @@ CREATE TABLE IF NOT EXISTS schema_meta (
 INSERT INTO schema_meta (key, value) VALUES ('db_version', '1')
 ON CONFLICT(key) DO UPDATE SET value = excluded.value;
 
+CREATE TABLE IF NOT EXISTS products_meta (
+  sku          TEXT PRIMARY KEY,
+  source_id    TEXT NOT NULL,
+  name         TEXT NOT NULL DEFAULT '',
+  brand        TEXT NOT NULL DEFAULT '',
+  model        TEXT NOT NULL DEFAULT '',
+  category     TEXT NOT NULL DEFAULT '',
+  subcategory  TEXT NOT NULL DEFAULT '',
+  specs_json   TEXT NOT NULL DEFAULT '{}',
+  price        REAL,
+  currency     TEXT,
+  condition    TEXT CHECK(condition IN ('new','used','refurbished','unknown')),
+  availability TEXT CHECK(availability IN ('in_stock','out_of_stock','unknown')),
+  url          TEXT NOT NULL CHECK(url LIKE 'https://%'),
+  image_url    TEXT CHECK(image_url = '' OR image_url LIKE 'https://%'),
+  seller       TEXT,
+  location     TEXT,
+  synced_at    INTEGER NOT NULL
+);
+
 CREATE VIRTUAL TABLE IF NOT EXISTS products_fts USING fts5(
   sku, source_id, name, brand, model, category, subcategory, specs_json,
   tokenize = 'trigram',
@@ -33,26 +53,6 @@ CREATE TRIGGER IF NOT EXISTS products_fts_au AFTER UPDATE ON products_meta BEGIN
   INSERT INTO products_fts(rowid, sku, source_id, name, brand, model, category, subcategory, specs_json)
   VALUES (new.rowid, new.sku, new.source_id, new.name, new.brand, new.model, new.category, new.subcategory, new.specs_json);
 END;
-
-CREATE TABLE IF NOT EXISTS products_meta (
-  sku          TEXT PRIMARY KEY,
-  source_id    TEXT NOT NULL,
-  name         TEXT NOT NULL DEFAULT '',
-  brand        TEXT NOT NULL DEFAULT '',
-  model        TEXT NOT NULL DEFAULT '',
-  category     TEXT NOT NULL DEFAULT '',
-  subcategory  TEXT NOT NULL DEFAULT '',
-  specs_json   TEXT NOT NULL DEFAULT '{}',
-  price        REAL,
-  currency     TEXT,
-  condition    TEXT CHECK(condition IN ('new','used','refurbished','unknown')),
-  availability TEXT CHECK(availability IN ('in_stock','out_of_stock','unknown')),
-  url          TEXT NOT NULL CHECK(url LIKE 'https://%'),
-  image_url    TEXT CHECK(image_url = '' OR image_url LIKE 'https://%'),
-  seller       TEXT,
-  location     TEXT,
-  synced_at    INTEGER NOT NULL
-);
 
 CREATE TABLE IF NOT EXISTS sync_state (
   source_id        TEXT PRIMARY KEY,
