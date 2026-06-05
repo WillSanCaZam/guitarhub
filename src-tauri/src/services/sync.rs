@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 use crate::domain::product::{CatalogFile, RawProduct, SyncState};
+use crate::repository::price_drop_notifications::PriceDropNotificationsRepo;
+use crate::repository::price_history::PriceHistoryRepo;
+use crate::services::price_drop::{is_price_drop, PriceDrop, Thresholds, COOLDOWN_SECS};
 use crate::AppError;
 use sqlx::SqlitePool;
 
@@ -12,6 +15,11 @@ pub trait SyncService: Send + Sync {
 }
 
 /// Result returned after a catalog sync operation.
+///
+/// `drops` lists every price drop detected during this sync that cleared
+/// both the materiality check (`is_price_drop`) and the per-SKU cooldown.
+/// `drops_sent` is populated by `sync_command` after the dispatch loop
+/// runs (i.e. the number of drops whose `AlertDispatcher::send` returned Ok).
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct SyncResult {
     pub source_id: String,
@@ -19,6 +27,8 @@ pub struct SyncResult {
     pub products_updated: u32,
     pub state: SyncState,
     pub progress: f32,
+    pub drops: Vec<PriceDrop>,
+    pub drops_sent: u32,
 }
 
 /// A `SyncService` that fetches a remote catalog JSON over HTTP, runs a
@@ -85,20 +95,50 @@ impl CatalogSyncService {
         Ok(())
     }
 
-    /// Insert or replace every product into `products_meta`.
+    /// Insert or replace every product into `products_meta`, then
+    /// write each new price to `price_history`, then detect drops
+    /// that pass the materiality check AND the per-SKU cooldown.
+    ///
+    /// Returns `(loaded, updated, drops)`. `drops` is the list of
+    /// `PriceDrop`s the caller should dispatch to the alert channel.
     async fn upsert_products(
         &self,
         source_id: &str,
         products: &[RawProduct],
-    ) -> Result<(u32, u32), AppError> {
+    ) -> Result<(u32, u32, Vec<PriceDrop>), AppError> {
         let total = products.len() as u32;
         let mut updated = 0u32;
+        let mut drops: Vec<PriceDrop> = Vec::new();
         let synced_at = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs() as i64;
 
+        let price_history = PriceHistoryRepo::new(self.pool.clone());
+        let cooldown_repo = PriceDropNotificationsRepo::new(self.pool.clone());
+        let thresholds = Thresholds::default();
+        // Channel is hardcoded "app" for service-layer drops — the command
+        // layer is responsible for switching to ntfy/webhook based on
+        // settings.alert_channel. (See design.md decision: AppHandle bridge
+        // lives in sync_command, not in the service layer.)
+        let channel = "app";
+
         for p in products {
+            // Read the previous price from price_history BEFORE we insert
+            // the new row (so this sync's "previous" stays the OLD value).
+            let prev_price = match price_history.get_last_price(&p.sku).await {
+                Ok(p) => p,
+                Err(e) => {
+                    tracing::error!(
+                        sku = %p.sku,
+                        error = %e,
+                        "failed to read previous price; skipping drop detection for this SKU"
+                    );
+                    None
+                }
+            };
+
+            // Existing INSERT OR REPLACE into products_meta — unchanged.
             let result = sqlx::query(
                 r#"INSERT OR REPLACE INTO products_meta
                    (sku, source_id, name, brand, model, category, subcategory,
@@ -126,8 +166,48 @@ impl CatalogSyncService {
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
             updated += result.rows_affected() as u32;
+
+            // Write the new price to price_history. A failure here is logged
+            // but does NOT abort the sync — the product is already in
+            // products_meta. Subsequent syncs will still detect drops based
+            // on whatever history rows exist.
+            if let Err(e) = price_history
+                .record_price(&p.sku, p.price, source_id, synced_at)
+                .await
+            {
+                tracing::error!(
+                    sku = %p.sku,
+                    error = %e,
+                    "failed to write price_history row; continuing sync"
+                );
+                continue;
+            }
+
+            // Run the pure drop detector. `prev_price = None` (first obs)
+            // short-circuits to None — we never fire on first observation.
+            if let Some(drop) =
+                is_price_drop(&p.sku, Some(p.price), prev_price, &thresholds, channel)
+            {
+                // Cooldown check: skip if we've notified for this SKU within
+                // the cooldown window.
+                let in_cooldown = match cooldown_repo.get_last_notified(&p.sku).await {
+                    Ok(Some(last)) => synced_at - last < COOLDOWN_SECS,
+                    Ok(None) => false,
+                    Err(e) => {
+                        tracing::error!(
+                            sku = %p.sku,
+                            error = %e,
+                            "failed to read cooldown row; assuming not in cooldown"
+                        );
+                        false
+                    }
+                };
+                if !in_cooldown {
+                    drops.push(drop);
+                }
+            }
         }
-        Ok((total, updated))
+        Ok((total, updated, drops))
     }
 }
 
@@ -169,7 +249,7 @@ impl SyncService for CatalogSyncService {
         self.set_state(source_id, SyncState::Inserting.as_str(), None)
             .await?;
 
-        let (loaded, updated) = self
+        let (loaded, updated, drops) = self
             .upsert_products(source_id, &catalog.products)
             .await?;
 
@@ -182,6 +262,8 @@ impl SyncService for CatalogSyncService {
             products_updated: updated,
             state: SyncState::Done,
             progress: 1.0,
+            drops,
+            drops_sent: 0,
         })
     }
 }
@@ -191,8 +273,180 @@ impl SyncService for CatalogSyncService {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::services::price_drop::PriceDrop;
     use httpmock::prelude::*;
     use sqlx::SqlitePool;
+
+    // ── SyncResult.drops field test (RED — SyncResult has no `drops` yet) ──
+
+    #[tokio::test]
+    async fn sync_result_has_drops_field_empty_initially() {
+        // A fresh SyncResult must have an empty `drops` vec — no compiler
+        // errors, no panics. The `drops_sent` counter must start at zero.
+        let pool = setup_db().await;
+        let _ = pool; // silence unused warning when this test is the only one running
+        let r = SyncResult {
+            source_id: "test".to_string(),
+            products_loaded: 0,
+            products_updated: 0,
+            state: SyncState::Done,
+            progress: 1.0,
+            drops: Vec::<PriceDrop>::new(),
+            drops_sent: 0,
+        };
+        assert!(r.drops.is_empty(), "fresh SyncResult.drops must be empty");
+        assert_eq!(r.drops_sent, 0, "fresh SyncResult.drops_sent must be 0");
+    }
+
+    // ── upsert_products writes price_history rows (RED) ──────────────────
+
+    /// After syncing 1 product, exactly 1 `price_history` row exists.
+    /// `recorded_at` is close to "now" (within 5 seconds).
+    #[tokio::test]
+    async fn upsert_products_writes_price_history_rows() {
+        let pool = setup_db().await;
+        let svc = CatalogSyncService::new(pool.clone(), reqwest::Client::new());
+
+        let products = vec![raw_product("SKU-HIST-1", 750.0)];
+        let before = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+        let (_loaded, _updated, drops) = svc
+            .upsert_products("test-source", &products)
+            .await
+            .expect("upsert_products must succeed");
+        let after = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+
+        // 1 history row for SKU-HIST-1
+        let count: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM price_history WHERE sku = 'SKU-HIST-1'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(count, 1, "expected 1 price_history row");
+
+        // recorded_at is within the test window
+        let recorded_at: i64 = sqlx::query_scalar(
+            "SELECT recorded_at FROM price_history WHERE sku = 'SKU-HIST-1'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert!(
+            recorded_at >= before && recorded_at <= after + 5,
+            "recorded_at {recorded_at} not within test window [{before}..{after}]"
+        );
+
+        // First-observation ⇒ no drop detected.
+        assert!(
+            drops.is_empty(),
+            "first observation must not produce a drop, got {}",
+            drops.len()
+        );
+    }
+
+    // ── upsert_products detects a 15% drop (RED) ─────────────────────────
+
+    /// Seed price_history with $1000, then sync a $850 catalog. The detector
+    /// must produce exactly 1 drop with `previous_price == 1000.0`.
+    #[tokio::test]
+    async fn upsert_products_detects_15pct_drop() {
+        use crate::repository::price_history::PriceHistoryRepo;
+
+        let pool = setup_db().await;
+        let price_history = PriceHistoryRepo::new(pool.clone());
+        let svc = CatalogSyncService::new(pool.clone(), reqwest::Client::new());
+
+        // Seed: write a $1000 history row, recorded 1 hour ago.
+        let one_hour_ago = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64
+            - 3600;
+        price_history
+            .record_price("SKU-DROP-1", 1000.0, "test-source", one_hour_ago)
+            .await
+            .unwrap();
+
+        // Now sync: catalog has SKU-DROP-1 at $850 (15% drop).
+        let products = vec![raw_product("SKU-DROP-1", 850.0)];
+        let (_loaded, _updated, drops) = svc
+            .upsert_products("test-source", &products)
+            .await
+            .expect("upsert_products must succeed");
+
+        // Exactly 1 drop detected
+        assert_eq!(drops.len(), 1, "expected exactly 1 drop, got {:?}", drops);
+        let drop = &drops[0];
+        assert_eq!(drop.sku, "SKU-DROP-1");
+        assert!(
+            (drop.previous_price - 1000.0).abs() < f64::EPSILON,
+            "expected previous_price=1000.0, got {}",
+            drop.previous_price
+        );
+        assert!(
+            (drop.new_price - 850.0).abs() < f64::EPSILON,
+            "expected new_price=850.0, got {}",
+            drop.new_price
+        );
+
+        // price_history now has 2 rows for this SKU (seed + new).
+        let count: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM price_history WHERE sku = 'SKU-DROP-1'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(count, 2, "expected 2 history rows (seed + new)");
+    }
+
+    // ── upsert_products first-observation suppression (RED) ──────────────
+
+    /// Empty price_history + first sync ⇒ no drop is ever reported.
+    /// (Sanity test for the first-observation suppression branch.)
+    #[tokio::test]
+    async fn upsert_products_first_observation_no_drop() {
+        let pool = setup_db().await;
+        let svc = CatalogSyncService::new(pool.clone(), reqwest::Client::new());
+
+        let products = vec![raw_product("SKU-FIRST-1", 500.0)];
+        let (_loaded, _updated, drops) = svc
+            .upsert_products("test-source", &products)
+            .await
+            .expect("upsert_products must succeed");
+
+        assert!(
+            drops.is_empty(),
+            "first observation must not produce a drop, got {} drops",
+            drops.len()
+        );
+    }
+
+    /// Build a `RawProduct` with a single price override.
+    fn raw_product(sku: &str, price: f64) -> RawProduct {
+        RawProduct {
+            sku: sku.to_string(),
+            name: format!("Test {sku}"),
+            brand: "TestBrand".to_string(),
+            model: "TM-100".to_string(),
+            category: "Electric Guitars".to_string(),
+            subcategory: "Solid Body".to_string(),
+            price,
+            currency: "USD".to_string(),
+            condition: "new".to_string(),
+            availability: "in_stock".to_string(),
+            url: format!("https://example.com/{sku}"),
+            image_url: format!("https://example.com/{sku}.jpg"),
+            specs_json: "{}".to_string(),
+            seller: "Test Seller".to_string(),
+            location: "USA".to_string(),
+        }
+    }
 
     /// Create an in-memory pool with the tables needed for sync tests.
     async fn setup_db() -> SqlitePool {
@@ -246,6 +500,41 @@ mod tests {
                                   'inserting','done',
                                   'failed_network','failed_schema','failed_db')),
                 error_msg        TEXT
+            )",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        // price_history table — schema mirrors the production migration 004.
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS price_history (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                sku         TEXT NOT NULL,
+                price       REAL NOT NULL,
+                recorded_at INTEGER NOT NULL,
+                source_id   TEXT NOT NULL DEFAULT ''
+            )",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        sqlx::query(
+            "CREATE INDEX IF NOT EXISTS idx_price_history_sku_recorded
+             ON price_history(sku, recorded_at)",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        // price_drop_notifications table — schema mirrors the production migration 007.
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS price_drop_notifications (
+                sku           TEXT    PRIMARY KEY,
+                last_notified INTEGER NOT NULL,
+                last_price    REAL    NOT NULL,
+                channel       TEXT    NOT NULL
             )",
         )
         .execute(&pool)
