@@ -1320,6 +1320,172 @@ END;",
         assert_eq!(count, 1, "INSERT OR REPLACE must not create duplicate rows");
     }
 
+    // ── Migration 008 tests ─────────────────────────────────────────────
+
+    /// Helper: apply the full migration chain 001→008 on an in-memory pool.
+    async fn apply_full_chain_001_to_008(pool: &sqlx::SqlitePool) -> PathBuf {
+        let dir = temp_dir_with_files(&[
+            "001_init.sql",
+            "002_add_url_validation.sql",
+            "003_add_image_cache.sql",
+            "004_add_price_source.sql",
+            "005_add_settings.sql",
+            "006_wishlist_schema.sql",
+            "007_price_drop_notifications.sql",
+            "008_collection_items.sql",
+        ]);
+        std::fs::write(dir.join("001_init.sql"), include_str!("../migrations/001_init.sql")).unwrap();
+        std::fs::write(dir.join("002_add_url_validation.sql"), include_str!("../migrations/002_add_url_validation.sql")).unwrap();
+        std::fs::write(dir.join("003_add_image_cache.sql"), include_str!("../migrations/003_add_image_cache.sql")).unwrap();
+        std::fs::write(dir.join("004_add_price_source.sql"), include_str!("../migrations/004_add_price_source.sql")).unwrap();
+        std::fs::write(dir.join("005_add_settings.sql"), include_str!("../migrations/005_add_settings.sql")).unwrap();
+        std::fs::write(dir.join("006_wishlist_schema.sql"), include_str!("../migrations/006_wishlist_schema.sql")).unwrap();
+        std::fs::write(dir.join("007_price_drop_notifications.sql"), include_str!("../migrations/007_price_drop_notifications.sql")).unwrap();
+        std::fs::write(dir.join("008_collection_items.sql"), include_str!("../migrations/008_collection_items.sql")).unwrap();
+
+        let runner = MigrationRunner::new(pool.clone(), dir.clone());
+        runner.run().await.unwrap();
+        dir
+    }
+
+    #[tokio::test]
+    async fn migration_008_creates_collection_items_table() {
+        let pool = make_memory_pool().await;
+        apply_full_chain_001_to_008(&pool).await;
+
+        let columns: Vec<(i64, String, String, i64, Option<String>, i64)> = sqlx::query_as(
+            "PRAGMA table_info(collection_items)",
+        )
+        .fetch_all(&pool)
+        .await
+        .unwrap();
+
+        let col_names: Vec<&str> = columns.iter().map(|(_, name, _, _, _, _)| name.as_str()).collect();
+        assert_eq!(
+            col_names.len(),
+            12,
+            "collection_items must have 12 columns after 001→008, got {}: {:?}",
+            col_names.len(),
+            col_names
+        );
+
+        let expected = [
+            "id", "sku", "name", "brand", "purchase_price", "purchase_currency",
+            "purchase_date", "condition", "serial_number", "notes", "image_url", "added_at",
+        ];
+        for (i, exp) in expected.iter().enumerate() {
+            assert_eq!(
+                col_names[i], *exp,
+                "column {} should be '{}', got '{}'", i, exp, col_names[i]
+            );
+        }
+
+        // Verify id is PRIMARY KEY (pk=1)
+        let id_pk: i64 = columns[0].5;
+        assert_eq!(id_pk, 1, "id column should be PRIMARY KEY (pk flag = 1)");
+
+        // Verify added_at is NOT NULL
+        assert_eq!(columns[11].3, 1, "added_at should be NOT NULL");
+    }
+
+    #[tokio::test]
+    async fn migration_008_collection_items_condition_check_constraint() {
+        let pool = make_memory_pool().await;
+        apply_full_chain_001_to_008(&pool).await;
+
+        // Valid condition values should succeed
+        for condition in &["mint", "excellent", "good", "fair", "poor"] {
+            sqlx::query(
+                "INSERT INTO collection_items (name, condition, added_at) VALUES (?1, ?2, ?3)",
+            )
+            .bind(format!("test-{}", condition))
+            .bind(*condition)
+            .bind(1_700_000_000_i64)
+            .execute(&pool)
+            .await
+            .unwrap_or_else(|_| panic!("condition='{}' should be accepted", condition));
+        }
+
+        // Invalid condition should fail
+        let result = sqlx::query(
+            "INSERT INTO collection_items (name, condition, added_at) VALUES (?1, ?2, ?3)",
+        )
+        .bind("bad-item")
+        .bind("broken")
+        .bind(1_700_000_000_i64)
+        .execute(&pool)
+        .await;
+
+        assert!(
+            result.is_err(),
+            "condition='broken' should be rejected by CHECK constraint"
+        );
+    }
+
+    #[tokio::test]
+    async fn migration_008_collection_items_index_exists() {
+        let pool = make_memory_pool().await;
+        apply_full_chain_001_to_008(&pool).await;
+
+        let idx_name: Option<String> = sqlx::query_scalar(
+            "SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_collection_items_sku'",
+        )
+        .fetch_optional(&pool)
+        .await
+        .unwrap();
+
+        assert!(
+            idx_name.is_some(),
+            "Expected index 'idx_collection_items_sku' to exist"
+        );
+    }
+
+    #[tokio::test]
+    async fn migration_008_collection_items_roundtrip_insert() {
+        let pool = make_memory_pool().await;
+        apply_full_chain_001_to_008(&pool).await;
+
+        sqlx::query(
+            "INSERT INTO collection_items (sku, name, brand, purchase_price, purchase_currency, purchase_date, condition, serial_number, notes, image_url, added_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+        )
+        .bind("GUITAR-001")
+        .bind("Stratocaster")
+        .bind("Fender")
+        .bind(1299.99_f64)
+        .bind("USD")
+        .bind(1_700_000_000_i64)
+        .bind("excellent")
+        .bind("SN123456")
+        .bind("My first guitar")
+        .bind("https://example.com/strat.jpg")
+        .bind(1_700_000_000_i64)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        let (name, sku, brand): (String, Option<String>, Option<String>) = sqlx::query_as(
+            "SELECT name, sku, brand FROM collection_items WHERE sku = ?1",
+        )
+        .bind("GUITAR-001")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+
+        assert_eq!(name, "Stratocaster");
+        assert_eq!(sku, Some("GUITAR-001".to_string()));
+        assert_eq!(brand, Some("Fender".to_string()));
+
+        // Verify db_version reached 8
+        let version: String = sqlx::query_scalar(
+            "SELECT value FROM schema_meta WHERE key = 'db_version'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(version, "8", "db_version should be 8 after 001→008");
+    }
+
     // ── Helpers ─────────────────────────────────────────────────────────
 
     fn temp_dir_with_files(files: &[&str]) -> PathBuf {

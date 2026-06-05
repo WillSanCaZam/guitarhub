@@ -89,8 +89,23 @@ impl ExportService {
         zip.write_all(settings_json.as_bytes())
             .map_err(|e| ExportError::Write(e.to_string()))?;
 
+        // ── collection_items.json ─────────────────────────────────────────
+        let collection: Vec<CollectionItemRow> =
+            sqlx::query_as::<_, CollectionItemRow>("SELECT * FROM collection_items")
+                .fetch_all(&self.pool)
+                .await
+                .map_err(|e| ExportError::Query(e.to_string()))?;
+
+        let collection_json =
+            serde_json::to_string_pretty(&collection).map_err(|e| ExportError::Write(e.to_string()))?;
+
+        zip.start_file("collection_items.json", SimpleFileOptions::default())
+            .map_err(|e| ExportError::Write(e.to_string()))?;
+        zip.write_all(collection_json.as_bytes())
+            .map_err(|e| ExportError::Write(e.to_string()))?;
+
         // ── Finalize ────────────────────────────────────────────────────
-        let file_count: u32 = 3;
+        let file_count: u32 = 4;
         zip.finish()
             .map_err(|e| ExportError::Write(e.to_string()))?;
 
@@ -156,6 +171,34 @@ struct SettingRow {
     value: String,
 }
 
+#[derive(Debug, sqlx::FromRow, serde::Serialize)]
+struct CollectionItemRow {
+    #[allow(dead_code)]
+    id: Option<i64>,
+    #[allow(dead_code)]
+    sku: Option<String>,
+    #[allow(dead_code)]
+    name: Option<String>,
+    #[allow(dead_code)]
+    brand: Option<String>,
+    #[allow(dead_code)]
+    purchase_price: Option<f64>,
+    #[allow(dead_code)]
+    purchase_currency: Option<String>,
+    #[allow(dead_code)]
+    purchase_date: Option<i64>,
+    #[allow(dead_code)]
+    condition: Option<String>,
+    #[allow(dead_code)]
+    serial_number: Option<String>,
+    #[allow(dead_code)]
+    notes: Option<String>,
+    #[allow(dead_code)]
+    image_url: Option<String>,
+    #[allow(dead_code)]
+    added_at: Option<i64>,
+}
+
 // ── Tests ──────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -164,7 +207,7 @@ mod tests {
     use crate::repository::sqlite::migrations::MigrationRunner;
     use std::io::Read as _;
 
-    /// Create an in-memory pool using the REAL migration chain (001→006).
+    /// Create an in-memory pool using the REAL migration chain (001→008).
     ///
     /// This is the source of truth for the export service: it ensures tests
     /// validate against the actual schema the app uses at runtime, so a
@@ -211,6 +254,16 @@ mod tests {
         std::fs::write(
             dir.join("006_wishlist_schema.sql"),
             include_str!("../repository/sqlite/migrations/006_wishlist_schema.sql"),
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("007_price_drop_notifications.sql"),
+            include_str!("../repository/sqlite/migrations/007_price_drop_notifications.sql"),
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("008_collection_items.sql"),
+            include_str!("../repository/sqlite/migrations/008_collection_items.sql"),
         )
         .unwrap();
 
@@ -292,6 +345,26 @@ mod tests {
             .execute(pool)
             .await
             .unwrap();
+
+        // Collection items
+        sqlx::query(
+            "INSERT INTO collection_items (sku, name, brand, purchase_price, purchase_currency, purchase_date, condition, serial_number, notes, image_url, added_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+        )
+        .bind("COLL_001")
+        .bind("Fender Strat")
+        .bind("Fender")
+        .bind(1299.99f64)
+        .bind("USD")
+        .bind(1_700_000_000i64)
+        .bind("excellent")
+        .bind("SN999")
+        .bind("My strat")
+        .bind("https://example.com/strat.jpg")
+        .bind(1_700_000_000i64)
+        .execute(pool)
+        .await
+        .unwrap();
     }
 
     #[tokio::test]
@@ -306,14 +379,14 @@ mod tests {
         let result = svc.export_to(&path).await.unwrap();
         assert!(result.success);
         assert!(result.size_bytes > 0, "ZIP should have content");
-        assert_eq!(result.file_count, 3);
+        assert_eq!(result.file_count, 4);
 
         // Read back and verify ZIP structure
         let zip_bytes = std::fs::read(&path).unwrap();
         let reader = std::io::Cursor::new(zip_bytes);
         let mut archive = zip::ZipArchive::new(reader).unwrap();
 
-        assert_eq!(archive.len(), 3, "ZIP should have 3 files");
+        assert_eq!(archive.len(), 4, "ZIP should have 4 files");
 
         // Check each file exists
         let mut found_files: Vec<String> = (0..archive.len())
@@ -321,9 +394,10 @@ mod tests {
             .collect();
         found_files.sort();
 
-        assert_eq!(found_files[0], "price_history.json");
-        assert_eq!(found_files[1], "settings.json");
-        assert_eq!(found_files[2], "wishlist.json");
+        assert_eq!(found_files[0], "collection_items.json");
+        assert_eq!(found_files[1], "price_history.json");
+        assert_eq!(found_files[2], "settings.json");
+        assert_eq!(found_files[3], "wishlist.json");
 
         // Verify wishlist.json is valid JSON with 2 items
         {
@@ -369,12 +443,21 @@ mod tests {
         let result = svc.export_to(&path).await.unwrap();
         assert!(result.success);
         assert!(result.size_bytes > 0);
-        assert_eq!(result.file_count, 3);
+        assert_eq!(result.file_count, 4);
 
         // Verify all files contain empty arrays/objects
         let zip_bytes = std::fs::read(&path).unwrap();
         let reader = std::io::Cursor::new(zip_bytes);
         let mut archive = zip::ZipArchive::new(reader).unwrap();
+
+        {
+            let mut file = archive.by_name("collection_items.json").unwrap();
+            let mut content = String::new();
+            file.read_to_string(&mut content).unwrap();
+            let items: Vec<serde_json::Value> =
+                serde_json::from_str(&content).expect("valid JSON");
+            assert!(items.is_empty(), "collection_items should be empty");
+        }
 
         {
             let mut file = archive.by_name("wishlist.json").unwrap();
@@ -430,7 +513,7 @@ mod tests {
         let result = svc.export_to(&path).await.unwrap();
         assert!(result.success);
         assert!(result.size_bytes > 0);
-        assert_eq!(result.file_count, 3);
+        assert_eq!(result.file_count, 4);
 
         // Verify file exists on disk and is non-empty
         let metadata = std::fs::metadata(&path).unwrap();
@@ -438,7 +521,7 @@ mod tests {
     }
 
     /// RED: Validate that the export service works against the REAL migration
-    /// schema (001→006), not an inline CREATE TABLE. Catches drift between
+    /// schema (001→008), not an inline CREATE TABLE. Catches drift between
     /// migrations and service expectations.
     #[tokio::test]
     async fn export_works_against_real_migration_chain() {
@@ -452,7 +535,7 @@ mod tests {
         let result = svc.export_to(&path).await.unwrap();
         assert!(result.success, "export must succeed against real schema");
         assert!(result.size_bytes > 0, "ZIP should have content");
-        assert_eq!(result.file_count, 3);
+        assert_eq!(result.file_count, 4);
 
         // Read back the ZIP and inspect the wishlist JSON — it should
         // reflect the real 10-column schema (id, sku, name, brand, price,
@@ -461,23 +544,39 @@ mod tests {
         let reader = std::io::Cursor::new(zip_bytes);
         let mut archive = zip::ZipArchive::new(reader).unwrap();
 
-        let mut file = archive.by_name("wishlist.json").unwrap();
-        let mut content = String::new();
-        file.read_to_string(&mut content).unwrap();
-        let items: Vec<serde_json::Value> =
-            serde_json::from_str(&content).expect("valid JSON");
+        {
+            let mut file = archive.by_name("wishlist.json").unwrap();
+            let mut content = String::new();
+            file.read_to_string(&mut content).unwrap();
+            let items: Vec<serde_json::Value> =
+                serde_json::from_str(&content).expect("valid JSON");
 
-        assert_eq!(items.len(), 2, "expected 2 wishlist items");
+            assert_eq!(items.len(), 2, "expected 2 wishlist items");
 
-        // The first item should expose the 10 real-schema column names
-        let first = &items[0];
-        for col in &[
-            "id", "sku", "name", "brand", "price", "currency",
-            "image_url", "product_url", "notes", "added_at",
-        ] {
-            assert!(
-                first.get(col).is_some(),
-                "wishlist JSON missing real-schema column '{col}', got: {first}"
+            // The first item should expose the 10 real-schema column names
+            let first = &items[0];
+            for col in &[
+                "id", "sku", "name", "brand", "price", "currency",
+                "image_url", "product_url", "notes", "added_at",
+            ] {
+                assert!(
+                    first.get(col).is_some(),
+                    "wishlist JSON missing real-schema column '{col}', got: {first}"
+                );
+            }
+        }
+
+        // Verify collection_items.json exists with the seeded row
+        {
+            let mut file = archive.by_name("collection_items.json").unwrap();
+            let mut content = String::new();
+            file.read_to_string(&mut content).unwrap();
+            let items: Vec<serde_json::Value> =
+                serde_json::from_str(&content).expect("valid JSON");
+            assert_eq!(items.len(), 1, "expected 1 collection item");
+            assert_eq!(
+                items[0].get("sku").unwrap().as_str().unwrap(),
+                "COLL_001"
             );
         }
     }

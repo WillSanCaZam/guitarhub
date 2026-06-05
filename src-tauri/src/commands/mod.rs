@@ -1,3 +1,4 @@
+pub mod collection_command;
 pub mod dashboard_command;
 pub mod export_command;
 pub mod image_command;

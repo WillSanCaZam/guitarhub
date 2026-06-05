@@ -33,7 +33,7 @@ mod tests {
     use crate::AppError;
     use crate::repository::sqlite::migrations::MigrationRunner;
 
-    /// Create an in-memory pool using the REAL migration chain (001→006).
+    /// Create an in-memory pool using the REAL migration chain (001→008).
     ///
     /// Mirrors the helper in `services::export_service::tests` — using the
     /// real schema here means command-level tests validate the same contract
@@ -80,6 +80,16 @@ mod tests {
         std::fs::write(
             dir.join("006_wishlist_schema.sql"),
             include_str!("../repository/sqlite/migrations/006_wishlist_schema.sql"),
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("007_price_drop_notifications.sql"),
+            include_str!("../repository/sqlite/migrations/007_price_drop_notifications.sql"),
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("008_collection_items.sql"),
+            include_str!("../repository/sqlite/migrations/008_collection_items.sql"),
         )
         .unwrap();
 
@@ -129,7 +139,7 @@ mod tests {
         let result = export_data_cmd(&pool, &path).await.unwrap();
         assert!(result.success);
         assert!(result.size_bytes > 0);
-        assert_eq!(result.file_count, 3);
+        assert_eq!(result.file_count, 4);
     }
 
     #[tokio::test]
@@ -140,7 +150,7 @@ mod tests {
 
         let result = export_data_cmd(&pool, &path).await.unwrap();
         assert!(result.success);
-        assert_eq!(result.file_count, 3);
+        assert_eq!(result.file_count, 4);
     }
 
     /// Validates the command layer against the REAL migration schema.
@@ -169,6 +179,6 @@ mod tests {
         let result = export_data_cmd(&pool, &path).await.unwrap();
         assert!(result.success, "command must succeed against real schema");
         assert!(result.size_bytes > 0);
-        assert_eq!(result.file_count, 3);
+        assert_eq!(result.file_count, 4);
     }
 }
