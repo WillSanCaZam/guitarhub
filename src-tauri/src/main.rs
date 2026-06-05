@@ -26,6 +26,7 @@ async fn main() -> anyhow::Result<()> {
             guitarhub_lib::commands::settings_command::test_alert_channel,
             guitarhub_lib::commands::export_command::export_data,
             guitarhub_lib::commands::sync_command::sync_catalog,
+            guitarhub_lib::commands::search_command::search_products,
         ])
         .run(tauri::generate_context!())
         .context("error while running tauri application")?;
