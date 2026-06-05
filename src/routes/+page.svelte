@@ -1,10 +1,13 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
+  import { onMount } from 'svelte';
   import ProductCard from '$lib/components/ProductCard.svelte';
+  import DashboardCell from '$lib/components/DashboardCell.svelte';
   import Settings from '$lib/components/Settings.svelte';
   import { pageFromOffset } from '$lib/types/search';
   import type { SearchResult } from '$lib/types/search';
   import { syncResult } from '$lib/stores/sync';
+  import { dashboardStats } from '$lib/stores/dashboard';
 
   let query = $state('');
   let results = $state([]);
@@ -14,6 +17,30 @@
   let loading = $state(false);
   let error = $state(null);
   let searched = $state(false);
+
+  async function loadDashboard() {
+    dashboardStats.update(s => ({ ...s, loading: true, error: null }));
+    try {
+      const [totalProducts, wishlistCount, recentSearches] = await Promise.all([
+        invoke<number>('get_total_products'),
+        invoke<number>('get_wishlist_count'),
+        invoke<string[]>('get_recent_searches')
+      ]);
+      dashboardStats.set({
+        totalProducts,
+        wishlistCount,
+        recentSearches,
+        loading: false,
+        error: null,
+      });
+    } catch (e) {
+      dashboardStats.update(s => ({ ...s, loading: false, error: String(e) }));
+    }
+  }
+
+  onMount(() => {
+    loadDashboard();
+  });
 
   async function search(reset) {
     const q = query.trim();
@@ -63,79 +90,153 @@
   }
 
   let hasMore = $derived(total > page * pageSize);
+
+  let drops = $derived($syncResult?.drops ?? []);
+  let dropsSent = $derived($syncResult?.drops_sent ?? 0);
 </script>
 
 <div class="page">
-  <div class="search-section">
-    <h1>Search Products</h1>
-    <div class="search-bar">
-      <input
-        type="text"
-        bind:value={query}
-        onkeydown={handleKeydown}
-        placeholder="Search guitars, basses, amps... (min. 3 characters)"
-        disabled={loading}
-        class="search-input"
-      />
-      <button
-        onclick={handleSearch}
-        disabled={loading || query.trim().length < 3}
-        class="search-btn"
-      >
-        Search
-      </button>
-    </div>
-  </div>
-
-  {#if $syncResult?.drops?.length > 0}
-    <div class="sync-toast">
-      {$syncResult.drops.length} price drop(s) detected
-      {#if $syncResult.drops_sent > 0}
-        , {$syncResult.drops_sent} sent
-      {/if}
-    </div>
-  {/if}
-
-  {#if error}
-    <div class="error-banner" role="alert">
-      Search failed: {error}
-    </div>
-  {/if}
-
-  {#if loading && results.length === 0}
-    <div class="loading-state" aria-busy="true">
-      <span class="spinner"></span>
-      Searching...
-    </div>
-  {:else if searched && results.length === 0 && !loading}
-    <div class="empty-state" role="status">
-      <p>No products found for "{query.trim()}"</p>
-      <p class="empty-hint">Try a different search term or browse all products.</p>
-    </div>
-  {:else if results.length > 0}
-    <section class="results-section">
-      <div class="results-meta">
-        <span>{total} result{total !== 1 ? 's' : ''} found</span>
-        <span>Page {page}</span>
-      </div>
-      <div class="grid">
-        {#each results as item (item.sku)}
-          <ProductCard product={item} />
-        {/each}
-      </div>
-      {#if hasMore}
-        <div class="load-more-wrap">
-          <button onclick={loadMore} disabled={loading} class="load-more-btn">
-            {loading ? 'Loading...' : 'Load More'}
+  <div class="bento-grid">
+    <!-- Cell 1: Hero (Search Results) -->
+    <div class="cell cell-hero">
+      <DashboardCell title="Search" icon="🔍" loading={false} empty={false}>
+        <div class="search-bar">
+          <input
+            type="text"
+            bind:value={query}
+            onkeydown={handleKeydown}
+            placeholder="Search guitars, basses, amps... (min. 3 characters)"
+            disabled={loading}
+            class="search-input"
+          />
+          <button
+            onclick={handleSearch}
+            disabled={loading || query.trim().length < 3}
+            class="search-btn"
+          >
+            Search
           </button>
         </div>
-      {/if}
-    </section>
-  {:else if !searched}
-    <div class="welcome-state">
-      <p>Enter a search term above to find guitar gear listings.</p>
+
+        {#if error}
+          <div class="error-banner" role="alert">
+            Search failed: {error}
+          </div>
+        {/if}
+
+        {#if loading && results.length === 0}
+          <div class="loading-state" aria-busy="true">
+            <span class="spinner"></span>
+            Searching...
+          </div>
+        {:else if searched && results.length === 0 && !loading}
+          <div class="empty-state" role="status">
+            <p>No products found for "{query.trim()}"</p>
+            <p class="empty-hint">Try a different search term or browse all products.</p>
+          </div>
+        {:else if results.length > 0}
+          <div class="results-meta">
+            <span>{total} result{total !== 1 ? 's' : ''} found</span>
+            <span>Page {page}</span>
+          </div>
+          <div class="product-grid">
+            {#each results as item (item.sku)}
+              <ProductCard product={item} />
+            {/each}
+          </div>
+          {#if hasMore}
+            <div class="load-more-wrap">
+              <button onclick={loadMore} disabled={loading} class="load-more-btn">
+                {loading ? 'Loading...' : 'Load More'}
+              </button>
+            </div>
+          {/if}
+        {:else if !searched}
+          <div class="welcome-state">
+            <p>Enter a search term above to find guitar gear listings.</p>
+          </div>
+        {/if}
+      </DashboardCell>
     </div>
-  {/if}
+
+    <!-- Cell 2: Wide (Sync Status) -->
+    <div class="cell cell-wide">
+      <DashboardCell title="Sync Status" icon="🔄" loading={false} empty={drops.length === 0}>
+        {#if drops.length > 0}
+          <div class="sync-toast">
+            {drops.length} price drop(s) detected
+            {#if dropsSent > 0}
+              , {dropsSent} sent
+            {/if}
+          </div>
+          <ul class="drop-list">
+            {#each drops.slice(0, 3) as drop}
+              <li class="drop-item">
+                <span class="drop-sku">{drop.sku}</span>
+                <span class="drop-price">
+                  ${drop.previous_price.toFixed(2)} → ${drop.new_price.toFixed(2)}
+                </span>
+                <span class="drop-reason">{drop.reason}</span>
+              </li>
+            {/each}
+          </ul>
+        {:else}
+          <p class="sync-idle">No recent price drops. Last sync: {$syncResult?.state ?? 'idle'}</p>
+        {/if}
+      </DashboardCell>
+    </div>
+
+    <!-- Cell 3: Standard (Total Products) -->
+    <div class="cell cell-standard">
+      <DashboardCell title="Products" icon="🎸" loading={$dashboardStats.loading} empty={$dashboardStats.totalProducts === 0}>
+        {#if !$dashboardStats.loading}
+          <div class="stat-value">{$dashboardStats.totalProducts.toLocaleString()}</div>
+          <div class="stat-label">in catalog</div>
+        {/if}
+      </DashboardCell>
+    </div>
+
+    <!-- Cell 4: Standard (Wishlist Count) -->
+    <div class="cell cell-standard">
+      <DashboardCell title="Wishlist" icon="❤️" loading={$dashboardStats.loading} empty={$dashboardStats.wishlistCount === 0}>
+        {#if !$dashboardStats.loading}
+          <div class="stat-value">{$dashboardStats.wishlistCount.toLocaleString()}</div>
+          <div class="stat-label">items saved</div>
+        {/if}
+      </DashboardCell>
+    </div>
+
+    <!-- Cell 5: Standard (Recent Searches) -->
+    <div class="cell cell-standard">
+      <DashboardCell title="Recent Searches" icon="🕓" loading={$dashboardStats.loading} empty={$dashboardStats.recentSearches.length === 0}>
+        {#if !$dashboardStats.loading && $dashboardStats.recentSearches.length > 0}
+          <ul class="recent-list">
+            {#each $dashboardStats.recentSearches as search}
+              <li class="recent-item">{search}</li>
+            {/each}
+          </ul>
+        {/if}
+      </DashboardCell>
+    </div>
+
+    <!-- Cells 6-9: placeholders for PR 2 -->
+    <div class="cell cell-wide">
+      <DashboardCell title="Featured Deal" icon="⭐" loading={false} empty={true}></DashboardCell>
+    </div>
+    <div class="cell cell-standard">
+      <DashboardCell title="Quick Settings" icon="⚙️" loading={false} empty={false}>
+        <button class="settings-shortcut" onclick={() => document.getElementById('settings')?.scrollIntoView({ behavior: 'smooth' })}>
+          Open Settings
+        </button>
+      </DashboardCell>
+    </div>
+    <div class="cell cell-standard">
+      <DashboardCell title="Price Trends" icon="📈" loading={false} empty={true}></DashboardCell>
+    </div>
+    <div class="cell cell-standard">
+      <DashboardCell title="About" icon="ℹ️" loading={false} empty={true}></DashboardCell>
+    </div>
+  </div>
 
   <section id="settings">
     <Settings />
@@ -144,21 +245,61 @@
 
 <style>
   .page {
-    max-width: 960px;
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 24px 16px;
+    padding: 16px;
   }
-  .search-section {
+
+  .bento-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
     margin-bottom: 24px;
   }
-  .search-section h1 {
-    margin: 0 0 12px;
-    font-size: 1.5rem;
+
+  .cell {
+    min-width: 0;
   }
+
+  .cell-hero {
+    grid-column: span 2;
+    grid-row: span 2;
+  }
+
+  .cell-wide {
+    grid-column: span 2;
+  }
+
+  .cell-tall {
+    grid-row: span 2;
+  }
+
+  .cell-standard {
+    grid-column: span 1;
+    grid-row: span 1;
+  }
+
+  @media (max-width: 768px) {
+    .bento-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .cell-hero,
+    .cell-wide,
+    .cell-tall,
+    .cell-standard {
+      grid-column: span 1;
+      grid-row: span 1;
+    }
+  }
+
+  /* Search styles within hero cell */
   .search-bar {
     display: flex;
     gap: 8px;
+    margin-bottom: 16px;
   }
+
   .search-input {
     flex: 1;
     padding: 10px 14px;
@@ -166,12 +307,15 @@
     border-radius: 6px;
     font-size: 1rem;
     box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.8);
   }
+
   .search-input:focus {
     outline: none;
     border-color: #1a1a2e;
     box-shadow: 0 0 0 2px rgba(26,26,46,0.15);
   }
+
   .search-btn {
     padding: 10px 20px;
     background: #1a1a2e;
@@ -182,13 +326,16 @@
     cursor: pointer;
     white-space: nowrap;
   }
+
   .search-btn:hover:not(:disabled) {
     background: #2a2a4e;
   }
+
   .search-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
+
   .error-banner {
     padding: 12px 16px;
     background: #f8d7da;
@@ -197,6 +344,7 @@
     margin-bottom: 16px;
     font-size: 0.9rem;
   }
+
   .loading-state {
     display: flex;
     align-items: center;
@@ -206,6 +354,7 @@
     color: #666;
     font-size: 1rem;
   }
+
   .spinner {
     width: 20px;
     height: 20px;
@@ -214,31 +363,34 @@
     border-radius: 50%;
     animation: spin 0.6s linear infinite;
   }
+
   @keyframes spin {
     to { transform: rotate(360deg); }
   }
+
   .empty-state {
     text-align: center;
     padding: 48px 0;
     color: #666;
   }
+
   .empty-state p {
     margin: 0 0 8px;
     font-size: 1.1rem;
   }
+
   .empty-hint {
     font-size: 0.9rem !important;
     color: #999;
   }
+
   .welcome-state {
     text-align: center;
     padding: 48px 0;
     color: #999;
     font-size: 1rem;
   }
-  .results-section {
-    margin-bottom: 32px;
-  }
+
   .results-meta {
     display: flex;
     justify-content: space-between;
@@ -246,16 +398,19 @@
     font-size: 0.85rem;
     color: #666;
   }
-  .grid {
+
+  .product-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 16px;
   }
+
   .load-more-wrap {
     display: flex;
     justify-content: center;
     margin-top: 24px;
   }
+
   .load-more-btn {
     padding: 10px 32px;
     background: #fff;
@@ -266,20 +421,160 @@
     cursor: pointer;
     transition: background 0.15s;
   }
+
   .load-more-btn:hover:not(:disabled) {
     background: #f0f0f0;
   }
+
   .load-more-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
+
+  /* Sync cell styles */
   .sync-toast {
-    padding: 12px 16px;
+    padding: 8px 12px;
     background: #d4edda;
     color: #155724;
     border: 1px solid #c3e6cb;
     border-radius: 6px;
-    margin-bottom: 16px;
-    font-size: 0.95rem;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+  }
+
+  .drop-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .drop-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+    padding: 6px 8px;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 6px;
+  }
+
+  .drop-sku {
+    font-weight: 600;
+    color: #1a1a2e;
+  }
+
+  .drop-price {
+    color: #28a745;
+    font-family: monospace;
+  }
+
+  .drop-reason {
+    color: #666;
+    font-size: 0.8rem;
+  }
+
+  .sync-idle {
+    margin: 0;
+    color: #888;
+    font-size: 0.9rem;
+  }
+
+  /* Stat cell styles */
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 4px;
+  }
+
+  /* Recent searches */
+  .recent-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .recent-item {
+    font-size: 0.9rem;
+    color: #333;
+    padding: 4px 8px;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 4px;
+  }
+
+  /* Settings shortcut */
+  .settings-shortcut {
+    padding: 10px 16px;
+    background: #1a1a2e;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    margin-top: auto;
+  }
+
+  .settings-shortcut:hover {
+    background: #2a2a4e;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .search-input {
+      background: rgba(30, 30, 40, 0.6);
+      border-color: #444;
+      color: #e8e8f0;
+    }
+
+    .search-input::placeholder {
+      color: #888;
+    }
+
+    .search-input:focus {
+      border-color: #e8e8f0;
+      box-shadow: 0 0 0 2px rgba(232, 232, 240, 0.15);
+    }
+
+    .load-more-btn {
+      background: rgba(30, 30, 40, 0.6);
+      color: #e8e8f0;
+      border-color: #444;
+    }
+
+    .load-more-btn:hover:not(:disabled) {
+      background: rgba(50, 50, 65, 0.7);
+    }
+
+    .drop-item {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .drop-sku {
+      color: #e8e8f0;
+    }
+
+    .stat-value {
+      color: #e8e8f0;
+    }
+
+    .recent-item {
+      color: #ccc;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .sync-idle {
+      color: #aaa;
+    }
   }
 </style>

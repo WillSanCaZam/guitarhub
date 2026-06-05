@@ -1,3 +1,4 @@
+pub mod dashboard_command;
 pub mod export_command;
 pub mod image_command;
 pub mod price_command;
