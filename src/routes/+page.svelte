@@ -1,7 +1,9 @@
-<script>
+<script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
   import ProductCard from '$lib/components/ProductCard.svelte';
   import Settings from '$lib/components/Settings.svelte';
+  import { pageFromOffset } from '$lib/types/search';
+  import type { SearchResult } from '$lib/types/search';
 
   let query = $state('');
   let results = $state([]);
@@ -17,22 +19,24 @@
     if (q.length < 3) return;
 
     const targetPage = reset ? 1 : page + 1;
+    const offset = (targetPage - 1) * pageSize;
+    const limit = pageSize;
 
     loading = true;
     error = null;
 
     try {
-      const res = await invoke('search_products', {
+      const res = await invoke<SearchResult>('search_products', {
         query: q,
-        filters: { category: null, priceMin: null, priceMax: null, sourceId: null },
+        filters: { category: null, price_min: null, price_max: null, source: null },
         sort: 'relevance',
         page: targetPage,
         pageSize
       });
 
-      results = reset ? res.items : [...results, ...res.items];
+      results = reset ? res.products : [...results, ...res.products];
       total = res.total;
-      page = res.page;
+      page = pageFromOffset(res.offset, res.limit);
       searched = true;
     } catch (e) {
       error = String(e);
