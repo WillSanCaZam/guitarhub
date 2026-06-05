@@ -269,11 +269,28 @@ fn split_statements(sql: &str) -> Vec<String> {
 
 /// Tokenize SQL into words and separators, preserving whitespace within
 /// the current statement but splitting on word boundaries for keyword detection.
+/// Strips SQL line comments (-- ...) to prevent comment text from interfering
+/// with statement parsing.
 fn tokenize_sql(sql: &str) -> Vec<String> {
     let mut tokens = Vec::new();
     let mut word = String::new();
+    let mut chars = sql.chars().peekable();
 
-    for ch in sql.chars() {
+    while let Some(ch) = chars.next() {
+        // Skip SQL line comments: -- until end of line
+        if ch == '-' && chars.peek() == Some(&'-') {
+            // Consume the second '-'
+            chars.next();
+            // Skip until end of line
+            while let Some(&next_ch) = chars.peek() {
+                if next_ch == '\n' {
+                    break;
+                }
+                chars.next();
+            }
+            continue;
+        }
+
         if ch.is_alphanumeric() || ch == '_' {
             word.push(ch);
         } else {
@@ -817,6 +834,173 @@ END;",
         .await
         .unwrap();
         assert_eq!(specs, "{\"pickups\":\"humbucker\"}", "specs_json must survive migration 002");
+    }
+
+    // ── Migration 006 tests ─────────────────────────────────────────────
+
+    /// Helper: apply the full migration chain 001→006 on an in-memory pool.
+    async fn apply_full_migration_chain(pool: &sqlx::SqlitePool) -> PathBuf {
+        let dir = temp_dir_with_files(&[
+            "001_init.sql",
+            "002_add_url_validation.sql",
+            "003_add_image_cache.sql",
+            "004_add_price_source.sql",
+            "005_add_settings.sql",
+            "006_wishlist_schema.sql",
+        ]);
+        std::fs::write(dir.join("001_init.sql"), include_str!("../migrations/001_init.sql")).unwrap();
+        std::fs::write(dir.join("002_add_url_validation.sql"), include_str!("../migrations/002_add_url_validation.sql")).unwrap();
+        std::fs::write(dir.join("003_add_image_cache.sql"), include_str!("../migrations/003_add_image_cache.sql")).unwrap();
+        std::fs::write(dir.join("004_add_price_source.sql"), include_str!("../migrations/004_add_price_source.sql")).unwrap();
+        std::fs::write(dir.join("005_add_settings.sql"), include_str!("../migrations/005_add_settings.sql")).unwrap();
+        std::fs::write(dir.join("006_wishlist_schema.sql"), include_str!("../migrations/006_wishlist_schema.sql")).unwrap();
+
+        let runner = MigrationRunner::new(pool.clone(), dir.clone());
+        runner.run().await.unwrap();
+        dir
+    }
+
+    #[tokio::test]
+    async fn migration_006_wishlist_has_10_columns() {
+        let pool = make_memory_pool().await;
+        apply_full_migration_chain(&pool).await;
+
+        let columns: Vec<(i64, String)> = sqlx::query_as("PRAGMA table_info(wishlist)")
+            .fetch_all(&pool)
+            .await
+            .unwrap();
+
+        let col_names: Vec<&str> = columns.iter().map(|(_, name)| name.as_str()).collect();
+        assert_eq!(
+            col_names.len(),
+            10,
+            "wishlist must have 10 columns after full chain, got {}: {:?}",
+            col_names.len(),
+            col_names
+        );
+
+        // Verify exact column names match WishlistRow struct
+        let expected = ["id", "sku", "name", "brand", "price", "currency", "image_url", "product_url", "notes", "added_at"];
+        for (i, exp) in expected.iter().enumerate() {
+            assert_eq!(
+                col_names[i], *exp,
+                "column {} should be '{}', got '{}'", i, exp, col_names[i]
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn migration_006_preserves_existing_wishlist_data() {
+        let pool = make_memory_pool().await;
+        let dir = temp_dir_with_files(&[
+            "001_init.sql",
+            "002_add_url_validation.sql",
+            "003_add_image_cache.sql",
+            "004_add_price_source.sql",
+            "005_add_settings.sql",
+            "006_wishlist_schema.sql",
+        ]);
+        std::fs::write(dir.join("001_init.sql"), include_str!("../migrations/001_init.sql")).unwrap();
+        std::fs::write(dir.join("002_add_url_validation.sql"), include_str!("../migrations/002_add_url_validation.sql")).unwrap();
+        std::fs::write(dir.join("003_add_image_cache.sql"), include_str!("../migrations/003_add_image_cache.sql")).unwrap();
+        std::fs::write(dir.join("004_add_price_source.sql"), include_str!("../migrations/004_add_price_source.sql")).unwrap();
+        std::fs::write(dir.join("005_add_settings.sql"), include_str!("../migrations/005_add_settings.sql")).unwrap();
+        std::fs::write(dir.join("006_wishlist_schema.sql"), include_str!("../migrations/006_wishlist_schema.sql")).unwrap();
+
+        // Apply migrations 001→005 first (stop before 006)
+        sqlx::query("CREATE TABLE IF NOT EXISTS schema_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        // Apply 001 through 005 by running them manually
+        let m001 = include_str!("../migrations/001_init.sql");
+        for stmt in split_statements(m001) {
+            if !stmt.trim().is_empty() {
+                sqlx::query(&stmt).execute(&pool).await.unwrap();
+            }
+        }
+        let m002 = include_str!("../migrations/002_add_url_validation.sql");
+        for stmt in split_statements(m002) {
+            if !stmt.trim().is_empty() {
+                sqlx::query(&stmt).execute(&pool).await.unwrap();
+            }
+        }
+        let m003 = include_str!("../migrations/003_add_image_cache.sql");
+        for stmt in split_statements(m003) {
+            if !stmt.trim().is_empty() {
+                sqlx::query(&stmt).execute(&pool).await.unwrap();
+            }
+        }
+        let m004 = include_str!("../migrations/004_add_price_source.sql");
+        for stmt in split_statements(m004) {
+            if !stmt.trim().is_empty() {
+                sqlx::query(&stmt).execute(&pool).await.unwrap();
+            }
+        }
+        let m005 = include_str!("../migrations/005_add_settings.sql");
+        for stmt in split_statements(m005) {
+            if !stmt.trim().is_empty() {
+                sqlx::query(&stmt).execute(&pool).await.unwrap();
+            }
+        }
+
+        // Set version to 5 so the runner picks up 006
+        sqlx::query("INSERT OR REPLACE INTO schema_meta VALUES ('db_version', '5')")
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        // Seed wishlist with pre-006 schema (sku, added_at, price_at_add, notes)
+        sqlx::query(
+            "INSERT INTO wishlist (sku, added_at, price_at_add, notes) VALUES ('WISH-001', 1700000000, 999.99, 'want this')",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+        sqlx::query(
+            "INSERT INTO wishlist (sku, added_at, price_at_add, notes) VALUES ('WISH-002', 1700001000, 500.0, 'maybe')",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        // Apply migration 006
+        let runner = MigrationRunner::new(pool.clone(), dir);
+        runner.run().await.unwrap();
+
+        // Verify original data preserved
+        let notes: String = sqlx::query_scalar("SELECT notes FROM wishlist WHERE sku = 'WISH-001'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(notes, "want this", "notes must survive migration 006");
+
+        let added_at: i64 = sqlx::query_scalar("SELECT added_at FROM wishlist WHERE sku = 'WISH-002'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(added_at, 1700001000, "added_at must survive migration 006");
+
+        // Verify new columns are NULL for migrated rows
+        let name: Option<String> = sqlx::query_scalar("SELECT name FROM wishlist WHERE sku = 'WISH-001'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert!(name.is_none(), "name should be NULL for migrated rows, got {:?}", name);
+
+        let brand: Option<String> = sqlx::query_scalar("SELECT brand FROM wishlist WHERE sku = 'WISH-001'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert!(brand.is_none(), "brand should be NULL for migrated rows, got {:?}", brand);
+
+        // Verify id column exists and is autoincrement
+        let id: i64 = sqlx::query_scalar("SELECT id FROM wishlist WHERE sku = 'WISH-001'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert!(id > 0, "id should be a positive autoincrement value, got {}", id);
     }
 
     // ── Migration 004 tests ─────────────────────────────────────────────
