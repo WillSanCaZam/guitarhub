@@ -23,6 +23,7 @@ async fn main() -> anyhow::Result<()> {
             guitarhub_lib::commands::price_command::get_price_insight,
             guitarhub_lib::commands::settings_command::get_setting,
             guitarhub_lib::commands::settings_command::save_setting,
+            guitarhub_lib::commands::settings_command::delete_setting,
             guitarhub_lib::commands::settings_command::test_alert_channel,
             guitarhub_lib::commands::export_command::export_data,
             guitarhub_lib::commands::sync_command::sync_catalog,
