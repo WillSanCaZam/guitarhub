@@ -194,6 +194,51 @@ impl PriceHistoryRepo {
             now_epoch: now,
         })
     }
+
+    /// Return the most recent price for a SKU across all sources, or `None`
+    /// if the SKU has no `price_history` rows.
+    ///
+    /// "Most recent" is defined by `recorded_at DESC` (timestamp), not by
+    /// row insertion order — the latest tick wins, regardless of source.
+    /// Used by the price-drop detector to compute the baseline before
+    /// writing a new `record_price` row.
+    pub async fn get_last_price(&self, sku: &str) -> Result<Option<f64>, sqlx::Error> {
+        let row: Option<(f64,)> = sqlx::query_as(
+            "SELECT price FROM price_history
+             WHERE sku = ?1
+             ORDER BY recorded_at DESC
+             LIMIT 1",
+        )
+        .bind(sku)
+        .fetch_optional(&self.pool)
+        .await?;
+        Ok(row.map(|(p,)| p))
+    }
+
+    /// Persist a new `price_history` row for `sku` at the given `now`
+    /// (unix epoch seconds). One row per (sku, source_id, recorded_at).
+    ///
+    /// Returns `sqlx::Error` on DB failure — callers (the sync loop) MUST
+    /// log + continue so a single failed write does not abort the sync.
+    pub async fn record_price(
+        &self,
+        sku: &str,
+        price: f64,
+        source_id: &str,
+        now: i64,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "INSERT INTO price_history (sku, price, recorded_at, source_id)
+             VALUES (?1, ?2, ?3, ?4)",
+        )
+        .bind(sku)
+        .bind(price)
+        .bind(now)
+        .bind(source_id)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
 }
 
 /// Current Unix epoch time in seconds.
@@ -496,6 +541,82 @@ mod tests {
         .execute(&repo.pool)
         .await
         .unwrap();
+    }
+
+    // ── get_last_price + record_price: new methods for price-drop detector ─
+
+    #[tokio::test]
+    async fn get_last_price_returns_none_when_empty() {
+        let pool = make_memory_pool().await;
+        create_price_history_table(&pool).await;
+        let repo = PriceHistoryRepo::new(pool);
+
+        let result = repo.get_last_price("NONEXISTENT").await.unwrap();
+        assert!(
+            result.is_none(),
+            "expected None for SKU with no price history, got {:?}",
+            result
+        );
+    }
+
+    #[tokio::test]
+    async fn record_price_then_get_last_price_returns_it() {
+        let pool = make_memory_pool().await;
+        create_price_history_table(&pool).await;
+        let repo = PriceHistoryRepo::new(pool);
+        let now = epoch_seconds();
+
+        repo.record_price("SKU1", 100.0, "reverb", now - 100).await.unwrap();
+        repo.record_price("SKU1", 80.0, "reverb", now - 50).await.unwrap();
+
+        let last = repo.get_last_price("SKU1").await.unwrap();
+        assert_eq!(
+            last,
+            Some(80.0),
+            "expected most recent price 80.0, got {:?}",
+            last
+        );
+    }
+
+    #[tokio::test]
+    async fn get_last_price_returns_most_recent_across_sources() {
+        let pool = make_memory_pool().await;
+        create_price_history_table(&pool).await;
+        let repo = PriceHistoryRepo::new(pool);
+        let now = epoch_seconds();
+
+        // Same SKU, different sources at different times. Most recent across ALL sources wins.
+        repo.record_price("SKU2", 100.0, "reverb", now - 300).await.unwrap();
+        repo.record_price("SKU2", 110.0, "ebay", now - 200).await.unwrap();
+        repo.record_price("SKU2", 95.0, "guitarcenter", now - 100).await.unwrap();
+
+        let last = repo.get_last_price("SKU2").await.unwrap();
+        assert_eq!(
+            last,
+            Some(95.0),
+            "expected most recent price 95.0 across all sources, got {:?}",
+            last
+        );
+    }
+
+    #[tokio::test]
+    async fn record_price_persists_source_id() {
+        let pool = make_memory_pool().await;
+        create_price_history_table(&pool).await;
+        let repo = PriceHistoryRepo::new(pool);
+        let now = epoch_seconds();
+
+        repo.record_price("SKU3", 250.0, "sweetwater", now).await.unwrap();
+
+        let (price, source_id): (f64, String) = sqlx::query_as(
+            "SELECT price, source_id FROM price_history WHERE sku = ?1",
+        )
+        .bind("SKU3")
+        .fetch_one(&repo.pool)
+        .await
+        .unwrap();
+        assert_eq!(price, 250.0);
+        assert_eq!(source_id, "sweetwater");
     }
 
     // ── get_insight: confidence aggregates (RED — fields don't exist yet) ─

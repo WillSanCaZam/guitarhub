@@ -838,7 +838,7 @@ END;",
 
     // ── Migration 006 tests ─────────────────────────────────────────────
 
-    /// Helper: apply the full migration chain 001→006 on an in-memory pool.
+    /// Helper: apply the full migration chain 001→007 on an in-memory pool.
     async fn apply_full_migration_chain(pool: &sqlx::SqlitePool) -> PathBuf {
         let dir = temp_dir_with_files(&[
             "001_init.sql",
@@ -847,6 +847,7 @@ END;",
             "004_add_price_source.sql",
             "005_add_settings.sql",
             "006_wishlist_schema.sql",
+            "007_price_drop_notifications.sql",
         ]);
         std::fs::write(dir.join("001_init.sql"), include_str!("../migrations/001_init.sql")).unwrap();
         std::fs::write(dir.join("002_add_url_validation.sql"), include_str!("../migrations/002_add_url_validation.sql")).unwrap();
@@ -854,6 +855,7 @@ END;",
         std::fs::write(dir.join("004_add_price_source.sql"), include_str!("../migrations/004_add_price_source.sql")).unwrap();
         std::fs::write(dir.join("005_add_settings.sql"), include_str!("../migrations/005_add_settings.sql")).unwrap();
         std::fs::write(dir.join("006_wishlist_schema.sql"), include_str!("../migrations/006_wishlist_schema.sql")).unwrap();
+        std::fs::write(dir.join("007_price_drop_notifications.sql"), include_str!("../migrations/007_price_drop_notifications.sql")).unwrap();
 
         let runner = MigrationRunner::new(pool.clone(), dir.clone());
         runner.run().await.unwrap();
@@ -1185,6 +1187,137 @@ END;",
             .await
             .unwrap();
         assert_eq!(count, 1, "settings table should still have data after re-apply");
+    }
+
+    // ── Migration 007 tests ─────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn migration_007_creates_price_drop_notifications_table() {
+        let pool = make_memory_pool().await;
+        apply_full_migration_chain(&pool).await;
+
+        // PRAGMA table_info returns (cid, name, type, notnull, dflt_value, pk)
+        let columns: Vec<(i64, String, String, i64, Option<String>, i64)> = sqlx::query_as(
+            "PRAGMA table_info(price_drop_notifications)",
+        )
+        .fetch_all(&pool)
+        .await
+        .unwrap();
+
+        let col_names: Vec<&str> = columns.iter().map(|(_, name, _, _, _, _)| name.as_str()).collect();
+        assert_eq!(
+            col_names.len(),
+            4,
+            "price_drop_notifications must have 4 columns after 001→007, got {}: {:?}",
+            col_names.len(),
+            col_names
+        );
+
+        // Verify exact column names + types
+        let expected = [
+            ("sku", "TEXT"),
+            ("last_notified", "INTEGER"),
+            ("last_price", "REAL"),
+            ("channel", "TEXT"),
+        ];
+        for (i, (exp_name, exp_type)) in expected.iter().enumerate() {
+            assert_eq!(
+                col_names[i], *exp_name,
+                "column {} should be '{}', got '{}'", i, exp_name, col_names[i]
+            );
+            assert_eq!(
+                columns[i].2, *exp_type,
+                "column '{}' should be type '{}', got '{}'", exp_name, exp_type, columns[i].2
+            );
+        }
+
+        // Verify sku is PRIMARY KEY (pk=1 in PRAGMA table_info output)
+        let sku_pk: i64 = columns[0].5;
+        assert_eq!(sku_pk, 1, "sku column should be PRIMARY KEY (pk flag = 1)");
+
+        // Verify NOT NULL constraints on the 3 non-PK columns
+        // (PRIMARY KEY columns are implicitly NOT NULL but PRAGMA reports notnull=0 for them.)
+        for col in columns.iter().skip(1) {
+            assert_eq!(
+                col.3, 1,
+                "column '{}' should be NOT NULL, got notnull={}", col.1, col.3
+            );
+        }
+
+        // Verify the index exists
+        let idx_name: Option<String> = sqlx::query_scalar(
+            "SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_price_drop_notifications_notified'",
+        )
+        .fetch_optional(&pool)
+        .await
+        .unwrap();
+        assert!(
+            idx_name.is_some(),
+            "Expected index 'idx_price_drop_notifications_notified' to exist"
+        );
+
+        // Verify db_version reached 7
+        let version: String = sqlx::query_scalar(
+            "SELECT value FROM schema_meta WHERE key = 'db_version'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(version, "7", "db_version should be 7 after 001→007");
+    }
+
+    #[tokio::test]
+    async fn migration_007_price_drop_notifications_accepts_row() {
+        let pool = make_memory_pool().await;
+        apply_full_migration_chain(&pool).await;
+
+        // Insert a row matching the cooldown table contract
+        sqlx::query(
+            "INSERT INTO price_drop_notifications (sku, last_notified, last_price, channel)
+             VALUES (?1, ?2, ?3, ?4)",
+        )
+        .bind("SKU-001")
+        .bind(1_700_000_000_i64)
+        .bind(899.99_f64)
+        .bind("ntfy")
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        // Verify round-trip
+        let (last_notified, last_price, channel): (i64, f64, String) = sqlx::query_as(
+            "SELECT last_notified, last_price, channel FROM price_drop_notifications WHERE sku = ?1",
+        )
+        .bind("SKU-001")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+
+        assert_eq!(last_notified, 1_700_000_000);
+        assert!((last_price - 899.99).abs() < 0.001);
+        assert_eq!(channel, "ntfy");
+
+        // Verify PK conflict (inserting same sku twice) — replaces row
+        sqlx::query(
+            "INSERT OR REPLACE INTO price_drop_notifications (sku, last_notified, last_price, channel)
+             VALUES (?1, ?2, ?3, ?4)",
+        )
+        .bind("SKU-001")
+        .bind(1_700_000_500_i64)
+        .bind(799.99_f64)
+        .bind("app")
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        let count: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM price_drop_notifications WHERE sku = ?1",
+        )
+        .bind("SKU-001")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(count, 1, "INSERT OR REPLACE must not create duplicate rows");
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────
