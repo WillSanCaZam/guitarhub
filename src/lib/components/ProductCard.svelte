@@ -47,7 +47,7 @@
       <p class="price">
         {product.price} {product.currency ?? ''}
         {#if priceInsight && priceInsight.level !== 'hidden'}
-          <PriceBadge level={priceInsight.level} pct={priceInsight.pct} />
+          <PriceBadge level={priceInsight.level} pct={priceInsight.pct} confidence={priceInsight.confidence} />
         {/if}
       </p>
     {/if}

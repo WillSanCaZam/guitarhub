@@ -18,6 +18,17 @@ pub struct PriceInsightRow {
     pub cnt_30d: i64,
     /// None when the SKU has no price_history rows at all.
     pub current_price: Option<f64>,
+    /// Max price within the 30-day window (used for stability CoV).
+    pub max_30d: f64,
+    /// Mean price within the 30-day window (CoV denominator).
+    pub avg_30d: f64,
+    /// Distinct sources in the 30-day window.
+    pub source_count_30d: i64,
+    /// Newest `recorded_at` for the SKU (i64 epoch seconds, 0 if no rows).
+    pub last_recorded_at: i64,
+    /// `epoch_seconds()` captured at query time — used to derive
+    /// `days_since_last` so repo and caller share one `now`.
+    pub now_epoch: i64,
 }
 
 /// SQL queries against the `price_history` table with outlier filtering.
@@ -137,17 +148,28 @@ impl PriceHistoryRepo {
         let window_30d = now - 30 * 86_400;
         let window_90d = now - 90 * 86_400;
 
-        let (min_30d, avg_90d, cnt_30d, current_price): (
-            Option<f64>,
-            Option<f64>,
-            Option<i64>,
-            Option<f64>,
-        ) = sqlx::query_as(
+        // Single-row aggregate; existing idx_price_history_sku_recorded
+        // covers all four new aggregates — no new index needed.
+        type InsightAggregate = (
+            Option<f64>, // min_30d
+            Option<f64>, // avg_30d
+            Option<f64>, // avg_90d
+            Option<i64>, // cnt_30d
+            Option<f64>, // max_30d
+            Option<i64>, // last_recorded_at
+            Option<i64>, // source_count_30d
+            Option<f64>, // current_price
+        );
+        let (min_30d, avg_30d, avg_90d, cnt_30d, max_30d, last_recorded_at, source_count_30d, current_price): InsightAggregate = sqlx::query_as(
             r#"
             SELECT
-                MIN(CASE WHEN recorded_at >= ?2 THEN price END) AS min_30d,
-                AVG(CASE WHEN recorded_at >= ?3 THEN price END) AS avg_90d,
-                COUNT(CASE WHEN recorded_at >= ?2 THEN 1 END) AS cnt_30d,
+                MIN(CASE WHEN recorded_at >= ?2 THEN price END)  AS min_30d,
+                AVG(CASE WHEN recorded_at >= ?2 THEN price END)  AS avg_30d,
+                AVG(CASE WHEN recorded_at >= ?3 THEN price END)  AS avg_90d,
+                COUNT(CASE WHEN recorded_at >= ?2 THEN 1 END)    AS cnt_30d,
+                MAX(CASE WHEN recorded_at >= ?2 THEN price END)  AS max_30d,
+                MAX(recorded_at)                                  AS last_recorded_at,
+                COUNT(DISTINCT CASE WHEN recorded_at >= ?2 THEN source_id END) AS source_count_30d,
                 (SELECT price FROM price_history
                  WHERE sku = ?1 ORDER BY recorded_at DESC LIMIT 1) AS current_price
             FROM price_history
@@ -162,9 +184,14 @@ impl PriceHistoryRepo {
 
         Ok(PriceInsightRow {
             min_30d: min_30d.unwrap_or(0.0),
+            avg_30d: avg_30d.unwrap_or(0.0),
             avg_90d: avg_90d.unwrap_or(0.0),
             cnt_30d: cnt_30d.unwrap_or(0),
+            max_30d: max_30d.unwrap_or(0.0),
+            source_count_30d: source_count_30d.unwrap_or(0),
+            last_recorded_at: last_recorded_at.unwrap_or(0),
             current_price,
+            now_epoch: now,
         })
     }
 }
@@ -469,5 +496,107 @@ mod tests {
         .execute(&repo.pool)
         .await
         .unwrap();
+    }
+
+    // ── get_insight: confidence aggregates (RED — fields don't exist yet) ─
+
+    #[tokio::test]
+    async fn get_insight_no_data_returns_zero_confidence_aggregates() {
+        let pool = make_memory_pool().await;
+        create_price_history_table(&pool).await;
+        let repo = PriceHistoryRepo::new(pool);
+
+        let row = repo.get_insight("NONEXISTENT").await.unwrap();
+        assert_eq!(row.max_30d, 0.0, "expected max_30d=0 for empty SKU");
+        assert_eq!(row.avg_30d, 0.0, "expected avg_30d=0 for empty SKU");
+        assert_eq!(row.source_count_30d, 0, "expected source_count_30d=0");
+        assert_eq!(row.last_recorded_at, 0, "expected last_recorded_at=0");
+    }
+
+    #[tokio::test]
+    async fn get_insight_max_30d_is_highest_price_in_window() {
+        let pool = make_memory_pool().await;
+        create_price_history_table(&pool).await;
+        let repo = PriceHistoryRepo::new(pool);
+        let now = epoch_seconds();
+
+        // 35 points: i=0..30 within 30d, prices 90..120
+        for i in 0..35 {
+            insert_point(&repo, "SKU_MAX", "reverb", 90.0 + i as f64, now - i as i64 * 86_400)
+                .await;
+        }
+
+        let row = repo.get_insight("SKU_MAX").await.unwrap();
+        assert!(
+            (row.max_30d - 120.0).abs() < f64::EPSILON,
+            "expected max_30d=120 (i=3 in 30d), got {}",
+            row.max_30d
+        );
+    }
+
+    #[tokio::test]
+    async fn get_insight_avg_30d_is_mean_in_window() {
+        let pool = make_memory_pool().await;
+        create_price_history_table(&pool).await;
+        let repo = PriceHistoryRepo::new(pool);
+        let now = epoch_seconds();
+
+        // 35 points: i=0..30 within 30d, prices 100, 101, ..., 130
+        for i in 0..35 {
+            insert_point(&repo, "SKU_AVG", "reverb", 100.0 + i as f64, now - i as i64 * 86_400)
+                .await;
+        }
+
+        let row = repo.get_insight("SKU_AVG").await.unwrap();
+        // Window contains i=0..30 → 31 points, prices 100..130 → mean = 115
+        let expected = (100.0 + 130.0) / 2.0;
+        assert!(
+            (row.avg_30d - expected).abs() < 0.01,
+            "expected avg_30d≈{expected}, got {}",
+            row.avg_30d
+        );
+    }
+
+    #[tokio::test]
+    async fn get_insight_source_count_30d_counts_distinct_sources() {
+        let pool = make_memory_pool().await;
+        create_price_history_table(&pool).await;
+        let repo = PriceHistoryRepo::new(pool);
+        let now = epoch_seconds();
+
+        // 3 distinct sources within 30d
+        insert_point(&repo, "SKU_SRC", "reverb", 100.0, now - 86_400).await;
+        insert_point(&repo, "SKU_SRC", "ebay", 110.0, now - 2 * 86_400).await;
+        insert_point(&repo, "SKU_SRC", "guitarcenter", 120.0, now - 3 * 86_400).await;
+        // 4th source but older than 30d → must not be counted
+        insert_point(&repo, "SKU_SRC", "oldshop", 130.0, now - 60 * 86_400).await;
+
+        let row = repo.get_insight("SKU_SRC").await.unwrap();
+        assert_eq!(
+            row.source_count_30d, 3,
+            "expected 3 distinct sources within 30d, got {}",
+            row.source_count_30d
+        );
+    }
+
+    #[tokio::test]
+    async fn get_insight_last_recorded_at_is_maximum() {
+        let pool = make_memory_pool().await;
+        create_price_history_table(&pool).await;
+        let repo = PriceHistoryRepo::new(pool);
+        let now = epoch_seconds();
+
+        // Insert at scattered times — newest is 100s ago
+        let newest = now - 100;
+        insert_point(&repo, "SKU_LAST", "reverb", 100.0, now - 5 * 86_400).await;
+        insert_point(&repo, "SKU_LAST", "reverb", 110.0, now - 86_400).await;
+        insert_point(&repo, "SKU_LAST", "reverb", 120.0, newest).await;
+        insert_point(&repo, "SKU_LAST", "reverb", 130.0, now - 50 * 86_400).await;
+
+        let row = repo.get_insight("SKU_LAST").await.unwrap();
+        assert_eq!(
+            row.last_recorded_at, newest,
+            "expected last_recorded_at to be the newest inserted timestamp"
+        );
     }
 }
