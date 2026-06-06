@@ -3,10 +3,6 @@ on:
   push:
     tags: ['v*']
 
-concurrency:
-  group: gh-pages-publish
-  cancel-in-progress: false
-
 env:
   CARGO_INCREMENTAL: 0
   CARGO_TERM_COLOR: always
