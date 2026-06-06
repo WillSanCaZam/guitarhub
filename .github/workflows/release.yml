@@ -61,11 +61,12 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           pattern: guitarhub-*
           merge-multiple: true
-      - name: Create Release
+      - name: Create or Update Release
         id: create
         env:
           GH_TOKEN: ${{ github.token }}
@@ -76,10 +77,15 @@ jobs:
             find . -type f | head -30
             exit 1
           fi
-          gh release create "${{ github.ref_name }}" \
-            --title "GuitarHub ${{ github.ref_name }}" \
-            --generate-notes \
-            $assets
+          if gh release view "${{ github.ref_name }}" &>/dev/null; then
+            echo "Release already exists — uploading assets"
+            gh release upload "${{ github.ref_name }}" $assets --clobber
+          else
+            gh release create "${{ github.ref_name }}" \
+              --title "GuitarHub ${{ github.ref_name }}" \
+              --generate-notes \
+              $assets
+          fi
 
   publish-update-endpoint:
     needs: [create-release]
