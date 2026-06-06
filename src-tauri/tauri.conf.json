@@ -9,6 +9,13 @@
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build"
   },
+  "bundle": {
+    "active": true,
+    "targets": ["deb"],
+    "icon": [
+      "icons/icon.png"
+    ]
+  },
   "app": {
     "windows": [
       {
@@ -25,6 +32,12 @@
         "style-src": "'unsafe-inline' 'self'"
       },
       "dangerousDisableAssetCspModification": false
+    }
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": ["https://willsancazam.github.io/guitarhub/latest.json"],
+      "pubkey": ""
     }
   }
 }

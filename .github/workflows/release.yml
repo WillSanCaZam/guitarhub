@@ -3,6 +3,10 @@ on:
   push:
     tags: ['v*']
 
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
 env:
   CARGO_INCREMENTAL: 0
   CARGO_TERM_COLOR: always
@@ -15,14 +19,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-          - os: macos-13
-            target: x86_64-apple-darwin
-          - os: macos-latest
-            target: aarch64-apple-darwin
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -48,7 +46,7 @@ jobs:
       - run: npm ci
       - run: cargo test --target ${{ matrix.target }}
         working-directory: src-tauri
-      - run: cargo tauri build --target ${{ matrix.target }}
+      - run: npx tauri build --target ${{ matrix.target }}
         working-directory: src-tauri
       - uses: actions/upload-artifact@v4
         with:

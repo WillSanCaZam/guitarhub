@@ -1,0 +1,8 @@
+{
+  "identifier": "updater-capability",
+  "description": "Capability for the updater plugin",
+  "windows": ["main"],
+  "permissions": [
+    "updater:default"
+  ]
+}

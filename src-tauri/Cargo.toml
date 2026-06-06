@@ -25,11 +25,12 @@ url = "2"
 zip = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-notification = "2"
+tauri-plugin-updater = "2"
 async-trait = "0.1"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
 [dev-dependencies]
-httpmock = "0.7"
+httpmock = "0.8.3"
 tempfile = "3"
