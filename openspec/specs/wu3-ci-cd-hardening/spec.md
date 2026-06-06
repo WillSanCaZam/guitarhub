@@ -31,12 +31,43 @@ Reorder and augment CI/CD pipelines so security scanning gates execution, input 
 
 `scrape.yml` MUST add a validation step between `download-artifact` and `--publish-index` that runs `python scraper/run_all.py --validate-input --input-dir incoming/`. If validation fails, the publish step MUST be skipped.
 
+The validation step MUST be named `validate-input` and MUST appear as a distinct job step in the workflow YAML. The step MUST use the same Python environment and dependencies as the scraper step. The `--validate-input` command MUST exit with code 0 when the input data is valid and code 1 when the input data is malformed.
+
+(Previously: The validation requirement existed but was not explicitly tied to the `--validate-input` CLI flag and the exact step naming.)
+
 #### Scenarios
 
 | Case | Precondition | Action | Outcome |
 |------|-------------|--------|---------|
 | Valid catalog data | Artifact has all required fields per schema | `--validate-input` step runs | Passes, `--publish-index` proceeds |
 | Malformed data | Artifact is missing required fields | `--validate-input` step runs | Fails, publish step skipped entirely |
+| Step order is correct | `scrape.yml` is inspected | Read job steps | `validate-input` step appears after `download-artifact` and before `--publish-index` |
+
+---
+
+### Requirement: `--validate-input` MUST be idempotent
+
+The `--validate-input` command MUST be safe to run multiple times on the same input directory without side effects. It MUST only read and validate the input files; it MUST NOT modify the input directory or create output artifacts.
+
+#### Scenario: Idempotent validation
+
+- GIVEN `incoming/` contains valid data
+- WHEN `--validate-input` is run twice in succession
+- THEN both runs exit with code 0
+- AND the `incoming/` directory contents are unchanged
+
+---
+
+### Requirement: Validation failure MUST produce actionable logs
+
+When `--validate-input` fails, the step output MUST include the specific file path and the validation error (e.g., missing required field, invalid schema, malformed JSON). The logs MUST be visible in the GitHub Actions UI.
+
+#### Scenario: Validation error details
+
+- GIVEN `incoming/products.json` is missing the `sku` field
+- WHEN `--validate-input` runs
+- THEN the console output contains "incoming/products.json"
+- AND the output contains the specific error "missing required field: sku"
 
 ### Requirement: Concurrency guard for release publishing
 

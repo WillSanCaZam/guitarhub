@@ -33,10 +33,38 @@ The system MUST provide `LICENSE` at the repo root containing the full GPL-3.0 l
 
 The system MUST provide `CHANGELOG.md` at the repo root in [Keep a Changelog](https://keepachangelog.com/) format. The `[Unreleased]` section SHALL include the MVP completion features grouped by `Added`, `Changed`, and `Fixed`.
 
+The `[Unreleased]` section MUST be replaced with a dated `v0.1.0` release section. The `v0.1.0` section MUST contain the release date in ISO format (`YYYY-MM-DD`). The `v0.1.0` section MUST include a summary of MVP features and a link to the full commit history or comparison URL.
+
+(Previously: The CHANGELOG contained only an `[Unreleased]` section with MVP features. No dated release section existed.)
+
 | Case | Precondition | Action | Outcome |
 |------|-------------|--------|---------|
 | Valid format | CHANGELOG.md exists | Render on GitHub | Follows Keep a Changelog structure |
 | Unreleased section | Features implemented | Read CHANGELOG | Lists SyncService, SearchService, Scraper under Added |
+| v0.1.0 section with date | CHANGELOG.md is opened | Read release sections | `## [0.1.0] - YYYY-MM-DD` section is present and appears before any `[Unreleased]` section |
+| v0.1.0 feature summary | v0.1.0 section is read | Inspect content | `Added` lists MVP features; `Changed` lists behavior modifications; `Fixed` lists bug fixes |
+| Unreleased preserved | v0.1.0 section is added | Read CHANGELOG | Empty `## [Unreleased]` section exists after `v0.1.0` |
+| Comparison link | v0.1.0 section is added | Read bottom of CHANGELOG | Link definition `[0.1.0]: https://github.com/william/guitarhub/compare/v0.0.0...v0.1.0` or equivalent is present |
+
+---
+
+### Requirement: CHANGELOG v0.1.0 MUST credit contributors
+
+The `v0.1.0` section SHOULD include a `Contributors` or `Thanks` line listing the main contributors to the release.
+
+| Case | Precondition | Action | Outcome |
+|------|-------------|--------|---------|
+| Contributors listed | v0.1.0 section is read | Inspect bottom of section | A contributors line is present naming the primary authors |
+
+---
+
+### Requirement: README.md MUST reflect v0.1.0 status
+
+The `README.md` MUST be updated to indicate the current release is `v0.1.0`. The README SHOULD include a badge or line showing the latest release version.
+
+| Case | Precondition | Action | Outcome |
+|------|-------------|--------|---------|
+| Version badge in README | README.md is rendered on GitHub | View project header | A version badge or line indicates "v0.1.0" and links to the GitHub releases page |
 
 ### Requirement: GPL-3.0 header MUST appear in source files
 
