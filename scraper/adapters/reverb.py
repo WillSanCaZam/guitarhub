@@ -3,75 +3,36 @@
 """Reverb.com marketplace scraper adapter.
 
 Ports & Adapters: implements ScraperPort protocol.
-Fetches product listings from Reverb's marketplace pages,
-parses HTML, and maps fields to CatalogProduct.
+Fetches product listings from Reverb's JSON API,
+and maps fields to CatalogProduct.
 """
 
+import json
 import logging
-import re
 import time
-from urllib.parse import urljoin
+from typing import Any
 
 import requests
-from bs4 import BeautifulSoup
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
+try:
+    import curl_cffi.requests as curl_requests
+    HAS_CURL_CFFI = True
+except ImportError:
+    curl_requests = None  # type: ignore[assignment]
+    HAS_CURL_CFFI = False
 
 from scraper.domain import CatalogFile, CatalogProduct
 from scraper.ports import FetchError, ParseError, ScraperPort
 
 logger = logging.getLogger(__name__)
 
-# CSS selector patterns for Reverb marketplace listing cards.
-# Reverb's HTML structure may change; these target known patterns.
-CARDS_SELECTOR = "div.grid-card, article.listing-card, div[data-listing-id]"
-TITLE_SELECTORS = [
-    ".grid-card__title",
-    ".listing-card__title",
-    "h2",
-    "h3",
-    ".product-title",
-    ".card-title",
-]
-BRAND_SELECTORS = [
-    ".grid-card__brand",
-    ".listing-card__brand",
-    ".brand",
-]
-PRICE_SELECTORS = [
-    ".grid-card__price",
-    ".listing-card__price",
-    ".price",
-    "[data-testid='price']",
-]
-CONDITION_SELECTORS = [
-    ".grid-card__condition",
-    ".listing-card__condition",
-    ".condition",
-]
-SELLER_SELECTORS = [
-    ".grid-card__seller",
-    ".listing-card__seller",
-    ".seller-name",
-]
-LOCATION_SELECTORS = [
-    ".grid-card__location",
-    ".listing-card__location",
-    ".location",
-]
-NEXT_PAGE_SELECTORS = [
-    "a.pagination__next",
-    "a[rel='next']",
-    "a.next",
-    "button.load-more",
-    "[data-load-more]",
-]
-
 
 class ReverbAdapter:
-    """Adapter that scrapes product listings from Reverb marketplace."""
+    """Adapter that scrapes product listings from Reverb marketplace via JSON API."""
 
-    BASE_URL = "https://reverb.com/marketplace"
+    BASE_URL = "https://reverb.com/api/listings"
 
     def __init__(
         self,
@@ -99,44 +60,56 @@ class ReverbAdapter:
         """Scrape Reverb marketplace and return a CatalogFile.
 
         Args:
-            url: Marketplace URL to scrape. Defaults to electric guitars.
+            url: Ignored; the adapter always uses the JSON API.
 
         Returns:
             CatalogFile with scraped products.
 
         Raises:
             FetchError: on HTTP or network failure.
-            ParseError: on HTML parsing failure.
+            ParseError: on JSON parsing failure.
         """
-        start_url = url or f"{self.BASE_URL}/electric-guitars"
         products: list[CatalogProduct] = []
         page = 1
 
         while page <= self.max_pages:
-            page_url = f"{start_url}?page={page}"
+            page_url = (
+                f"{self.BASE_URL}?product_type=electric-guitars"
+                f"&per_page=24&page={page}"
+            )
             logger.info("Fetching page %d: %s", page, page_url)
 
             try:
-                response = self._fetch(page_url)
+                data = self._fetch_json(page_url)
             except FetchError:
                 raise
             except Exception as exc:
                 raise FetchError(f"Failed to fetch {page_url}: {exc}") from exc
 
-            try:
-                soup = BeautifulSoup(response.text, "html.parser")
-            except Exception as exc:
-                raise ParseError(f"Failed to parse HTML from {page_url}: {exc}") from exc
+            listings = data.get("listings", [])
+            total_pages = data.get("total_pages", 1)
+            current_page = data.get("current_page", page)
 
-            page_products = self._extract_products(soup)
-            logger.info("Extracted %d products from page %d", len(page_products), page)
+            logger.info(
+                "Extracted %d products from page %d/%d",
+                len(listings),
+                current_page,
+                total_pages,
+            )
 
-            if not page_products:
+            if not listings:
                 break
 
-            products.extend(page_products)
+            for listing in listings:
+                try:
+                    product = self._map_listing(listing)
+                    if product is not None:
+                        products.append(product)
+                except Exception as exc:
+                    logger.warning("Skipping listing due to parse error: %s", exc)
+                    continue
 
-            if not self._has_next_page(soup):
+            if current_page >= total_pages:
                 break
 
             page += 1
@@ -147,10 +120,23 @@ class ReverbAdapter:
     # ── HTTP helpers ───────────────────────────────────────────────────
 
     @staticmethod
-    def _build_session() -> requests.Session:
+    def _build_session() -> Any:
         """Build a requests session with retry and user-agent."""
-        session = requests.Session()
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (compatible; GuitarHub-Scraper/0.1; "
+                "+https://github.com/willbennett/guitarhub)"
+            ),
+            "Accept": "application/json",
+            "Accept-Language": "en-US,en;q=0.9",
+        }
 
+        if HAS_CURL_CFFI:
+            session = curl_requests.Session()  # type: ignore[union-attr]
+            session.headers.update(headers)
+            return session
+
+        session = requests.Session()
         retry_strategy = Retry(
             total=3,
             backoff_factor=1.0,
@@ -161,16 +147,7 @@ class ReverbAdapter:
         adapter = HTTPAdapter(max_retries=retry_strategy)
         session.mount("https://", adapter)
         session.mount("http://", adapter)
-
-        session.headers.update({
-            "User-Agent": (
-                "Mozilla/5.0 (compatible; GuitarHub-Scraper/0.1; "
-                "+https://github.com/willbennett/guitarhub)"
-            ),
-            "Accept": "text/html,application/xhtml+xml",
-            "Accept-Language": "en-US,en;q=0.9",
-        })
-
+        session.headers.update(headers)
         return session
 
     def _fetch(self, url: str) -> requests.Response:
@@ -180,7 +157,14 @@ class ReverbAdapter:
         Retries transient errors via the session's Retry adapter.
         """
         try:
-            response = self.session.get(url, timeout=30)
+            if HAS_CURL_CFFI and isinstance(
+                self.session, curl_requests.Session  # type: ignore[union-attr]
+            ):
+                response = self.session.get(
+                    url, timeout=30, impersonate="chrome120"
+                )
+            else:
+                response = self.session.get(url, timeout=30)
         except requests.exceptions.RetryError as exc:
             raise FetchError(
                 f"Max retries exceeded for {url}: {exc}"
@@ -200,127 +184,94 @@ class ReverbAdapter:
 
         return response
 
-    # ── HTML extraction ────────────────────────────────────────────────
+    def _fetch_json(self, url: str) -> dict:
+        """Fetch JSON from a URL.
 
-    def _extract_products(self, soup: BeautifulSoup) -> list[CatalogProduct]:
-        """Extract CatalogProduct instances from parsed HTML."""
-        cards = soup.select(CARDS_SELECTOR)
-        products: list[CatalogProduct] = []
+        Sets Accept: application/json header and parses JSON response.
+        Raises ParseError on invalid JSON.
+        """
+        response = self._fetch(url)
+        try:
+            return json.loads(response.text)
+        except json.JSONDecodeError as exc:
+            raise ParseError(f"Invalid JSON from {url}: {exc}") from exc
 
-        for card in cards:
-            try:
-                product = self._extract_one(card)
-                if product is not None:
-                    products.append(product)
-            except Exception as exc:
-                logger.warning("Skipping card due to parse error: %s", exc)
-                continue
+    # ── Listing mapping ──────────────────────────────────────────────────
 
-        return products
+    def _map_listing(self, listing: dict) -> CatalogProduct | None:
+        """Map a Reverb API listing dict to a CatalogProduct."""
+        listing_id = listing.get("id")
+        if listing_id is None:
+            return None
 
-    def _extract_one(self, card: BeautifulSoup) -> CatalogProduct | None:
-        """Extract a single CatalogProduct from a listing card element."""
-        # ── Name / title ────────────────────────────────────────────
-        name = self._select_text(card, TITLE_SELECTORS)
-        if not name:
-            return None  # skip cards without a title
+        title = listing.get("title", "")
+        if not title:
+            return None
 
-        # ── Product URL ─────────────────────────────────────────────
-        link = card.select_one("a[href*='/item/']")
-        relative_url = link.get("href") if link else ""
-        product_url = urljoin("https://reverb.com", relative_url) if relative_url else ""
+        sku = self._extract_sku(str(listing_id), title)
 
-        # ── SKU from URL ────────────────────────────────────────────
-        sku = self._extract_sku(relative_url or product_url, name)
+        price_data = listing.get("price", {}) or {}
+        price = self._parse_price(price_data.get("amount", ""))
+        currency = listing.get("listing_currency", "USD")
 
-        # ── Image URL ───────────────────────────────────────────────
-        img = card.select_one("img")
-        image_url = ""
-        if img:
-            image_url = (
-                img.get("src")
-                or img.get("data-src")
-                or img.get("data-lazy-src")
-                or ""
-            )
+        condition = listing.get("condition_slug", "")
+        state = listing.get("state", {}) or {}
+        if isinstance(state, str):
+            availability = "in_stock" if state == "live" else "unknown"
+        else:
+            availability = "in_stock" if state.get("slug") == "live" else "unknown"
 
-        # ── Price ───────────────────────────────────────────────────
-        price = self._parse_price(self._select_text(card, PRICE_SELECTORS))
+        links = listing.get("_links", {})
+        web_link = links.get("web", {}) if isinstance(links, dict) else {}
+        photo_link = links.get("photo", {}) if isinstance(links, dict) else {}
+        product_url = web_link.get("href", "") if isinstance(web_link, dict) else ""
+        image_url = photo_link.get("href", "") if isinstance(photo_link, dict) else ""
 
-        # ── Other fields ────────────────────────────────────────────
-        brand = self._select_text(card, BRAND_SELECTORS) or ""
-        condition = self._select_text(card, CONDITION_SELECTORS) or ""
-        seller = self._select_text(card, SELLER_SELECTORS) or ""
-        location = self._select_text(card, LOCATION_SELECTORS) or ""
+        # Fallback to first photo if no photo link
+        if not image_url:
+            photos = listing.get("photos", [])
+            if photos and isinstance(photos, list):
+                first_photo = photos[0]
+                if isinstance(first_photo, dict):
+                    photo_links = first_photo.get("_links", {})
+                    if isinstance(photo_links, dict):
+                        image_url = photo_links.get("large_crop", {}).get("href", "") or photo_links.get("small_crop", {}).get("href", "")
+
+        brand = listing.get("make", "")
+        model = listing.get("model", "")
+        seller = listing.get("shop_name", "")
+        location = listing.get("slug", "")
 
         return CatalogProduct(
             sku=sku,
-            name=name.strip(),
+            name=title.strip(),
             brand=brand.strip(),
+            model=model.strip(),
             price=price,
+            currency=currency,
+            condition=condition.strip().lower(),
+            availability=availability,
             url=product_url,
             image_url=image_url,
-            condition=condition.strip().lower(),
             seller=seller.strip(),
             location=location.strip(),
         )
 
-    # ── Selector helpers ───────────────────────────────────────────────
-
     @staticmethod
-    def _select_text(
-        element: BeautifulSoup, selectors: list[str]
-    ) -> str:
-        """Return text from the first matching selector, stripped."""
-        for selector in selectors:
-            found = element.select_one(selector)
-            if found and found.get_text(strip=True):
-                return found.get_text(strip=True)
-        return ""
-
-    @staticmethod
-    def _extract_sku(url_fragment: str, name: str) -> str:
-        """Generate a stable-ish SKU from URL and product name.
-
-        Uses the Reverb item UUID from the URL when available,
-        otherwise falls back to a sanitized name hash.
-        """
-        # Reverb item URLs: /item/<uuid>-<slug>
-        match = re.search(r"/item/([a-f0-9-]+)", url_fragment)
-        if match:
-            item_id = match.group(1)
-            short_id = item_id.split("-")[0][:8]
-            return f"reverb-{short_id}"
-
-        # Fallback: hash the name
-        name_slug = re.sub(r"[^a-zA-Z0-9]", "", name)[:20].lower()
-        return f"reverb-{name_slug}"
+    def _extract_sku(listing_id: str, name: str) -> str:
+        """Generate a stable SKU from listing id."""
+        return f"reverb-{listing_id}"
 
     @staticmethod
     def _parse_price(text: str) -> float:
-        """Parse a price string like '$1,599.99' or 'Price: $2,000'."""
+        """Parse a price string like '1599.99' or '$1,599.99'."""
         if not text:
             return 0.0
-        match = re.search(r"[\d,]+(?:\.\d{2})?", text.replace(",", ""))
+        cleaned = text.replace(",", "").replace("$", "")
+        match = __import__("re").search(r"[\d.]+(?:\.\d{2})?", cleaned)
         if match:
             try:
-                return float(match.group(0).replace(",", ""))
+                return float(match.group(0))
             except ValueError:
                 return 0.0
         return 0.0
-
-    @staticmethod
-    def _has_next_page(soup: BeautifulSoup) -> bool:
-        """Check if the page has a next-page / load-more control."""
-        for selector in NEXT_PAGE_SELECTORS:
-            element = soup.select_one(selector)
-            if element is not None:
-                # Check it's not disabled
-                disabled = (
-                    element.get("disabled")
-                    or element.get("aria-disabled")
-                    or False
-                )
-                if not disabled:
-                    return True
-        return False

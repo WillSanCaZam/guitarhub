@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Unit tests for ReverbAdapter — HTML extraction and URL generation."""
+"""Unit tests for ReverbAdapter — JSON API extraction and mapping."""
 
+import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
-from bs4 import BeautifulSoup
 
 from scraper.adapters.reverb import ReverbAdapter
 from scraper.ports import FetchError
@@ -25,137 +25,131 @@ def adapter() -> ReverbAdapter:
 
 
 @pytest.fixture
-def sample_html() -> str:
-    """Load the sample Reverb marketplace HTML fixture."""
-    path = FIXTURES_DIR / "reverb-sample.html"
-    return path.read_text(encoding="utf-8")
-
-
-@pytest.fixture
-def sample_soup(sample_html: str) -> BeautifulSoup:
-    """Parse sample HTML into BeautifulSoup."""
-    return BeautifulSoup(sample_html, "html.parser")
+def sample_json() -> dict:
+    """Load the sample Reverb JSON API fixture."""
+    path = FIXTURES_DIR / "reverb-sample.json"
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 # ── URL generation ───────────────────────────────────────────────────────
 
 
 class TestUrlGeneration:
-    """Adapter constructs correct marketplace URLs."""
+    """Adapter constructs correct API URLs."""
 
-    def test_default_url_is_electric_guitars(self):
-        """Default scrape URL points to electric guitars marketplace."""
+    def test_base_url_is_api_endpoint(self):
+        """BASE_URL points to the JSON API."""
         adapter = ReverbAdapter()
-        assert adapter.BASE_URL == "https://reverb.com/marketplace"
+        assert adapter.BASE_URL == "https://reverb.com/api/listings"
 
-    def test_scrape_uses_provided_url(self):
-        """Adapter uses url parameter when provided."""
+    def test_scrape_uses_api_url(self):
+        """scrape() builds API URL with query params."""
         adapter = ReverbAdapter(session=MagicMock())
-        adapter._fetch = MagicMock(return_value=MagicMock(text="<html></html>"))
-        adapter._extract_products = MagicMock(return_value=[])
+        adapter._fetch_json = MagicMock(return_value={
+            "listings": [],
+            "current_page": 1,
+            "total_pages": 1,
+        })
 
-        custom_url = "https://reverb.com/marketplace/bass-guitars"
-        adapter.scrape(url=custom_url)
-        adapter._fetch.assert_called_once()
-        call_url = adapter._fetch.call_args[0][0]
-        assert custom_url in call_url
+        adapter.scrape()
+        call_url = adapter._fetch_json.call_args[0][0]
+        assert "reverb.com/api/listings" in call_url
+        assert "product_type=electric-guitars" in call_url
+        assert "per_page=24" in call_url
+        assert "page=1" in call_url
 
 
-# ── HTML extraction ──────────────────────────────────────────────────────
+# ── JSON extraction ──────────────────────────────────────────────────────
 
 
 class TestExtractProducts:
-    """HTML parsing and field mapping from fixture."""
+    """JSON parsing and field mapping from fixture."""
 
-    def test_extract_products_from_fixture(self, adapter, sample_soup):
-        """Extract all products from the sample HTML."""
-        products = adapter._extract_products(sample_soup)
-        assert len(products) == 2, "Expected 2 products in fixture"
+    def test_extract_products_from_fixture(self, adapter, sample_json):
+        """Extract all products from the sample JSON."""
+        adapter.max_pages = 1
+        adapter._fetch_json = MagicMock(return_value=sample_json)
+        catalog = adapter.scrape()
+        assert len(catalog.products) == 2, "Expected 2 products in fixture"
 
-    def test_field_mapping_first_product(self, adapter, sample_soup):
+    def test_field_mapping_first_product(self, adapter, sample_json):
         """First product fields are correctly mapped."""
-        products = adapter._extract_products(sample_soup)
-        product = products[0]
+        listing = sample_json["listings"][0]
+        product = adapter._map_listing(listing)
 
-        assert product.sku == "reverb-a1b2c3d4"
-        assert "Fender American Professional II Stratocaster" in product.name
+        assert product is not None
+        assert product.sku == "reverb-97923167"
+        assert product.name == "Fender American Professional II Stratocaster"
         assert product.brand == "Fender"
+        assert product.model == "American Professional II Stratocaster"
         assert product.price == 1599.99
-        assert product.condition == "new"
-        assert "fender-american-professional" in product.url
-        assert "images.reverb.com" in product.image_url
+        assert product.currency == "USD"
+        assert product.condition == "brand_new"
+        assert product.availability == "in_stock"
+        assert "fender-american-professional-ii-stratocaster" in product.url
+        assert product.image_url == "https://rvb-img.reverb.com/fender-strat.jpg"
         assert product.seller == "Reverb Bazaar"
-        assert product.location == "Austin, TX"
+        assert product.location == ""
 
-    def test_field_mapping_second_product(self, adapter, sample_soup):
+    def test_field_mapping_second_product(self, adapter, sample_json):
         """Second product fields are correctly mapped."""
-        products = adapter._extract_products(sample_soup)
-        product = products[1]
+        listing = sample_json["listings"][1]
+        product = adapter._map_listing(listing)
 
-        assert "Gibson Les Paul Standard" in product.name
+        assert product is not None
+        assert product.sku == "reverb-97923168"
+        assert "Gibson Les Paul Standard '50s" in product.name
         assert product.brand == "Gibson"
+        assert product.model == "Les Paul Standard '50s"
         assert product.price == 2499.99
-        assert product.condition == "used"
+        assert product.currency == "USD"
+        assert product.condition == "excellent"
+        assert product.availability == "in_stock"
 
     def test_defaults_for_missing_fields(self, adapter):
-        """Cards with missing optional fields still produce valid products."""
-        html = """
-        <div class="grid-card">
-            <a href="/item/test-001-minimal">
-                <p class="grid-card__title">Minimal Product</p>
-                <p class="grid-card__price">$99.99</p>
-            </a>
-        </div>
-        """
-        soup = BeautifulSoup(html, "html.parser")
-        products = adapter._extract_products(soup)
-        assert len(products) == 1
-        p = products[0]
-        assert p.name == "Minimal Product"
-        assert p.price == 99.99
-        assert p.brand == ""  # default
-        assert p.condition == ""  # default
-        assert p.seller == ""  # default
-        assert p.location == ""  # default
-        assert p.currency == "USD"  # default
-        assert p.availability == "in_stock"  # default
+        """Listings with missing optional fields still produce valid products."""
+        partial = {
+            "id": 12345,
+            "title": "Minimal Product",
+            "price": {"amount": "99.99"},
+            "listing_currency": "USD",
+            "state": "live",
+            "_links": {"web": {"href": "https://reverb.com/item/12345"}},
+        }
+        product = adapter._map_listing(partial)
 
-    def test_skip_card_without_title(self, adapter):
-        """Cards missing a title are skipped (no name → no product)."""
-        html = """
-        <div class="grid-card">
-            <a href="/item/test-no-title">
-                <p class="grid-card__price">$99.99</p>
-            </a>
-        </div>
-        """
-        soup = BeautifulSoup(html, "html.parser")
-        products = adapter._extract_products(soup)
-        assert len(products) == 0
+        assert product is not None
+        assert product.name == "Minimal Product"
+        assert product.price == 99.99
+        assert product.brand == ""
+        assert product.model == ""
+        assert product.condition == ""
+        assert product.seller == ""
+        assert product.location == ""
+        assert product.currency == "USD"
+        assert product.availability == "in_stock"
+        assert product.image_url == ""
+
+    def test_skip_listing_without_title(self, adapter):
+        """Listings missing a title are skipped."""
+        listing = {
+            "id": 99999,
+            "title": "",
+            "price": {"amount": "99.99"},
+            "_links": {"web": {"href": "https://reverb.com/item/99999"}},
+        }
+        product = adapter._map_listing(listing)
+        assert product is None
 
     def test_empty_page_returns_empty_list(self, adapter):
-        """A page with no listing cards returns empty list."""
-        html = "<html><body><p>No listings found.</p></body></html>"
-        soup = BeautifulSoup(html, "html.parser")
-        products = adapter._extract_products(soup)
-        assert len(products) == 0
-
-    def test_multiple_selectors_fallback(self, adapter):
-        """Adapter tries alternative selectors if primary ones fail."""
-        html = """
-        <article class="listing-card">
-            <a href="/item/test-alt-001">
-                <h3 class="listing-card__title">Alternate Layout Product</h3>
-                <span class="price">$599.99</span>
-                <span class="condition">New</span>
-            </a>
-        </article>
-        """
-        soup = BeautifulSoup(html, "html.parser")
-        products = adapter._extract_products(soup)
-        assert len(products) == 1
-        assert products[0].name == "Alternate Layout Product"
-        assert products[0].price == 599.99
+        """A page with empty listings array returns empty catalog."""
+        adapter._fetch_json = MagicMock(return_value={
+            "listings": [],
+            "current_page": 1,
+            "total_pages": 5,
+        })
+        catalog = adapter.scrape()
+        assert len(catalog.products) == 0
 
 
 # ── Price parsing ────────────────────────────────────────────────────────
@@ -182,54 +176,82 @@ class TestPriceParsing:
     def test_non_numeric_text(self):
         assert ReverbAdapter._parse_price("Contact for price") == 0.0
 
+    def test_json_price_amount(self):
+        """Direct JSON price amount string without currency symbol."""
+        assert ReverbAdapter._parse_price("1599.99") == 1599.99
+
 
 # ── SKU generation ───────────────────────────────────────────────────────
 
 
 class TestSkuGeneration:
-    """SKU extraction from URLs."""
+    """SKU extraction from listing id."""
 
-    def test_sku_from_uuid_url(self):
-        sku = ReverbAdapter._extract_sku(
-            "/item/a1b2c3d4-e5f6-7890-abcd-ef1234567890-fender-strat",
-            "Fender Stratocaster",
-        )
-        assert sku == "reverb-a1b2c3d4"
+    def test_sku_from_id(self):
+        sku = ReverbAdapter._extract_sku("97923167", "Fender Stratocaster")
+        assert sku == "reverb-97923167"
 
-    def test_sku_fallback_to_name(self):
-        sku = ReverbAdapter._extract_sku(
-            "/item/some-product",
-            "Fender Stratocaster",
-        )
-        assert "reverb-" in sku
-        assert len(sku) > 7
+    def test_sku_with_numeric_id(self):
+        sku = ReverbAdapter._extract_sku("42", "Gibson Les Paul")
+        assert sku == "reverb-42"
 
 
-# ── Pagination detection ─────────────────────────────────────────────────
+# ── Pagination ─────────────────────────────────────────────────────────────
 
 
 class TestPagination:
-    """Next-page detection."""
+    """Page-stop logic based on current_page and total_pages."""
 
-    def test_has_next_page_with_link(self):
-        html = '<a class="pagination__next" href="?page=2">Next</a>'
-        soup = BeautifulSoup(html, "html.parser")
-        assert ReverbAdapter._has_next_page(soup) is True
+    def test_stops_when_current_page_equals_total_pages(self, adapter):
+        adapter._fetch_json = MagicMock(return_value={
+            "listings": [{"id": 1, "title": "Test", "price": {"amount": "1"}, "_links": {"web": {"href": "https://example.com"}}}],
+            "current_page": 1,
+            "total_pages": 1,
+        })
+        catalog = adapter.scrape()
+        assert len(catalog.products) == 1
+        assert adapter._fetch_json.call_count == 1
 
-    def test_has_next_page_with_load_more(self):
-        html = '<button class="load-more">Load more</button>'
-        soup = BeautifulSoup(html, "html.parser")
-        assert ReverbAdapter._has_next_page(soup) is True
+    def test_stops_when_current_page_gte_total_pages(self, adapter):
+        adapter._fetch_json = MagicMock(return_value={
+            "listings": [{"id": 1, "title": "Test", "price": {"amount": "1"}, "_links": {"web": {"href": "https://example.com"}}}],
+            "current_page": 3,
+            "total_pages": 2,
+        })
+        catalog = adapter.scrape()
+        assert len(catalog.products) == 1
+        assert adapter._fetch_json.call_count == 1
 
-    def test_no_next_page(self):
-        html = "<html><body>Page 1 of 1</body></html>"
-        soup = BeautifulSoup(html, "html.parser")
-        assert ReverbAdapter._has_next_page(soup) is False
+    def test_continues_to_next_page(self, adapter):
+        adapter._fetch_json = MagicMock(side_effect=[
+            {
+                "listings": [{"id": 1, "title": "Page1", "price": {"amount": "1"}, "_links": {"web": {"href": "https://example.com"}}}],
+                "current_page": 1,
+                "total_pages": 2,
+            },
+            {
+                "listings": [{"id": 2, "title": "Page2", "price": {"amount": "2"}, "_links": {"web": {"href": "https://example.com"}}}],
+                "current_page": 2,
+                "total_pages": 2,
+            },
+        ])
+        catalog = adapter.scrape()
+        assert len(catalog.products) == 2
+        assert adapter._fetch_json.call_count == 2
 
-    def test_disabled_next_button(self):
-        html = '<a class="pagination__next" aria-disabled="true">Next</a>'
-        soup = BeautifulSoup(html, "html.parser")
-        assert ReverbAdapter._has_next_page(soup) is False
+    def test_respects_max_pages(self, adapter):
+        adapter.max_pages = 2
+        adapter._fetch_json = MagicMock(side_effect=[
+            {
+                "listings": [{"id": i, "title": f"Page{i}", "price": {"amount": str(i)}, "_links": {"web": {"href": "https://example.com"}}}],
+                "current_page": i,
+                "total_pages": 5,
+            }
+            for i in range(1, 6)
+        ])
+        catalog = adapter.scrape()
+        assert len(catalog.products) == 2
+        assert adapter._fetch_json.call_count == 2
 
 
 # ── HTTP error handling ──────────────────────────────────────────────────
@@ -276,6 +298,19 @@ class TestHttpErrorHandling:
         with pytest.raises(FetchError, match="400"):
             adapter._fetch("https://reverb.com/bad-request")
 
+    def test_invalid_json_raises_parse_error(self):
+        """Invalid JSON response should raise ParseError."""
+        adapter = ReverbAdapter(session=MagicMock())
+        mock_response = MagicMock(spec=requests.Response)
+        mock_response.status_code = 200
+        mock_response.text = "not json"
+        adapter.session.get.return_value = mock_response
+
+        with pytest.raises(Exception) as exc_info:
+            adapter._fetch_json("https://reverb.com/api/listings")
+        # json.JSONDecodeError is wrapped in ParseError
+        assert "Invalid JSON" in str(exc_info.value)
+
 
 # ── Session creation ─────────────────────────────────────────────────────
 
@@ -290,8 +325,22 @@ class TestSession:
         assert "GuitarHub-Scraper" in ua
         assert "github.com" in ua
 
-    def test_session_has_retry_adapter(self):
-        """Session mounts HTTPAdapter with retry config."""
+    def test_session_accepts_json(self):
+        """Session Accept header prefers JSON."""
         session = ReverbAdapter._build_session()
-        adapter = session.get_adapter("https://reverb.com")
-        assert isinstance(adapter, requests.adapters.HTTPAdapter)
+        accept = session.headers.get("Accept", "")
+        assert "application/json" in accept
+
+    def test_session_has_retry_adapter(self):
+        """Session mounts HTTPAdapter with retry config, or uses curl_cffi."""
+        session = ReverbAdapter._build_session()
+        ua = session.headers.get("User-Agent", "")
+        assert "GuitarHub-Scraper" in ua
+        assert "github.com" in ua
+        try:
+            import curl_cffi.requests as curl_requests
+
+            assert isinstance(session, curl_requests.Session)
+        except ImportError:
+            adapter = session.get_adapter("https://reverb.com")
+            assert isinstance(adapter, requests.adapters.HTTPAdapter)

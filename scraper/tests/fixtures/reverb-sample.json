@@ -1,0 +1,43 @@
+{
+  "total": 100,
+  "current_page": 1,
+  "total_pages": 5,
+  "listings": [
+    {
+      "id": 97923167,
+      "make": "Fender",
+      "model": "American Professional II Stratocaster",
+      "title": "Fender American Professional II Stratocaster",
+      "price": {"amount": "1599.99", "currency": "USD"},
+      "listing_currency": "USD",
+      "condition": "Brand New",
+      "condition_slug": "brand_new",
+      "shop_name": "Reverb Bazaar",
+      "sku": "FE-AP2-STRAT-001",
+      "state": "live",
+      "photos": [],
+      "_links": {
+        "web": {"href": "https://reverb.com/item/97923167-fender-american-professional-ii-stratocaster"},
+        "photo": {"href": "https://rvb-img.reverb.com/fender-strat.jpg"}
+      }
+    },
+    {
+      "id": 97923168,
+      "make": "Gibson",
+      "model": "Les Paul Standard '50s",
+      "title": "Gibson Les Paul Standard '50s Heritage Cherry Sunburst",
+      "price": {"amount": "2499.99", "currency": "USD"},
+      "listing_currency": "USD",
+      "condition": "Excellent",
+      "condition_slug": "excellent",
+      "shop_name": "Guitar Center",
+      "sku": "GI-LP50-001",
+      "state": "live",
+      "photos": [],
+      "_links": {
+        "web": {"href": "https://reverb.com/item/97923168-gibson-les-paul-standard-50s"},
+        "photo": {"href": "https://rvb-img.reverb.com/gibson-lespaul.jpg"}
+      }
+    }
+  ]
+}
