@@ -31,4 +31,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - URL validation for images and webhooks with SSRF prevention (IP literal rejection, HTTPS enforcement, domain allowlist).
 
+## [Unreleased]
+
+### Added
+
+### Changed
+
+### Fixed
+
+### Security
+
 [0.1.0]: https://github.com/willbennett/guitarhub/releases/tag/v0.1.0

@@ -76,7 +76,7 @@ jobs:
           path: catalog-${{ matrix.source }}.json
           retention-days: 7
 
-      - name: Validate incoming catalog files
+      - name: validate-input
         run: |
           source .venv/bin/activate
           python -m scraper.cli --validate-input --input-dir incoming/

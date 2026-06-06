@@ -42,7 +42,11 @@ test-app:
 ## Run only Python tests (unit + contract)
 test-scraper:
 	@if [ -d "$(SCRAPER_DIR)" ]; then \
-		cd "$(SCRAPER_DIR)" && python -m pytest tests/unit tests/contract -v; \
+		if [ -d ".venv" ]; then \
+			source .venv/bin/activate && python -m pytest scraper/tests/ -v; \
+		else \
+			python3 -m pytest scraper/tests/ -v; \
+		fi; \
 	else \
 		echo "No $(SCRAPER_DIR)/ directory found — skipping Python tests"; \
 	fi
@@ -67,7 +71,16 @@ lint-rust:
 ## Run only Python linters (ruff + mypy)
 lint-py:
 	@if [ -d "$(SCRAPER_DIR)" ]; then \
-		cd "$(SCRAPER_DIR)" && ruff check . && mypy . --strict; \
+		if command -v ruff >/dev/null 2>&1; then \
+			ruff check scraper/; \
+		else \
+			echo "ruff not installed — skipping ruff check"; \
+		fi; \
+		if command -v mypy >/dev/null 2>&1; then \
+			mypy scraper/ --strict; \
+		else \
+			echo "mypy not installed — skipping mypy check"; \
+		fi; \
 	else \
 		echo "No $(SCRAPER_DIR)/ directory found — skipping Python linting"; \
 	fi
