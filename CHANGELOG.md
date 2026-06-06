@@ -41,4 +41,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Security
 
-[0.1.0]: https://github.com/willbennett/guitarhub/releases/tag/v0.1.0
+[0.1.0]: https://github.com/WillSanCaZam/guitarhub/releases/tag/v0.1.0
