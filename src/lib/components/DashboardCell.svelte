@@ -22,7 +22,7 @@
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div
-  class="dashboard-cell"
+  class="dashboard-cell glassmorphism"
   role="region"
   aria-label={title}
   tabindex="0"
@@ -52,9 +52,7 @@
 
 <style>
   .dashboard-cell {
-    background: rgba(255, 255, 255, 0.55);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     padding: 16px;
     border: 1px solid rgba(255, 255, 255, 0.25);
@@ -65,6 +63,14 @@
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     outline: none;
     cursor: default;
+  }
+
+  @supports (backdrop-filter: blur(12px)) {
+    .dashboard-cell {
+      background: rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
   }
 
   .dashboard-cell:hover {

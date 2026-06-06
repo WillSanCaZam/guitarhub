@@ -18,4 +18,10 @@ describe('DashboardCell', () => {
     render(DashboardCell, { props: { title: 'Test', empty: true, emptyMessage: 'Nothing here' } });
     expect(screen.getByText('Nothing here')).toBeInTheDocument();
   });
+
+  it('has glassmorphism class on root element', () => {
+    render(DashboardCell, { props: { title: 'Test' } });
+    const cell = screen.getByRole('region');
+    expect(cell.classList.contains('glassmorphism')).toBe(true);
+  });
 });
