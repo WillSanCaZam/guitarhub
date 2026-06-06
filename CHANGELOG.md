@@ -2,26 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [0.1.0] - 2026-06-05
 
 ### Added
 
-- **SyncService** — catalog synchronization with HTTP fetch, state machine (idle → downloading → validating → sanitizing → inserting → done/failed), and SQLite upsert
-- **SearchService** — FTS5 full-text search with sanitized MATCH queries, filters (category, price range, source), sort orders (relevance, price asc/desc, date), and pagination (limit/offset)
-- **Frontend scaffold** — Svelte 5 pages with search bar, ProductCard grid, loading/empty/error states, sync button with progress indicator, and "Load more" pagination
-- **Python scraper** — ports-and-adapters scraper package with Reverb adapter (HTTP retry+backoff, BeautifulSoup HTML extraction), Pydantic domain models, and CLI entry point
-- **CI workflows** — Rust CI (`cargo test`, clippy, formatting) and Python CI (pytest, mypy, pip-audit)
-- **Scraper scheduled workflow** — GitHub Actions cron every 6 hours with pip-audit gate and schema validation
-- **License, changelog, and README** — GPL-3.0 license, Keep a Changelog format, and project documentation
-- **SPDX headers** — GPL-3.0-or-later license identifiers on all new source files
+- **Search** — Full-text search across the local catalog via SQLite FTS5.
+- **Sync Service** — Background catalog sync with state-machine tracking (idle → downloading → validating → inserting → done).
+- **Price Drops & Alerts** — Detect price drops with configurable relative/absolute thresholds; dispatch alerts via in-app, Ntfy, or webhook channels.
+- **Collection Tracking** — Manage personal gear collection with purchase details, condition, and estimated market value.
+- **Dashboard Bento Grid** — 9-cell dashboard showing catalog stats, wishlist count, recent searches, collection value, and price insights.
+- **Local Image Cache** — LRU image cache with SQLite BLOB storage, request coalescing, stale fallback, and 7-day TTL.
+- **Export** — Export wishlist, price history, settings, and collection as a ZIP of JSON files.
+- **Scraper** — Reverb.com marketplace adapter with retry, structured errors (FetchError, ParseError), and JSON API mapping.
+- **Structured Errors** — Unified AppError enum with typed variants (NotFound, InvalidInput, Database, Network, Internal, SyncInProgress).
+- **Offline-First** — Full catalog and image caching for offline browsing, search, and collection management.
 
 ### Changed
 
-- SDD architecture artifacts updated for all phases (proposal, specs, design, tasks)
+- Initial project scaffold with Tauri 2, Svelte 5, and Rust backend.
 
 ### Fixed
 
-- (none)
+- CI workflows for scraper-less builds.
+
+### Security
+
+- URL validation for images and webhooks with SSRF prevention (IP literal rejection, HTTPS enforcement, domain allowlist).
+
+[0.1.0]: https://github.com/willbennett/guitarhub/releases/tag/v0.1.0
