@@ -7,6 +7,8 @@
   let testResult = $state(null);
   let testLoading = $state(false);
   let exportResult = $state(null);
+  let saving = $state(false);
+  let saved = $state(false);
 
   onMount(async () => {
     try {
@@ -68,6 +70,23 @@
       exportResult = result;
     } catch (e) {
       exportResult = { success: false, size_bytes: 0, file_count: 0 };
+    }
+  }
+
+  async function saveAll() {
+    saving = true;
+    saved = false;
+    try {
+      await invoke('save_setting', { key: 'alert_channel', value: alertChannel });
+      await invoke('save_setting', { key: 'alert_config', value: alertConfig });
+      saved = true;
+      setTimeout(() => {
+        saved = false;
+      }, 2000);
+    } catch (e) {
+      console.error('Failed to save settings:', e);
+    } finally {
+      saving = false;
     }
   }
 
@@ -137,7 +156,9 @@
       </p>
     {/if}
 
-    <button type="submit" onclick={(e) => e.preventDefault()}>Save</button>
+    <button type="submit" onclick={saveAll} disabled={saving}>
+      {saved ? 'Saved ✓' : (saving ? 'Saving...' : 'Save')}
+    </button>
   </fieldset>
 
   <fieldset class="export-section">
