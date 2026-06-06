@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 pub mod alert_service;
 pub mod export_service;
 pub mod image_cache;

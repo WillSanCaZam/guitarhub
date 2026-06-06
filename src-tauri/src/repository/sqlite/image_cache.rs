@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use sqlx::SqlitePool;
 
 /// SQL CRUD operations for the `image_cache` table.

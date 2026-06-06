@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use tauri::State;
 
 use crate::services::export_service::{ExportError, ExportResult, ExportService};

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //! Price-drop detection — pure, no I/O, unit-testable.
 //!
 //! Anti-spam is layered: this module handles **materiality** only

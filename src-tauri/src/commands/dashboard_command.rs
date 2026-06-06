@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use crate::AppError;
 use crate::AppState;
 use tauri::State;
@@ -30,17 +32,50 @@ pub async fn get_wishlist_count(state: State<'_, AppState>) -> Result<u32, AppEr
     get_wishlist_count_cmd(&state.pool).await
 }
 
-/// Return recent search queries (placeholder — localStorage-backed in frontend).
+/// Core logic for `get_recent_searches`, extracted for testability.
+pub async fn get_recent_searches_cmd(pool: &sqlx::SqlitePool) -> Result<Vec<String>, AppError> {
+    let rows: Vec<String> = sqlx::query_scalar(
+        "SELECT query FROM recent_searches ORDER BY searched_at DESC LIMIT 10",
+    )
+    .fetch_all(pool)
+    .await?;
+    Ok(rows)
+}
+
+/// Core logic for `record_search`, extracted for testability.
+pub async fn record_search_cmd(pool: &sqlx::SqlitePool, query: &str) -> Result<(), AppError> {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs() as i64;
+    sqlx::query(
+        "INSERT INTO recent_searches (query, searched_at) VALUES (?1, ?2)
+         ON CONFLICT(query) DO UPDATE SET searched_at = ?2",
+    )
+    .bind(query)
+    .bind(now)
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+/// Return recent search queries.
 #[tauri::command]
-pub async fn get_recent_searches() -> Result<Vec<String>, AppError> {
-    Ok(vec![])
+pub async fn get_recent_searches(state: State<'_, AppState>) -> Result<Vec<String>, AppError> {
+    get_recent_searches_cmd(&state.pool).await
+}
+
+/// Record a search query for recent-searches tracking.
+#[tauri::command]
+pub async fn record_search(query: String, state: State<'_, AppState>) -> Result<(), AppError> {
+    record_search_cmd(&state.pool, &query).await
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    /// Create an in-memory pool with the two tables needed for dashboard counts.
+    /// Create an in-memory pool with the tables needed for dashboard counts.
     async fn memory_pool() -> sqlx::SqlitePool {
         let pool = sqlx::SqlitePool::connect("sqlite::memory:")
             .await
@@ -81,6 +116,15 @@ mod tests {
                 product_url TEXT,
                 notes       TEXT,
                 added_at    INTEGER
+            )",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+        sqlx::query(
+            "CREATE TABLE recent_searches (
+                query       TEXT PRIMARY KEY,
+                searched_at INTEGER NOT NULL
             )",
         )
         .execute(&pool)
@@ -181,8 +225,79 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn get_recent_searches_returns_empty_vec() {
-        let result = get_recent_searches().await.unwrap();
+    async fn get_recent_searches_empty_table_returns_empty_vec() {
+        let pool = memory_pool().await;
+        let result = get_recent_searches_cmd(&pool).await.unwrap();
         assert!(result.is_empty());
+    }
+
+    #[tokio::test]
+    async fn record_search_then_get_recent_searches_returns_query() {
+        let pool = memory_pool().await;
+        record_search_cmd(&pool, "fender stratocaster").await.unwrap();
+        let result = get_recent_searches_cmd(&pool).await.unwrap();
+        assert_eq!(result, vec!["fender stratocaster"]);
+    }
+
+    #[tokio::test]
+    async fn record_search_updates_existing_query() {
+        let pool = memory_pool().await;
+        record_search_cmd(&pool, "gibson les paul").await.unwrap();
+        // Re-recording the same query should not duplicate it
+        record_search_cmd(&pool, "gibson les paul").await.unwrap();
+        let result = get_recent_searches_cmd(&pool).await.unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0], "gibson les paul");
+    }
+
+    #[tokio::test]
+    async fn get_recent_searches_limits_to_ten() {
+        let pool = memory_pool().await;
+        let base = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64;
+        for i in 0..15 {
+            sqlx::query(
+                "INSERT INTO recent_searches (query, searched_at) VALUES (?1, ?2)",
+            )
+            .bind(format!("query-{i}"))
+            .bind(base + i)
+            .execute(&pool)
+            .await
+            .unwrap();
+        }
+        let result = get_recent_searches_cmd(&pool).await.unwrap();
+        assert_eq!(result.len(), 10);
+        // query-14 has the largest timestamp so it should be first in DESC order
+        assert_eq!(result[0], "query-14");
+        assert_eq!(result[9], "query-5");
+    }
+
+    #[tokio::test]
+    async fn get_recent_searches_orders_by_searched_at_desc() {
+        let pool = memory_pool().await;
+        let base = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64;
+        sqlx::query(
+            "INSERT INTO recent_searches (query, searched_at) VALUES (?1, ?2)",
+        )
+        .bind("older")
+        .bind(base)
+        .execute(&pool)
+        .await
+        .unwrap();
+        sqlx::query(
+            "INSERT INTO recent_searches (query, searched_at) VALUES (?1, ?2)",
+        )
+        .bind("newer")
+        .bind(base + 1)
+        .execute(&pool)
+        .await
+        .unwrap();
+        let result = get_recent_searches_cmd(&pool).await.unwrap();
+        assert_eq!(result, vec!["newer", "older"]);
     }
 }

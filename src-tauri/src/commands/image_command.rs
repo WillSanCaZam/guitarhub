@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use base64::Engine;
 use tauri::State;
 use url::Url;

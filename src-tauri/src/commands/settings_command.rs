@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 use tauri::{AppHandle, State};
 use tauri_plugin_notification::NotificationExt;
 

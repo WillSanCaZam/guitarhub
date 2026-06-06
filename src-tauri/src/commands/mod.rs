@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 pub mod collection_command;
 pub mod dashboard_command;
 pub mod export_command;
