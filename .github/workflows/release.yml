@@ -71,7 +71,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          assets=$(find . -type f \( -name "*.deb" -o -name "*.AppImage" -o -name "*.dmg" -o -name "*.msi" -o -name "*.zip" -o -name "*.tar.gz" \) 2>/dev/null | head -20)
+          assets=$(find . -maxdepth 4 -type f \( -name "*.deb" -o -name "*.AppImage" -o -name "*.dmg" -o -name "*.msi" -o -name "*.zip" \) 2>/dev/null | head -20)
           if [ -z "$assets" ]; then
             echo "No bundle files found in artifacts"
             find . -type f | head -30
@@ -94,10 +94,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          path: source
+      - run: python source/scripts/generate_latest_json.py ${{ github.ref_name }}
+      - uses: actions/checkout@v4
+        with:
           ref: gh-pages
-      - run: python scripts/generate_latest_json.py ${{ github.ref_name }}
-      - run: 'git commit -am "chore: update latest.json to ${{ github.ref_name }}"'
+          path: gh-pages
+      - run: |
+          cp latest.json gh-pages/latest.json
+          cd gh-pages
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add latest.json
+          git diff --cached --quiet || git commit -m "chore: update latest.json to ${{ github.ref_name }}"
       - name: Push with retry
+        working-directory: gh-pages
         run: |
           for i in 1 2 3; do
             git pull --rebase && git push && break
