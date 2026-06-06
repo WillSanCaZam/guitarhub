@@ -9,6 +9,7 @@
   import { syncResult } from '$lib/stores/sync';
   import { dashboardStats } from '$lib/stores/dashboard';
   import { collectionStore, loadCollection, loadCollectionStats } from '$lib/stores/collection';
+  import { calculateCollectionGainLoss, formatGainLoss } from '$lib/utils/collectionValue';
   import pkg from '../../package.json';
 
   let query = $state('');
@@ -100,6 +101,9 @@
 
   let featuredProduct = $derived(results.length > 0 ? results[0] : null);
   let appVersion = pkg.version;
+
+  let collectionGainLoss = $derived(calculateCollectionGainLoss($collectionStore.items));
+  let collectionGainLossFormatted = $derived(formatGainLoss(collectionGainLoss));
 </script>
 
 <div class="page">
@@ -264,6 +268,10 @@
                 <span class="stat-value">${$collectionStore.stats.total_value.toFixed(0)}</span>
                 <span class="stat-label">total value</span>
               </div>
+              <div class="stat">
+                <span class="stat-value gain-loss-{collectionGainLossFormatted.colorClass}">{collectionGainLossFormatted.text}</span>
+                <span class="stat-label">gain/loss</span>
+              </div>
               {#if $collectionStore.stats.top_item_name}
                 <div class="top-item">
                   Top: {$collectionStore.stats.top_item_name} (${$collectionStore.stats.top_item_value.toFixed(0)})
@@ -309,6 +317,13 @@
 
   .cell {
     min-width: 0;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .cell:focus-within {
+    outline: 2px solid #4a90d9;
+    outline-offset: 2px;
   }
 
   .cell-hero {
@@ -591,6 +606,18 @@
     margin-top: 4px;
   }
 
+  .gain-loss-gain {
+    color: #28a745;
+  }
+
+  .gain-loss-loss {
+    color: #dc3545;
+  }
+
+  .gain-loss-neutral {
+    color: #666;
+  }
+
   /* App info */
   .app-info {
     display: flex;
@@ -692,6 +719,18 @@
     }
 
     .top-item {
+      color: #aaa;
+    }
+
+    .gain-loss-gain {
+      color: #4ade80;
+    }
+
+    .gain-loss-loss {
+      color: #f87171;
+    }
+
+    .gain-loss-neutral {
       color: #aaa;
     }
   }
