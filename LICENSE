@@ -170,7 +170,7 @@ the terms of this License in conveying all material for which you do
 not control copyright.  Those thus making or running the covered works
 for you must do so exclusively on your behalf, under your direction
 and control, on terms that prohibit them from making any copies of
-your copyrighted material outside their relationship with you.
+your copyright material outside their relationship with you.
 
   Conveying under any other circumstances is permitted solely under
 the conditions stated below.  Sublicensing is not allowed; section 10
@@ -190,7 +190,7 @@ is effected by exercising rights under this License with respect to
 the covered work, and you disclaim any intention to limit operation or
 modification of the work as a means of enforcing, against the work's
 users, your or third parties' legal rights to forbid circumvention of
-technological measures.
+measures.
 
   4. Conveying Verbatim Copies.
 
@@ -244,8 +244,8 @@ parts of the aggregate.
 
   6. Conveying Non-Source Forms.
 
-  You may convey a covered work in object code form under the terms
-of sections 4 and 5, provided that you also convey the
+  You may convey a covered work in object code form under the terms of
+sections 4 and 5, provided that you also convey the
 machine-readable Corresponding Source under the terms of this License,
 in one of these ways:
 
@@ -273,7 +273,7 @@ in one of these ways:
     with subsection 6b.
 
     d) Convey the object code by offering access from a designated
-    place (gratis or for a charge), and offer equivalent access to the
+    place (gratis or at a charge), and offer equivalent access to the
     Corresponding Source in the same way through the same place at no
     further charge.  You need not require recipients to copy the
     Corresponding Source along with the object code.  If the place to
@@ -328,11 +328,11 @@ been installed in ROM).
 
   The requirement to provide Installation Information does not include a
 requirement to continue to provide support service, warranty, or updates
-for a work that has been modified or installed by the recipient, or for
-the User Product in which it has been modified or installed.  Access to a
-network may be denied when the modification itself materially and
-adversely affects the operation of the network or violates the rules and
-protocols for communication across the network.
+for a work that has been modified or installed, or for the User Product in
+which it has been modified or installed.  Access to a network may be
+denied when the modification itself materially and adversely affects the
+operation of the network or violates the rules and protocols for
+communication across the network.
 
   Corresponding Source conveyed, and Installation Information provided,
 in accord with this section must be in a format that is publicly
@@ -518,24 +518,16 @@ or convey a specific copy of the covered work, then the patent license
 you grant is automatically extended to all recipients of the covered
 work and works based on it.
 
-  A patent license is "discriminatory" if it does not include within
-the scope of its coverage, prohibits the exercise of, or is
-conditioned on the non-exercise of one or more of the rights that are
-specifically granted under this License.  You may not convey a covered
-work if you are a party to an arrangement with a third party that is
-in the business of distributing software, under which you make payment
-to the third party based on the extent of your activity of conveying
-the work, and under which the third party grants, to any of the
-parties who would receive the covered work from you, a discriminatory
-patent license (a) in connection with copies of the covered work
-conveyed by you (or copies made from those copies), or (b) primarily
-for and in connection with specific products or compilations that
-contain the covered work, unless you entered into that arrangement,
-or that patent license was granted, prior to 28 March 2007.
+  A patent license is "discriminatory" if it in the terms and conditions
+of the license or any arrangements related to its operation contain
+discrimination that (a) is directed against a particular party or parties,
+(b) is not justified by the specific circumstances of the case, and (c)
+is not reasonably related to the purpose of promoting the free exchange
+of ideas and information.
 
-  Nothing in this License shall be construed as excluding or limiting
-any implied license or other defenses to infringement that may be
-otherwise available to you under applicable patent law.
+  Nothing in this License shall be interpreted as excluding or limiting
+any implied license or other defenses to infringement that may otherwise
+be available to you under applicable patent law.
 
   12. No Surrender of Others' Freedom.
 
@@ -653,11 +645,11 @@ Also add information on how to contact you by electronic and paper mail.
 notice like this when it starts in an interactive mode:
 
     <program>  Copyright (C) <year>  <name of author>
-    This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
+    This program comes with ABSOLUTELY NO WARRANTY; for details type 'show w'.
     This is free software, and you are welcome to redistribute it
-    under certain conditions; type `show c' for details.
+    under certain conditions; type 'show c' for details.
 
-The hypothetical commands `show w' and `show c' should show the appropriate
+The hypothetical commands 'show w' and 'show c' should show the appropriate
 parts of the General Public License.  Of course, your program's commands
 might be different; for a GUI interface, you would use an "about box".
 
@@ -669,6 +661,6 @@ For more information on this, and how to apply and follow the GNU GPL, see
   The GNU General Public License does not permit incorporating your program
 into proprietary programs.  If your program is a subroutine library, you
 may consider it more useful to permit linking proprietary applications with
-the library.  If this is what you want to use, change the license to the GNU
-Lesser General Public License instead of this one.  But first, please read
+the library.  If this is what you want to do, use the GNU Lesser General
+Public License instead of this License.  But first, please read
 <https://www.gnu.org/licenses/why-not-lgpl.html>.
