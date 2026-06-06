@@ -53,7 +53,7 @@ export async function addToCollection(product: {
   image_url?: string;
 }) {
   await invoke('add_to_collection', {
-    item: {
+    input: {
       sku: product.sku,
       name: product.name,
       brand: product.brand,

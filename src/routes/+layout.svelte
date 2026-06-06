@@ -1,18 +1,34 @@
 <script>
+  import { onMount } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { syncResult } from '$lib/stores/sync';
 
   let { children } = $props();
   let syncing = $state(false);
   let syncError = $state(null);
+  let catalogUrl = $state('https://pages.guitarhub.app/catalog.json');
+
+  onMount(async () => {
+    try {
+      const saved = await invoke('get_setting', { key: 'catalog_url' });
+      if (saved) {
+        catalogUrl = saved;
+      } else {
+        await invoke('save_setting', {
+          key: 'catalog_url',
+          value: 'https://pages.guitarhub.app/catalog.json'
+        });
+      }
+    } catch (e) {
+      // Fallback already set in initial state
+    }
+  });
 
   async function handleSync() {
     syncing = true;
     syncError = null;
     try {
-      const result = await invoke('sync_catalog', {
-        url: 'https://pages.guitarhub.app/catalog.json'
-      });
+      const result = await invoke('sync_catalog', { url: catalogUrl });
       syncResult.set(result);
     } catch (e) {
       syncError = String(e);
