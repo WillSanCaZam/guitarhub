@@ -1,0 +1,23 @@
+{
+  "version": "0.1.0",
+  "notes": "MVP release \u2014 see GitHub Release for details",
+  "pub_date": "2026-06-06T02:55:50Z",
+  "platforms": {
+    "linux-x86_64": {
+      "signature": "",
+      "url": "https://github.com/WillSanCaZam/guitarhub/releases/download/v0.1.0/GuitarHub_0.1.0_amd64.deb"
+    },
+    "windows-x86_64": {
+      "signature": "",
+      "url": ""
+    },
+    "darwin-x86_64": {
+      "signature": "",
+      "url": ""
+    },
+    "darwin-aarch64": {
+      "signature": "",
+      "url": ""
+    }
+  }
+}
