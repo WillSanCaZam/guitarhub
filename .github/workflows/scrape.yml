@@ -1,9 +1,10 @@
 name: Scrape
 
+# Re-enabled automatic runs every 6 hours, plus manual trigger.
 on:
+  workflow_dispatch:
   schedule:
     - cron: "0 */6 * * *"
-  workflow_dispatch:
 
 env:
   PYTHON_VERSION: "3.12"
@@ -20,6 +21,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install system build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
@@ -27,17 +33,22 @@ jobs:
           cache: pip
           cache-dependency-path: scraper/requirements.txt
 
-      - name: Install dependencies
+      - name: Create virtualenv and install dependencies
         run: |
+          python -m venv .venv
+          source .venv/bin/activate
           python -m pip install --upgrade pip
           pip install -r scraper/requirements.txt
           pip install pip-audit
 
       - name: Security audit
-        run: pip-audit
+        run: |
+          source .venv/bin/activate
+          pip-audit
 
       - name: Run scraper
         run: |
+          source .venv/bin/activate
           python -m scraper \
             --adapter "${{ matrix.source }}" \
             --output "catalog-${{ matrix.source }}.json" \
@@ -45,6 +56,7 @@ jobs:
 
       - name: Validate JSON envelope
         run: |
+          source .venv/bin/activate
           python -c "
           import json
           with open('catalog-${{ matrix.source }}.json') as f:
@@ -63,3 +75,8 @@ jobs:
           name: catalog-${{ matrix.source }}
           path: catalog-${{ matrix.source }}.json
           retention-days: 7
+
+      - name: Validate incoming catalog files
+        run: |
+          source .venv/bin/activate
+          python -m scraper.cli --validate-input --input-dir incoming/
