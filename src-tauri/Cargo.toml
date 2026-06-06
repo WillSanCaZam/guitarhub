@@ -31,5 +31,5 @@ async-trait = "0.1"
 tauri-build = { version = "2", features = [] }
 
 [dev-dependencies]
-httpmock = "0.7"
+httpmock = "0.8"
 tempfile = "3"
