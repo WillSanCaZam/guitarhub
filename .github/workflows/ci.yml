@@ -40,10 +40,8 @@ jobs:
           TMP_KEY=$(mktemp)
           TMP_PASS="test-password-123"
           echo "test-bundle-data" > /tmp/test-bundle
-          npx tauri signer generate \
-            --password "$TMP_PASS" \
-            --private-key "$TMP_KEY" \
-            --force 2>/dev/null
+          printf '%s\n%s\n' "$TMP_PASS" "$TMP_PASS" \
+            | npx tauri signer generate --private-key "$TMP_KEY" --force
           npx tauri signer sign \
             --private-key "$TMP_KEY" \
             --password "$TMP_PASS" \

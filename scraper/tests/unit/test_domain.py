@@ -13,7 +13,7 @@ from scraper.domain import CatalogFile, CatalogProduct
 class TestCatalogProduct:
     """CatalogProduct field mapping and validation."""
 
-    def test_create_with_all_fields(self) -> None -> None:
+    def test_create_with_all_fields(self) -> None:
         """All fields populated correctly."""
         product = CatalogProduct(
             sku="reverb-abc123",
@@ -38,7 +38,7 @@ class TestCatalogProduct:
         assert product.condition == "new"
         assert product.specs_json == '{"body_wood": "alder"}'
 
-    def test_defaults_for_optional_fields(self) -> None -> None:
+    def test_defaults_for_optional_fields(self) -> None:
         """Optional fields get sensible defaults."""
         product = CatalogProduct(
             sku="reverb-test",
@@ -55,7 +55,7 @@ class TestCatalogProduct:
         assert product.seller == ""
         assert product.location == ""
 
-    def test_sku_is_required(self) -> None -> None:
+    def test_sku_is_required(self) -> None:
         """sku is a required field."""
         with pytest.raises(ValidationError):
             CatalogProduct(
@@ -64,7 +64,7 @@ class TestCatalogProduct:
                 url="https://reverb.com/item/no-sku",
             )
 
-    def test_name_is_required(self) -> None -> None:
+    def test_name_is_required(self) -> None:
         """name is a required field."""
         with pytest.raises(ValidationError):
             CatalogProduct(
@@ -73,7 +73,7 @@ class TestCatalogProduct:
                 url="https://reverb.com/item/test",
             )
 
-    def test_price_is_required(self) -> None -> None:
+    def test_price_is_required(self) -> None:
         """price is a required field."""
         with pytest.raises(ValidationError):
             CatalogProduct(
@@ -82,7 +82,7 @@ class TestCatalogProduct:
                 url="https://reverb.com/item/no-price",
             )
 
-    def test_url_is_required(self) -> None -> None:
+    def test_url_is_required(self) -> None:
         """url is a required field."""
         with pytest.raises(ValidationError):
             CatalogProduct(
@@ -91,7 +91,7 @@ class TestCatalogProduct:
                 price=100.0,
             )
 
-    def test_serialization_round_trip(self) -> None -> None:
+    def test_serialization_round_trip(self) -> None:
         """Serializes to dict and back without data loss."""
         original = CatalogProduct(
             sku="reverb-xyz",
