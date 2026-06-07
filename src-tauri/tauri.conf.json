@@ -11,7 +11,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["deb"],
+    "targets": ["deb", "AppImage"],
     "icon": [
       "icons/icon.png"
     ]
@@ -37,7 +37,7 @@
   "plugins": {
     "updater": {
       "endpoints": ["https://willsancazam.github.io/guitarhub/latest.json"],
-      "pubkey": ""
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDVFNjA5QkY0NzE1Q0FCMTcKUldRWHExeHg5SnRnWG0yb0Vsd3ZTcGNTZnpMQjQrakExcDBEZ2dodEtQVng5Wlc4bHdHWXBYbU4K"
     }
   }
 }

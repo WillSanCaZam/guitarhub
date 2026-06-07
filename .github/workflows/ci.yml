@@ -34,6 +34,31 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run test
+      - name: Signing dry-run (test key, non-release)
+        run: |
+          TMP_KEY=$(mktemp)
+          TMP_PASS="test-password-123"
+          echo "test-bundle-data" > /tmp/test-bundle
+          npx tauri signer generate \
+            --password "$TMP_PASS" \
+            --private-key "$TMP_KEY" \
+            --force 2>/dev/null
+          npx tauri signer sign \
+            --private-key "$TMP_KEY" \
+            --password "$TMP_PASS" \
+            /tmp/test-bundle
+          SIG_FILE="/tmp/test-bundle.sig"
+          if [ ! -f "$SIG_FILE" ]; then
+            echo "❌ Signature file not produced"
+            exit 1
+          fi
+          SIG_CONTENT=$(cat "$SIG_FILE")
+          if [ -z "$SIG_CONTENT" ]; then
+            echo "❌ Signature is empty"
+            exit 1
+          fi
+          echo "✅ Signature produced: ${#SIG_CONTENT} bytes"
+          rm -f "$TMP_KEY" /tmp/test-bundle "$SIG_FILE"
 
   rust:
     runs-on: ubuntu-latest

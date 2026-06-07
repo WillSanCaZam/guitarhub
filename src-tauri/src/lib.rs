@@ -5,9 +5,12 @@ pub mod domain;
 pub mod repository;
 pub mod services;
 
+use repository::settings::SettingsRepository;
 use repository::sqlite::migrations::MigrationRunner;
+use repository::sqlite::settings::SqliteSettingsRepository;
 use services::image_cache::ImageCacheService;
 use sqlx::sqlite::SqlitePoolOptions;
+use std::sync::Arc;
 
 /// Shared application state injected into Tauri commands.
 ///
@@ -55,7 +58,9 @@ pub async fn initialize_database(db_path: &str) -> anyhow::Result<AppState> {
     let runner = MigrationRunner::new(pool.clone(), migrations_dir);
     runner.run().await?;
 
-    let image_cache_service = ImageCacheService::new_default(pool.clone());
+    let settings_repo: Arc<dyn SettingsRepository> =
+        Arc::new(SqliteSettingsRepository::new(pool.clone()));
+    let image_cache_service = ImageCacheService::new_default(pool.clone(), settings_repo);
 
     let http_client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(30))

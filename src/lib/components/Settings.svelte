@@ -9,6 +9,7 @@
   let exportResult = $state(null);
   let saving = $state(false);
   let saved = $state(false);
+  let allowedImageDomains = $state('');
 
   onMount(async () => {
     try {
@@ -19,6 +20,10 @@
       const savedConfig = await invoke('get_setting', { key: 'alert_config' });
       if (savedConfig) {
         alertConfig = savedConfig;
+      }
+      const savedDomains = await invoke('get_setting', { key: 'allowed_image_domains' });
+      if (savedDomains) {
+        allowedImageDomains = savedDomains;
       }
     } catch (e) {
       console.error('Failed to load settings:', e);
@@ -73,12 +78,21 @@
     }
   }
 
+  async function onDomainsChange() {
+    try {
+      await invoke('save_setting', { key: 'allowed_image_domains', value: allowedImageDomains });
+    } catch (e) {
+      console.error('Failed to save allowed image domains:', e);
+    }
+  }
+
   async function saveAll() {
     saving = true;
     saved = false;
     try {
       await invoke('save_setting', { key: 'alert_channel', value: alertChannel });
       await invoke('save_setting', { key: 'alert_config', value: alertConfig });
+      await invoke('save_setting', { key: 'allowed_image_domains', value: allowedImageDomains });
       saved = true;
       setTimeout(() => {
         saved = false;
@@ -159,6 +173,26 @@
     <button type="submit" onclick={saveAll} disabled={saving}>
       {saved ? 'Saved ✓' : (saving ? 'Saving...' : 'Save')}
     </button>
+  </fieldset>
+
+  <fieldset class="domain-section">
+    <legend>Image Domain Allowlist</legend>
+
+    <div class="config-input">
+      <label for="allowed-image-domains">
+        Allowed domains (comma-separated):
+      </label>
+      <input
+        id="allowed-image-domains"
+        type="text"
+        bind:value={allowedImageDomains}
+        oninput={onDomainsChange}
+        placeholder="reverb.com, mlstatic.com"
+      />
+    </div>
+    <p class="hint">
+      Only images from these domains will be loaded. Leave empty to use the defaults (reverb.com, mlstatic.com).
+    </p>
   </fieldset>
 
   <fieldset class="export-section">
