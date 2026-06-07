@@ -71,23 +71,44 @@ When `--validate-input` fails, the step output MUST include the specific file pa
 
 ### Requirement: Concurrency guard for release publishing
 
-`release.yml` MUST define a `concurrency` block with `group: gh-pages-publish` and `cancel-in-progress: false`.
+`release.yml` MUST define a `concurrency` block with `group: ${{ github.ref_name }}` and `cancel-in-progress: false`.
 
 #### Scenarios
 
 | Case | Precondition | Action | Outcome |
 |------|-------------|--------|---------|
-| Two releases queued | Release A starts, Release B is triggered | A runs, B waits | A publishes to gh-pages, B runs after A finishes |
-| Fast follow | Release B pushed while A is building | A still running | B waits for A to finish — no race on gh-pages |
+| Different tags | Release v0.1.0 runs, v0.1.1 triggered | Both run | Both build in parallel — no cancellation |
+| Same tag re-push | v0.1.0 pushed twice | First runs, second queues | First completes, second waits |
 
-### Requirement: Build matrix covers 4 platform targets
+### Requirement: Build matrix covers Linux x86_64 only
 
-`release.yml` MUST define a build matrix with 4 entries: `x86_64-pc-windows-msvc` on `windows-latest`, `x86_64-unknown-linux-gnu` on `ubuntu-latest`, `x86_64-apple-darwin` on `macos-13`, `aarch64-apple-darwin` on `macos-latest`. `fail-fast` MUST be `false`. Each build job MUST have a 30-minute timeout.
+`release.yml` MUST define a build matrix with 1 entry: `x86_64-unknown-linux-gnu` on `ubuntu-latest`. `fail-fast` MUST be `false`. Timeout MUST be 30 minutes.
 
 | Case | Precondition | Action | Outcome |
 |------|-------------|--------|---------|
-| All platforms succeed | Tag push triggers workflow | 4 matrix jobs run | 4 independent bundles produced |
-| macOS fails, Linux succeeds | macOS runner fails | Matrix continues | Linux completes, macOS failure logged |
+| Linux build succeeds | Tag push triggers workflow | 1 matrix job runs | Linux bundle produced |
+| Linux build fails | System dep missing | Job fails | No release created, job reports error |
+
+### Requirement: Bundle config MUST declare explicit targets
+
+`tauri.conf.json` MUST include a `bundle` section with `targets: ["deb"]`, `identifier: "com.guitarhub.app"`, and valid `icon` paths.
+
+#### Scenario: Bundle config present
+
+- GIVEN `tauri.conf.json` is inspected
+- THEN `bundle.active` is `true`
+- AND `bundle.targets` includes `deb`
+- AND `bundle.icon` references existing files
+
+### Requirement: httpmock dev-dependency upgraded to 0.8.3
+
+`Cargo.toml` MUST upgrade `httpmock` from `"0.7"` to `"0.8.3"`. After upgrade, `cargo test` MUST pass. Other Dependabot PRs are observed but not merged in this change.
+
+#### Scenario: httpmock upgrade validated
+
+- GIVEN `httpmock` is changed to `"0.8.3"` in `[dev-dependencies]`
+- WHEN `cargo test` runs
+- THEN all tests pass
 
 ### Requirement: Linux system deps installed conditionally
 

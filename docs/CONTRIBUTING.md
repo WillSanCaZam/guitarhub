@@ -1,10 +1,5 @@
 # Contributing to GuitarHub
 
-> **⚠️ Note:** The `scraper/` directory (Python scraper pipeline) is not yet
-> implemented. Sections below that reference `scraper/ports/`, `scraper/tests/`,
-> or `scraper/run_all.py` describe the **planned architecture** and will work
-> once the scraper is built. The Rust backend and Svelte frontend are active.
-
 Thanks for your interest! GuitarHub is an offline-first guitar gear catalog
 aggregator. This guide covers the full contributor workflow.
 
@@ -13,12 +8,12 @@ aggregator. This guide covers the full contributor workflow.
 1. **Fork and clone** the repo.
 2. **Open in a dev container** (recommended): VS Code will prompt "Reopen in
    Container" when you open the project — this installs all dependencies
-   automatically. See [`.devcontainer/`](../.devcontainer/) for details.
+   automatically. See [`devcontainer.json`](../devcontainer.json) for details.
 3. **Or set up manually**:
    - Rust toolchain via `rustup`
    - Python 3.12 + pip
    - Node.js 20
-   - Tauri system deps (see [Dockerfile](../.devcontainer/Dockerfile))
+   - Tauri system deps (see [Dockerfile](../Dockerfile))
    - Run `make setup` to install everything
 4. **Copy the environment file**: `cp .env.example .env` and adjust as needed.
    See [`.env.example`](../.env.example) for variable descriptions.
@@ -80,7 +75,9 @@ Run `make help` for the full list of available targets.
 ## Adding a new source adapter
 
 The scraper uses a **SourcePort** abstraction to decouple each marketplace from
-the ingestion pipeline. To add a new source:
+the ingestion pipeline. Source adapters connect to REST/JSON APIs (e.g., the
+Reverb adapter uses the public Reverb JSON API) — no HTML scraping or
+BeautifulSoup required. To add a new source:
 
 ### Step 1: check the port interface
 
@@ -110,7 +107,7 @@ Add your source name to the CI matrix in `.github/workflows/scrape.yml`:
 
 ```yaml
 matrix:
-  source: [reverb, mercadolibre, guitarras_co, your_source]
+  source: [reverb, your_source]
 ```
 
 ### Step 4: test the adapter
@@ -171,5 +168,5 @@ Environment variables the scraper reads:
 
 ## Need help?
 
-Open a [GitHub Discussion](https://github.com/user/guitarhub/discussions) or
+Open a [GitHub Discussion](https://github.com/WillSanCaZam/guitarhub/discussions) or
 check the `docs/` folder for architecture guides and RFCs.

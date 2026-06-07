@@ -4,7 +4,7 @@
 
 Please report security vulnerabilities to the GitHub private vulnerability reporting tool:
 
-https://github.com/{owner}/GuitarHub/security/advisories
+https://github.com/WillSanCaZam/GuitarHub/security/advisories
 
 ## Response SLA
 

@@ -35,9 +35,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- In-app updater via tauri-plugin-updater (checks latest.json on gh-pages)
+- Tag-scoped release concurrency (groups by tag name)
+- Automatic Linux .deb generation via CI release pipeline
+- docs/ARCHITECTURE.md — architecture overview and design decisions
+- docs/RELEASE.md — release process documentation
+
 ### Changed
 
+- Release CI matrix reduced to Linux-only (macOS/Windows deferred)
+- httpmock upgraded from 0.7 to 0.8.3
+
 ### Fixed
+
+- macOS codesigning bypassed in CI with TAURI_SKIP_SIGNING
+- SvelteKit test file routing conflict (+page.test.ts → page.test.ts)
+- release.yml: tauri-action replaced with npx tauri build
+- release.yml: asset discovery excludes inner tar.gz files
 
 ### Security
 
