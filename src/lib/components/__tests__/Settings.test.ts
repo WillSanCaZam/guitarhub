@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/svelte';
+import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import Settings from '../Settings.svelte';
 import { invoke } from '@tauri-apps/api/core';
 
@@ -9,7 +9,9 @@ describe('Settings', () => {
     render(Settings);
     const saveBtn = screen.getByRole('button', { name: /save/i });
     await fireEvent.click(saveBtn);
-    expect(screen.getByText('Saved ✓')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Saved ✓')).toBeInTheDocument();
+    });
   });
 
   it('save button is disabled while saving', async () => {
@@ -26,7 +28,9 @@ describe('Settings', () => {
     render(Settings);
     const saveBtn = screen.getByRole('button', { name: /save/i });
     await fireEvent.click(saveBtn);
-    expect(screen.getByText('Saved ✓')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Saved ✓')).toBeInTheDocument();
+    });
     vi.advanceTimersByTime(2000);
     expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument();
     vi.useRealTimers();
