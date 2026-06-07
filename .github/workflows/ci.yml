@@ -33,6 +33,7 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - run: npm ci
+      - run: npx svelte-kit sync
       - run: npm run test
       - name: Signing dry-run (test key, non-release)
         run: |
