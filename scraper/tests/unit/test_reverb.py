@@ -37,12 +37,12 @@ def sample_json() -> dict:
 class TestUrlGeneration:
     """Adapter constructs correct API URLs."""
 
-    def test_base_url_is_api_endpoint(self):
+    def test_base_url_is_api_endpoint(self) -> None:
         """BASE_URL points to the JSON API."""
         adapter = ReverbAdapter()
         assert adapter.BASE_URL == "https://reverb.com/api/listings"
 
-    def test_scrape_uses_api_url(self):
+    def test_scrape_uses_api_url(self) -> None:
         """scrape() builds API URL with query params."""
         adapter = ReverbAdapter(session=MagicMock())
         adapter._fetch_json = MagicMock(return_value={
@@ -65,14 +65,14 @@ class TestUrlGeneration:
 class TestExtractProducts:
     """JSON parsing and field mapping from fixture."""
 
-    def test_extract_products_from_fixture(self, adapter, sample_json):
+    def test_extract_products_from_fixture(self, adapter, sample_json) -> None:
         """Extract all products from the sample JSON."""
         adapter.max_pages = 1
         adapter._fetch_json = MagicMock(return_value=sample_json)
         catalog = adapter.scrape()
         assert len(catalog.products) == 2, "Expected 2 products in fixture"
 
-    def test_field_mapping_first_product(self, adapter, sample_json):
+    def test_field_mapping_first_product(self, adapter, sample_json) -> None:
         """First product fields are correctly mapped."""
         listing = sample_json["listings"][0]
         product = adapter._map_listing(listing)
@@ -91,7 +91,7 @@ class TestExtractProducts:
         assert product.seller == "Reverb Bazaar"
         assert product.location == ""
 
-    def test_field_mapping_second_product(self, adapter, sample_json):
+    def test_field_mapping_second_product(self, adapter, sample_json) -> None:
         """Second product fields are correctly mapped."""
         listing = sample_json["listings"][1]
         product = adapter._map_listing(listing)
@@ -106,7 +106,7 @@ class TestExtractProducts:
         assert product.condition == "excellent"
         assert product.availability == "in_stock"
 
-    def test_defaults_for_missing_fields(self, adapter):
+    def test_defaults_for_missing_fields(self, adapter) -> None:
         """Listings with missing optional fields still produce valid products."""
         partial = {
             "id": 12345,
@@ -130,7 +130,7 @@ class TestExtractProducts:
         assert product.availability == "in_stock"
         assert product.image_url == ""
 
-    def test_skip_listing_without_title(self, adapter):
+    def test_skip_listing_without_title(self, adapter) -> None:
         """Listings missing a title are skipped."""
         listing = {
             "id": 99999,
@@ -141,7 +141,7 @@ class TestExtractProducts:
         product = adapter._map_listing(listing)
         assert product is None
 
-    def test_empty_page_returns_empty_list(self, adapter):
+    def test_empty_page_returns_empty_list(self, adapter) -> None:
         """A page with empty listings array returns empty catalog."""
         adapter._fetch_json = MagicMock(return_value={
             "listings": [],
@@ -158,25 +158,25 @@ class TestExtractProducts:
 class TestPriceParsing:
     """Price string normalization."""
 
-    def test_standard_price(self):
+    def test_standard_price(self) -> None:
         assert ReverbAdapter._parse_price("$1,599.99") == 1599.99
 
-    def test_price_without_cents(self):
+    def test_price_without_cents(self) -> None:
         assert ReverbAdapter._parse_price("$2,000") == 2000.0
 
-    def test_price_with_currency_symbol(self):
+    def test_price_with_currency_symbol(self) -> None:
         assert ReverbAdapter._parse_price("€899") == 899.0
 
-    def test_price_in_text(self):
+    def test_price_in_text(self) -> None:
         assert ReverbAdapter._parse_price("Price: $1,299.00") == 1299.0
 
-    def test_empty_string(self):
+    def test_empty_string(self) -> None:
         assert ReverbAdapter._parse_price("") == 0.0
 
-    def test_non_numeric_text(self):
+    def test_non_numeric_text(self) -> None:
         assert ReverbAdapter._parse_price("Contact for price") == 0.0
 
-    def test_json_price_amount(self):
+    def test_json_price_amount(self) -> None:
         """Direct JSON price amount string without currency symbol."""
         assert ReverbAdapter._parse_price("1599.99") == 1599.99
 
@@ -187,11 +187,11 @@ class TestPriceParsing:
 class TestSkuGeneration:
     """SKU extraction from listing id."""
 
-    def test_sku_from_id(self):
+    def test_sku_from_id(self) -> None:
         sku = ReverbAdapter._extract_sku("97923167", "Fender Stratocaster")
         assert sku == "reverb-97923167"
 
-    def test_sku_with_numeric_id(self):
+    def test_sku_with_numeric_id(self) -> None:
         sku = ReverbAdapter._extract_sku("42", "Gibson Les Paul")
         assert sku == "reverb-42"
 
@@ -202,7 +202,7 @@ class TestSkuGeneration:
 class TestPagination:
     """Page-stop logic based on current_page and total_pages."""
 
-    def test_stops_when_current_page_equals_total_pages(self, adapter):
+    def test_stops_when_current_page_equals_total_pages(self, adapter) -> None:
         adapter._fetch_json = MagicMock(return_value={
             "listings": [{"id": 1, "title": "Test", "price": {"amount": "1"}, "_links": {"web": {"href": "https://example.com"}}}],
             "current_page": 1,
@@ -212,7 +212,7 @@ class TestPagination:
         assert len(catalog.products) == 1
         assert adapter._fetch_json.call_count == 1
 
-    def test_stops_when_current_page_gte_total_pages(self, adapter):
+    def test_stops_when_current_page_gte_total_pages(self, adapter) -> None:
         adapter._fetch_json = MagicMock(return_value={
             "listings": [{"id": 1, "title": "Test", "price": {"amount": "1"}, "_links": {"web": {"href": "https://example.com"}}}],
             "current_page": 3,
@@ -222,7 +222,7 @@ class TestPagination:
         assert len(catalog.products) == 1
         assert adapter._fetch_json.call_count == 1
 
-    def test_continues_to_next_page(self, adapter):
+    def test_continues_to_next_page(self, adapter) -> None:
         adapter._fetch_json = MagicMock(side_effect=[
             {
                 "listings": [{"id": 1, "title": "Page1", "price": {"amount": "1"}, "_links": {"web": {"href": "https://example.com"}}}],
@@ -239,7 +239,7 @@ class TestPagination:
         assert len(catalog.products) == 2
         assert adapter._fetch_json.call_count == 2
 
-    def test_respects_max_pages(self, adapter):
+    def test_respects_max_pages(self, adapter) -> None:
         adapter.max_pages = 2
         adapter._fetch_json = MagicMock(side_effect=[
             {
@@ -260,7 +260,7 @@ class TestPagination:
 class TestHttpErrorHandling:
     """Adapter raises typed errors on HTTP failures."""
 
-    def test_404_raises_fetch_error(self):
+    def test_404_raises_fetch_error(self) -> None:
         """A 404 should raise FetchError immediately (no retry)."""
         adapter = ReverbAdapter(session=MagicMock())
         mock_response = MagicMock(spec=requests.Response)
@@ -271,7 +271,7 @@ class TestHttpErrorHandling:
         with pytest.raises(FetchError, match="404"):
             adapter._fetch("https://reverb.com/missing")
 
-    def test_timeout_raises_fetch_error(self):
+    def test_timeout_raises_fetch_error(self) -> None:
         """A timeout should raise FetchError."""
         adapter = ReverbAdapter(session=MagicMock())
         adapter.session.get.side_effect = requests.exceptions.Timeout("timed out")
@@ -279,7 +279,7 @@ class TestHttpErrorHandling:
         with pytest.raises(FetchError, match="timed out"):
             adapter._fetch("https://reverb.com/slow")
 
-    def test_connection_error_raises_fetch_error(self):
+    def test_connection_error_raises_fetch_error(self) -> None:
         """A connection error should raise FetchError."""
         adapter = ReverbAdapter(session=MagicMock())
         adapter.session.get.side_effect = requests.exceptions.ConnectionError("refused")
@@ -287,7 +287,7 @@ class TestHttpErrorHandling:
         with pytest.raises(FetchError, match="refused"):
             adapter._fetch("https://reverb.com/down")
 
-    def test_400_raises_fetch_error(self):
+    def test_400_raises_fetch_error(self) -> None:
         """A 400 should raise FetchError (client error, no retry)."""
         adapter = ReverbAdapter(session=MagicMock())
         mock_response = MagicMock(spec=requests.Response)
@@ -298,7 +298,7 @@ class TestHttpErrorHandling:
         with pytest.raises(FetchError, match="400"):
             adapter._fetch("https://reverb.com/bad-request")
 
-    def test_invalid_json_raises_parse_error(self):
+    def test_invalid_json_raises_parse_error(self) -> None:
         """Invalid JSON response should raise ParseError."""
         adapter = ReverbAdapter(session=MagicMock())
         mock_response = MagicMock(spec=requests.Response)
@@ -318,20 +318,20 @@ class TestHttpErrorHandling:
 class TestSession:
     """Adapter session configuration."""
 
-    def test_session_has_user_agent(self):
+    def test_session_has_user_agent(self) -> None:
         """Session includes a descriptive User-Agent header."""
         session = ReverbAdapter._build_session()
         ua = session.headers.get("User-Agent", "")
         assert "GuitarHub-Scraper" in ua
         assert "github.com" in ua
 
-    def test_session_accepts_json(self):
+    def test_session_accepts_json(self) -> None:
         """Session Accept header prefers JSON."""
         session = ReverbAdapter._build_session()
         accept = session.headers.get("Accept", "")
         assert "application/json" in accept
 
-    def test_session_has_retry_adapter(self):
+    def test_session_has_retry_adapter(self) -> None:
         """Session mounts HTTPAdapter with retry config, or uses curl_cffi."""
         session = ReverbAdapter._build_session()
         ua = session.headers.get("User-Agent", "")

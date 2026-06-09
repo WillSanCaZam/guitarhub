@@ -13,20 +13,20 @@ from scraper.ports import ScraperPort
 class TestProtocolConformance:
     """ReverbAdapter conforms to ScraperPort protocol."""
 
-    def test_reverb_adapter_is_scraper_port(self):
+    def test_reverb_adapter_is_scraper_port(self) -> None:
         """ReverbAdapter satisfies ScraperPort via runtime_checkable."""
         adapter = ReverbAdapter()
         assert isinstance(adapter, ScraperPort), (
             "ReverbAdapter must conform to ScraperPort protocol"
         )
 
-    def test_adapter_has_scrape_method(self):
+    def test_adapter_has_scrape_method(self) -> None:
         """All adapters expose a callable scrape method."""
         adapter = ReverbAdapter()
         assert hasattr(adapter, "scrape")
         assert callable(adapter.scrape)
 
-    def test_scrape_returns_catalog_file(self):
+    def test_scrape_returns_catalog_file(self) -> None:
         """scrape() signature accepts optional url and returns CatalogFile.
 
         We verify the return type annotation without making network calls
@@ -47,7 +47,7 @@ class TestProtocolConformance:
             f"Expected CatalogFile return annotation, got {return_str}"
         )
 
-    def test_adapter_has_required_fields(self):
+    def test_adapter_has_required_fields(self) -> None:
         """Adapter exposes source_id for provenance."""
         adapter = ReverbAdapter()
         assert hasattr(adapter, "source_id")

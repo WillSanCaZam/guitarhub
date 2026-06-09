@@ -10,6 +10,7 @@ use sha2::{Digest, Sha256};
 use sqlx::SqlitePool;
 use tokio::sync::{watch, RwLock};
 
+use crate::repository::settings::SettingsRepository;
 use crate::repository::sqlite::image_cache::ImageCacheRepo;
 
 // Defaults
@@ -28,6 +29,7 @@ const MAX_DOWNLOAD_SIZE: u64 = 50 * 1024 * 1024; // Reject individual files > 50
 pub struct ImageCacheService {
     pool: SqlitePool,
     repo: ImageCacheRepo,
+    settings_repo: Arc<dyn SettingsRepository>,
     max_bytes: u64,
     default_ttl: Duration,
     http: Client,
@@ -64,6 +66,7 @@ impl Clone for ImageCacheService {
         Self {
             pool: self.pool.clone(),
             repo: ImageCacheRepo::new(self.pool.clone()),
+            settings_repo: self.settings_repo.clone(),
             max_bytes: self.max_bytes,
             default_ttl: self.default_ttl,
             http: self.http.clone(),
@@ -74,7 +77,12 @@ impl Clone for ImageCacheService {
 }
 
 impl ImageCacheService {
-    pub fn new(pool: SqlitePool, max_bytes: u64, default_ttl: Duration) -> Self {
+    pub fn new(
+        pool: SqlitePool,
+        max_bytes: u64,
+        default_ttl: Duration,
+        settings_repo: Arc<dyn SettingsRepository>,
+    ) -> Self {
         let http = Client::builder()
             .timeout(Duration::from_secs(30))
             .user_agent("GuitarHub/0.1")
@@ -84,6 +92,7 @@ impl ImageCacheService {
         Self {
             repo: ImageCacheRepo::new(pool.clone()),
             pool,
+            settings_repo,
             max_bytes,
             default_ttl,
             http,
@@ -93,8 +102,8 @@ impl ImageCacheService {
     }
 
     /// Convenience constructor with default 50 MB limit and 7-day TTL.
-    pub fn new_default(pool: SqlitePool) -> Self {
-        Self::new(pool, DEFAULT_MAX_BYTES, DEFAULT_TTL)
+    pub fn new_default(pool: SqlitePool, settings_repo: Arc<dyn SettingsRepository>) -> Self {
+        Self::new(pool, DEFAULT_MAX_BYTES, DEFAULT_TTL, settings_repo)
     }
 
     /// Core method: return cached image or fetch + store.
@@ -178,6 +187,16 @@ impl ImageCacheService {
                 };
 
                 if is_stale {
+                    // Check domain allowlist before re-fetching
+                    let allowed = get_allowed_domains_from_repo(&*self.settings_repo).await;
+                    if !is_domain_in_list(url, &allowed) {
+                        tracing::info!(
+                            "Domain no longer allowed for stale image {url}; serving stale blob."
+                        );
+                        let _ = self.repo.touch(hash).await;
+                        return Ok((blob, mime_type));
+                    }
+
                     // Try to re-fetch, fall back to stale on failure
                     match self.http_get(url).await {
                         Ok((fresh_bytes, fresh_mime)) => {
@@ -215,6 +234,12 @@ impl ImageCacheService {
                     if failed.contains(url) {
                         return Err(ImageCacheError::Placeholder);
                     }
+                }
+
+                // Check domain allowlist before HTTP fetch (defense-in-depth)
+                let allowed = get_allowed_domains_from_repo(&*self.settings_repo).await;
+                if !is_domain_in_list(url, &allowed) {
+                    return Err(ImageCacheError::Placeholder);
                 }
 
                 // HTTP fetch
@@ -348,6 +373,49 @@ impl ImageCacheService {
     }
 }
 
+/// Domain check helper: read the allowed image domains from settings.
+async fn get_allowed_domains_from_repo(repo: &dyn SettingsRepository) -> Vec<String> {
+    let raw = repo.get("allowed_image_domains").await;
+    match raw {
+        Some(val) if !val.trim().is_empty() => {
+            let parsed = parse_domain_list(&val);
+            if parsed.is_empty() {
+                vec!["reverb.com".to_string(), "mlstatic.com".to_string()]
+            } else {
+                parsed
+            }
+        }
+        _ => vec!["reverb.com".to_string(), "mlstatic.com".to_string()],
+    }
+}
+
+/// Parse a comma-separated domain list, trimming whitespace.
+fn parse_domain_list(input: &str) -> Vec<String> {
+    input
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect()
+}
+
+/// Check if a URL's domain is in the allowed list.
+/// IP literal hosts are allowed through (IPC layer handles those).
+fn is_domain_in_list(url: &str, allowed: &[String]) -> bool {
+    if let Ok(parsed) = url::Url::parse(url) {
+        if let Some(host) = parsed.host() {
+            // Allow IP literals (IPC layer handles those)
+            if matches!(host, url::Host::Ipv4(_) | url::Host::Ipv6(_)) {
+                return true;
+            }
+            let host_str = host.to_string();
+            return allowed.iter().any(|domain| {
+                host_str == domain.as_str() || host_str.ends_with(&format!(".{domain}"))
+            });
+        }
+    }
+    false
+}
+
 /// SHA-256 hex digest of a string.
 fn hex_sha256(input: &str) -> String {
     let mut hasher = Sha256::new();
@@ -369,7 +437,14 @@ fn chrono_now() -> i64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::repository::settings::MockSettingsRepository;
     use httpmock::prelude::*;
+    use std::sync::Arc;
+
+    /// Helper: create a MockSettingsRepository with default image domains.
+    fn mock_settings() -> Arc<dyn SettingsRepository> {
+        Arc::new(MockSettingsRepository::default())
+    }
 
     /// Helper: create an in-memory SqlitePool with the image_cache table.
     async fn test_pool() -> SqlitePool {
@@ -402,7 +477,7 @@ mod tests {
     #[tokio::test]
     async fn cache_hit_returns_stored_blob() {
         let pool = test_pool().await;
-        let svc = ImageCacheService::new_default(pool);
+        let svc = ImageCacheService::new_default(pool, mock_settings());
 
         // Pre-populate cache
         let repo = ImageCacheRepo::new(svc.pool.clone());
@@ -429,7 +504,7 @@ mod tests {
         });
 
         let pool = test_pool().await;
-        let svc = ImageCacheService::new(pool, 10 * 1024 * 1024, Duration::from_secs(3600));
+        let svc = ImageCacheService::new(pool, 10 * 1024 * 1024, Duration::from_secs(3600), mock_settings());
 
         let url = format!("{}/test.png", server.base_url());
         let (bytes, mime) = svc.get(&url).await.unwrap();
@@ -450,7 +525,7 @@ mod tests {
     async fn lru_evicts_oldest_entries() {
         let pool = test_pool().await;
         // Set a small max_bytes so we can test eviction
-        let svc = ImageCacheService::new(pool, 30, Duration::from_secs(3600));
+        let svc = ImageCacheService::new(pool, 30, Duration::from_secs(3600), mock_settings());
 
         let hash_a = hex_sha256("https://example.com/a.jpg");
         let hash_b = hex_sha256("https://example.com/b.jpg");
@@ -532,6 +607,7 @@ mod tests {
             pool,
             10 * 1024 * 1024,
             Duration::from_secs(3600),
+            mock_settings(),
         ));
 
         let url = format!("{}/shared.jpg", server.base_url());
@@ -562,7 +638,7 @@ mod tests {
     async fn stale_offline_returns_stale_blob() {
         let pool = test_pool().await;
         // TTL = 1 second, so the entry will be stale almost immediately
-        let svc = ImageCacheService::new(pool.clone(), 10 * 1024 * 1024, Duration::from_secs(1));
+        let svc = ImageCacheService::new(pool.clone(), 10 * 1024 * 1024, Duration::from_secs(1), mock_settings());
 
         let hash = hex_sha256("https://example.com/stale.jpg");
 
@@ -604,7 +680,7 @@ mod tests {
 
         let pool = test_pool().await;
         // Set max_bytes to 50 — the 100-byte image exceeds this
-        let svc = ImageCacheService::new(pool.clone(), 50, Duration::from_secs(3600));
+        let svc = ImageCacheService::new(pool.clone(), 50, Duration::from_secs(3600), mock_settings());
 
         let url = format!("{}/huge.jpg", server.base_url());
         let (bytes, mime) = svc.get(&url).await.unwrap();
@@ -633,7 +709,7 @@ mod tests {
         });
 
         let pool = test_pool().await;
-        let svc = ImageCacheService::new(pool.clone(), 10 * 1024 * 1024, Duration::from_secs(1));
+        let svc = ImageCacheService::new(pool.clone(), 10 * 1024 * 1024, Duration::from_secs(1), mock_settings());
 
         // Insert stale entry
         let hash = hex_sha256(&format!("{}/refresh.jpg", server.base_url()));
@@ -664,7 +740,7 @@ mod tests {
     #[tokio::test]
     async fn invalid_url_returns_error() {
         let pool = test_pool().await;
-        let svc = ImageCacheService::new_default(pool);
+        let svc = ImageCacheService::new_default(pool, mock_settings());
 
         let result = svc.get("not-a-url").await;
         assert!(result.is_err());
@@ -679,7 +755,7 @@ mod tests {
     #[tokio::test]
     async fn network_failure_returns_placeholder() {
         let pool = test_pool().await;
-        let svc = ImageCacheService::new_default(pool);
+        let svc = ImageCacheService::new_default(pool, mock_settings());
 
         // URL that doesn't resolve
         let result = svc
@@ -687,5 +763,49 @@ mod tests {
             .await;
 
         assert!(result.is_err());
+    }
+
+    // ── Domain rejection via SettingsRepository ──────────────────────────
+
+    #[tokio::test]
+    async fn blocked_domain_returns_placeholder() {
+        let restricted = MockSettingsRepository::default();
+        restricted.save("allowed_image_domains", "reverb.com").await.unwrap();
+
+        let pool = test_pool().await;
+        let svc = ImageCacheService::new_default(
+            pool,
+            Arc::new(restricted) as Arc<dyn SettingsRepository>,
+        );
+
+        let result = svc.get("https://evil.com/payload.jpg").await;
+        assert!(
+            matches!(result, Err(ImageCacheError::Placeholder)),
+            "blocked domain should return Placeholder, got {:?}",
+            result,
+        );
+    }
+
+    #[tokio::test]
+    async fn allowed_domain_passes_check() {
+        let permissive = MockSettingsRepository::default();
+        permissive
+            .save("allowed_image_domains", "reverb.com,mlstatic.com")
+            .await
+            .unwrap();
+
+        let pool = test_pool().await;
+        let svc = ImageCacheService::new_default(
+            pool,
+            Arc::new(permissive) as Arc<dyn SettingsRepository>,
+        );
+
+        // This should pass domain check but fail with DownloadFailed (no server running)
+        let result = svc.get("https://reverb.com/pedal.jpg").await;
+        assert!(
+            !matches!(result, Err(ImageCacheError::Placeholder)),
+            "allowed domain should not be Placeholder, got {:?}",
+            result,
+        );
     }
 }
