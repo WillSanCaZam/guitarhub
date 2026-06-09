@@ -19,7 +19,7 @@ jobs:
       - run: pip install -r scraper/requirements.txt
       - run: pip install ruff mypy pytest pip-audit
       - run: ruff check scraper/
-      - run: mypy scraper/ --strict
+      - run: mypy --config-file scraper/pyproject.toml scraper/
       - run: pip-audit -r scraper/requirements.txt
       - run: pytest scraper/tests/unit scraper/tests/contract -v
 
@@ -33,7 +33,31 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - run: npm ci
+      - run: npx svelte-kit sync
       - run: npm run test
+      - name: Signing dry-run (test key, non-release)
+        run: |
+          TMP_KEY=$(mktemp)
+          TMP_PASS="test-password-123"
+          echo "test-bundle-data" > /tmp/test-bundle
+          printf '%s\n%s\n' "$TMP_PASS" "$TMP_PASS" \
+            | npx tauri signer generate --write-keys "$TMP_KEY" --force
+          npx tauri signer sign \
+            --private-key "$TMP_KEY" \
+            --password "$TMP_PASS" \
+            /tmp/test-bundle
+          SIG_FILE="/tmp/test-bundle.sig"
+          if [ ! -f "$SIG_FILE" ]; then
+            echo "❌ Signature file not produced"
+            exit 1
+          fi
+          SIG_CONTENT=$(cat "$SIG_FILE")
+          if [ -z "$SIG_CONTENT" ]; then
+            echo "❌ Signature is empty"
+            exit 1
+          fi
+          echo "✅ Signature produced: ${#SIG_CONTENT} bytes"
+          rm -f "$TMP_KEY" /tmp/test-bundle "$SIG_FILE"
 
   rust:
     runs-on: ubuntu-latest
@@ -42,6 +66,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo install cargo-audit --locked
+      - name: Install system dependencies (Tauri)
+        run: sudo apt-get update && sudo apt-get install -y -qq libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
       - run: cargo clippy --all-targets -- -D warnings
         working-directory: src-tauri
       - run: cargo test
