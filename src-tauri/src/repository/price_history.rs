@@ -146,7 +146,17 @@ impl PriceHistoryRepo {
     /// the SKU has no price_history rows at all. Otherwise all fields
     /// are populated from the most recent 30/90 day windows.
     pub async fn get_insight(&self, sku: &str) -> Result<PriceInsightRow, sqlx::Error> {
-        let now = epoch_seconds();
+        self.get_insight_at(sku, epoch_seconds()).await
+    }
+
+    /// Like `get_insight` but accepts an explicit `now` timestamp for
+    /// deterministic testing. Not public — tests access it via a `#[doc(hidden)]`
+    /// re-export or direct `pub(crate)`.
+    pub(crate) async fn get_insight_at(
+        &self,
+        sku: &str,
+        now: i64,
+    ) -> Result<PriceInsightRow, sqlx::Error> {
         let window_30d = now - 30 * 86_400;
         let window_90d = now - 90 * 86_400;
 
@@ -442,7 +452,8 @@ mod tests {
         let pool = make_memory_pool().await;
         create_price_history_table(&pool).await;
         let repo = PriceHistoryRepo::new(pool);
-        let now = epoch_seconds();
+        // Use a deterministic timestamp — no wall-clock drift between insert and query
+        let now = 2_000_000_000;
 
         // Insert 35 points over 35 days: min = 90, prices range from 90 to 124
         for i in 0..35 {
@@ -457,7 +468,7 @@ mod tests {
             .await;
         }
 
-        let row = repo.get_insight("SKU6").await.unwrap();
+        let row = repo.get_insight_at("SKU6", now).await.unwrap();
 
         assert!(
             row.current_price.is_some(),
@@ -506,14 +517,15 @@ mod tests {
         let pool = make_memory_pool().await;
         create_price_history_table(&pool).await;
         let repo = PriceHistoryRepo::new(pool);
-        let now = epoch_seconds();
+        // Deterministic timestamp — no wall-clock drift
+        let now = 2_000_000_000;
 
         // 35 points, all at 100.0. i=0..30 are within 30-day window (31 points)
         for i in 0..35 {
             insert_point(&repo, "SKU7", "reverb", 100.0, now - i as i64 * 86_400).await;
         }
 
-        let row = repo.get_insight("SKU7").await.unwrap();
+        let row = repo.get_insight_at("SKU7", now).await.unwrap();
         assert!(row.current_price.is_some());
         assert!((row.min_30d - 100.0).abs() < f64::EPSILON);
         assert!((row.avg_90d - 100.0).abs() < f64::EPSILON);
@@ -641,18 +653,19 @@ mod tests {
         let pool = make_memory_pool().await;
         create_price_history_table(&pool).await;
         let repo = PriceHistoryRepo::new(pool);
-        let now = epoch_seconds();
+        // Use a deterministic timestamp — no wall-clock drift between insert and query
+        let now = 2_000_000_000;
 
-        // 35 points: i=0..30 within 30d, prices 90..120
+        // 35 points: i=0..30 within 30d (31 points, prices 90..120)
         for i in 0..35 {
             insert_point(&repo, "SKU_MAX", "reverb", 90.0 + i as f64, now - i as i64 * 86_400)
                 .await;
         }
 
-        let row = repo.get_insight("SKU_MAX").await.unwrap();
+        let row = repo.get_insight_at("SKU_MAX", now).await.unwrap();
         assert!(
             (row.max_30d - 120.0).abs() < f64::EPSILON,
-            "expected max_30d=120 (i=3 in 30d), got {}",
+            "expected max_30d=120 (i=30 at boundary), got {}",
             row.max_30d
         );
     }
@@ -662,7 +675,8 @@ mod tests {
         let pool = make_memory_pool().await;
         create_price_history_table(&pool).await;
         let repo = PriceHistoryRepo::new(pool);
-        let now = epoch_seconds();
+        // Deterministic timestamp — no wall-clock drift
+        let now = 2_000_000_000;
 
         // 35 points: i=0..30 within 30d, prices 100, 101, ..., 130
         for i in 0..35 {
@@ -670,7 +684,7 @@ mod tests {
                 .await;
         }
 
-        let row = repo.get_insight("SKU_AVG").await.unwrap();
+        let row = repo.get_insight_at("SKU_AVG", now).await.unwrap();
         // Window contains i=0..30 → 31 points, prices 100..130 → mean = 115
         let expected = (100.0 + 130.0) / 2.0;
         assert!(
@@ -685,7 +699,8 @@ mod tests {
         let pool = make_memory_pool().await;
         create_price_history_table(&pool).await;
         let repo = PriceHistoryRepo::new(pool);
-        let now = epoch_seconds();
+        // Deterministic timestamp — no wall-clock drift
+        let now = 2_000_000_000;
 
         // 3 distinct sources within 30d
         insert_point(&repo, "SKU_SRC", "reverb", 100.0, now - 86_400).await;
@@ -694,7 +709,7 @@ mod tests {
         // 4th source but older than 30d → must not be counted
         insert_point(&repo, "SKU_SRC", "oldshop", 130.0, now - 60 * 86_400).await;
 
-        let row = repo.get_insight("SKU_SRC").await.unwrap();
+        let row = repo.get_insight_at("SKU_SRC", now).await.unwrap();
         assert_eq!(
             row.source_count_30d, 3,
             "expected 3 distinct sources within 30d, got {}",
@@ -707,16 +722,17 @@ mod tests {
         let pool = make_memory_pool().await;
         create_price_history_table(&pool).await;
         let repo = PriceHistoryRepo::new(pool);
-        let now = epoch_seconds();
+        // Deterministic timestamp — no wall-clock drift
+        let now = 2_000_000_000;
 
-        // Insert at scattered times — newest is 100s ago
+        // Insert at scattered times — newest is 100s from now
         let newest = now - 100;
         insert_point(&repo, "SKU_LAST", "reverb", 100.0, now - 5 * 86_400).await;
         insert_point(&repo, "SKU_LAST", "reverb", 110.0, now - 86_400).await;
         insert_point(&repo, "SKU_LAST", "reverb", 120.0, newest).await;
         insert_point(&repo, "SKU_LAST", "reverb", 130.0, now - 50 * 86_400).await;
 
-        let row = repo.get_insight("SKU_LAST").await.unwrap();
+        let row = repo.get_insight_at("SKU_LAST", now).await.unwrap();
         assert_eq!(
             row.last_recorded_at, newest,
             "expected last_recorded_at to be the newest inserted timestamp"
