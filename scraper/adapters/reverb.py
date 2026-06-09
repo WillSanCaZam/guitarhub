@@ -24,7 +24,7 @@ except ImportError:
     HAS_CURL_CFFI = False
 
 from scraper.domain import CatalogFile, CatalogProduct
-from scraper.ports import FetchError, ParseError, ScraperPort
+from scraper.ports import FetchError, ParseError
 
 logger = logging.getLogger(__name__)
 
