@@ -38,14 +38,9 @@ jobs:
       - name: Signing dry-run (test key, non-release)
         run: |
           TMP_KEY=$(mktemp)
-          TMP_PASS="test-password-123"
           echo "test-bundle-data" > /tmp/test-bundle
-          printf '%s\n%s\n' "$TMP_PASS" "$TMP_PASS" \
-            | npx tauri signer generate --write-keys "$TMP_KEY" --force
-          npx tauri signer sign \
-            -f "$TMP_KEY" \
-            --password "$TMP_PASS" \
-            /tmp/test-bundle
+          npx tauri signer generate --write-keys "$TMP_KEY" --force
+          npx tauri signer sign -f "$TMP_KEY" /tmp/test-bundle
           SIG_FILE="/tmp/test-bundle.sig"
           if [ ! -f "$SIG_FILE" ]; then
             echo "❌ Signature file not produced"
