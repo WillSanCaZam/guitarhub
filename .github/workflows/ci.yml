@@ -43,7 +43,7 @@ jobs:
           printf '%s\n%s\n' "$TMP_PASS" "$TMP_PASS" \
             | npx tauri signer generate --write-keys "$TMP_KEY" --force
           npx tauri signer sign \
-            --private-key "$TMP_KEY" \
+            -f "$TMP_KEY" \
             --password "$TMP_PASS" \
             /tmp/test-bundle
           SIG_FILE="/tmp/test-bundle.sig"
