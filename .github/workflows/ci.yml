@@ -40,8 +40,9 @@ jobs:
           TMP_KEY=$(mktemp)
           echo "test-bundle-data" > /tmp/test-bundle
           npx tauri signer generate --write-keys "$TMP_KEY" --force
-          TAURI_SIGNING_PRIVATE_KEY=$(cat "$TMP_KEY") \
-            npx tauri signer sign /tmp/test-bundle
+          TAURI_SIGNING_PRIVATE_KEY_PATH="$TMP_KEY" \
+            TAURI_SIGNING_PRIVATE_KEY_PASSWORD="" \
+            npx tauri signer sign /tmp/test-bundle 2>&1
           SIG_FILE="/tmp/test-bundle.sig"
           if [ ! -f "$SIG_FILE" ]; then
             echo "❌ Signature file not produced"
