@@ -235,7 +235,7 @@ mod tests {
         let sent = dispatch_drops(&drops, &alert, &pool, &client, "ntfy", 1_700_000_000).await;
 
         assert_eq!(sent, 1, "expected 1 drop sent via ntfy");
-        mock.assert_hits(1);
+        mock.assert_calls(1);
 
         let repo = PriceDropNotificationsRepo::new(pool);
         let last = repo.get_last_notified("SKU-DROP-2").await.unwrap();
@@ -269,7 +269,7 @@ mod tests {
 
         assert_eq!(sent, 0, "HTTP 500 means 0 sent");
         // Retry-once sends two requests on failure.
-        mock.assert_hits(2);
+        mock.assert_calls(2);
 
         let repo = PriceDropNotificationsRepo::new(pool);
         let last = repo.get_last_notified("SKU-FAIL").await.unwrap();

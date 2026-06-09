@@ -598,7 +598,7 @@ mod tests {
         assert_eq!(result.products_loaded, 1);
         assert_eq!(result.state, SyncState::Done);
         assert!((result.progress - 1.0).abs() < f32::EPSILON);
-        mock.assert_hits(1);
+        mock.assert_calls(1);
 
         // Verify products inserted
         let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM products_meta")
@@ -637,7 +637,7 @@ mod tests {
             err.to_string().contains("HTTP 404"),
             "Expected HTTP 404 error, got: {err}"
         );
-        mock.assert_hits(1);
+        mock.assert_calls(1);
     }
 
     #[tokio::test]
@@ -658,7 +658,7 @@ mod tests {
             err.to_string().contains("HTTP 503"),
             "Expected HTTP 503 error, got: {err}"
         );
-        mock.assert_hits(1);
+        mock.assert_calls(1);
     }
 
     #[tokio::test]
@@ -681,7 +681,7 @@ mod tests {
             err.to_string().contains("Invalid catalog JSON"),
             "Expected Invalid catalog JSON error, got: {err}"
         );
-        mock.assert_hits(1);
+        mock.assert_calls(1);
     }
 
     // ── Test: concurrent sync rejection ─────────────────────────────────────
@@ -705,7 +705,7 @@ mod tests {
         // First sync succeeds
         let r1 = svc.sync_catalog(&url).await;
         assert!(r1.is_ok(), "first sync should succeed: {:?}", r1.err());
-        mock.assert_hits(1);
+        mock.assert_calls(1);
 
         // Second sync with same source_id — the source_id is now `done`,
         // so concurrent check passes (it's not running). Let's test with
@@ -773,7 +773,7 @@ mod tests {
         assert_eq!(result2.products_loaded, 2);
         assert_eq!(result2.state, SyncState::Done);
 
-        mock.assert_hits(2);
+        mock.assert_calls(2);
 
         // Verify 2 rows in DB
         let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM products_meta")
@@ -802,7 +802,7 @@ mod tests {
         let url = format!("{}/catalog.json", server.base_url());
 
         svc.sync_catalog(&url).await.expect("sync should succeed");
-        mock.assert_hits(1);
+        mock.assert_calls(1);
 
         // Verify final state is 'done'
         let status: String = sqlx::query_scalar(
