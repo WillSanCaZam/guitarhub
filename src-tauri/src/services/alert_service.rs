@@ -389,7 +389,7 @@ mod tests {
 
         let result = alert.send("Price Drop", "Item is now cheaper!", &client).await;
         assert!(result.is_ok());
-        mock.assert_hits(1);
+        mock.assert_calls(1);
     }
 
     #[tokio::test]
@@ -409,7 +409,7 @@ mod tests {
         let result = alert.test(&client).await;
         assert!(result.success);
         assert!(result.message.contains("sent"));
-        mock.assert_hits(1);
+        mock.assert_calls(1);
     }
 
     #[tokio::test]
@@ -430,7 +430,7 @@ mod tests {
         assert!(!result.success);
         assert!(result.message.contains("HTTP 500"));
         // Retry-once sends two requests on failure.
-        mock.assert_hits(2);
+        mock.assert_calls(2);
     }
 
     #[tokio::test]
@@ -468,7 +468,7 @@ mod tests {
 
         let result = alert.send("Alert!", "Something happened", &client).await;
         assert!(result.is_ok());
-        mock.assert_hits(1);
+        mock.assert_calls(1);
     }
 
     #[tokio::test]
@@ -489,7 +489,7 @@ mod tests {
         assert!(!result.success);
         assert!(result.message.contains("HTTP 400"));
         // Retry-once sends two requests on failure.
-        mock.assert_hits(2);
+        mock.assert_calls(2);
     }
 
     #[tokio::test]

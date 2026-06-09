@@ -352,7 +352,8 @@ impl ImageCacheService {
 fn hex_sha256(input: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(input.as_bytes());
-    format!("{:x}", hasher.finalize())
+    let result = hasher.finalize();
+    result.iter().map(|b| format!("{:02x}", b)).collect()
 }
 
 /// Current Unix epoch seconds.
@@ -435,12 +436,12 @@ mod tests {
 
         assert_eq!(bytes, b"fake-png-bytes");
         assert_eq!(mime, "image/png");
-        mock.assert_hits(1);
+        mock.assert_calls(1);
 
         // Second call should hit cache (no HTTP call)
         let (bytes2, _) = svc.get(&url).await.unwrap();
         assert_eq!(bytes2, b"fake-png-bytes");
-        mock.assert_hits(1); // Still 1 — cached
+        mock.assert_calls(1); // Still 1 — cached
     }
 
     // ── LRU evicts oldest entries ───────────────────────────────────────
@@ -552,7 +553,7 @@ mod tests {
         }
 
         // Only 1 HTTP call should have been made
-        mock.assert_hits(1);
+        mock.assert_calls(1);
     }
 
     // ── Stale + offline returns stale blob ───────────────────────────────
@@ -616,7 +617,7 @@ mod tests {
         let cached = repo.fetch(&hash).await.unwrap();
         assert!(cached.is_none(), "oversized entry should not be cached");
 
-        mock.assert_hits(1);
+        mock.assert_calls(1);
     }
 
     // ── Stale + online re-fetches ────────────────────────────────────────
@@ -655,7 +656,7 @@ mod tests {
         let (bytes, _) = svc.get(&url).await.unwrap();
         assert_eq!(bytes, b"fresh-data", "should re-fetch stale entry when online");
 
-        mock.assert_hits(1);
+        mock.assert_calls(1);
     }
 
     // ── URL validation ──────────────────────────────────────────────────
