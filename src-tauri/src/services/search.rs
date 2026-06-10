@@ -379,18 +379,23 @@ mod tests {
         .unwrap();
     }
 
+    struct ProductTestParams<'a> {
+        pool: &'a SqlitePool,
+        sku: &'a str,
+        name: &'a str,
+        brand: &'a str,
+        category: &'a str,
+        price: f64,
+        source_id: &'a str,
+        condition: &'a str,
+        currency: &'a str,
+    }
+
     /// Insert a product with custom condition and currency for filter tests.
     async fn insert_product_with_condition_currency(
-        pool: &SqlitePool,
-        sku: &str,
-        name: &str,
-        brand: &str,
-        category: &str,
-        price: f64,
-        source_id: &str,
-        condition: &str,
-        currency: &str,
+        params: ProductTestParams<'_>,
     ) {
+        let ProductTestParams { pool, sku, name, brand, category, price, source_id, condition, currency } = params;
         let synced_at = 1000i64;
         sqlx::query(
             r#"INSERT INTO products_meta
@@ -561,15 +566,29 @@ mod tests {
         let pool = setup_db().await;
         let svc = FtsSearchService::new(pool.clone());
 
-        insert_product_with_condition_currency(
-            &pool, "SKU-COND-1", "New Guitar", "Fender",
-            "Electric Guitars", 999.99, "reverb", "new", "USD",
-        )
+        insert_product_with_condition_currency(ProductTestParams {
+            pool: &pool,
+            sku: "SKU-COND-1",
+            name: "New Guitar",
+            brand: "Fender",
+            category: "Electric Guitars",
+            price: 999.99,
+            source_id: "reverb",
+            condition: "new",
+            currency: "USD",
+        })
         .await;
-        insert_product_with_condition_currency(
-            &pool, "SKU-COND-2", "Used Guitar", "Gibson",
-            "Electric Guitars", 799.99, "reverb", "used", "USD",
-        )
+        insert_product_with_condition_currency(ProductTestParams {
+            pool: &pool,
+            sku: "SKU-COND-2",
+            name: "Used Guitar",
+            brand: "Gibson",
+            category: "Electric Guitars",
+            price: 799.99,
+            source_id: "reverb",
+            condition: "used",
+            currency: "USD",
+        })
         .await;
 
         let filters = SearchFilters {
@@ -595,15 +614,29 @@ mod tests {
         let pool = setup_db().await;
         let svc = FtsSearchService::new(pool.clone());
 
-        insert_product_with_condition_currency(
-            &pool, "SKU-CUR-1", "USD Guitar", "Fender",
-            "Electric Guitars", 999.99, "reverb", "new", "USD",
-        )
+        insert_product_with_condition_currency(ProductTestParams {
+            pool: &pool,
+            sku: "SKU-CUR-1",
+            name: "USD Guitar",
+            brand: "Fender",
+            category: "Electric Guitars",
+            price: 999.99,
+            source_id: "reverb",
+            condition: "new",
+            currency: "USD",
+        })
         .await;
-        insert_product_with_condition_currency(
-            &pool, "SKU-CUR-2", "EUR Guitar", "Gibson",
-            "Electric Guitars", 799.99, "reverb", "new", "EUR",
-        )
+        insert_product_with_condition_currency(ProductTestParams {
+            pool: &pool,
+            sku: "SKU-CUR-2",
+            name: "EUR Guitar",
+            brand: "Gibson",
+            category: "Electric Guitars",
+            price: 799.99,
+            source_id: "reverb",
+            condition: "new",
+            currency: "EUR",
+        })
         .await;
 
         let filters = SearchFilters {
@@ -629,20 +662,41 @@ mod tests {
         let pool = setup_db().await;
         let svc = FtsSearchService::new(pool.clone());
 
-        insert_product_with_condition_currency(
-            &pool, "SKU-CC-1", "USD New Guitar", "Fender",
-            "Electric Guitars", 999.99, "reverb", "new", "USD",
-        )
+        insert_product_with_condition_currency(ProductTestParams {
+            pool: &pool,
+            sku: "SKU-CC-1",
+            name: "USD New Guitar",
+            brand: "Fender",
+            category: "Electric Guitars",
+            price: 999.99,
+            source_id: "reverb",
+            condition: "new",
+            currency: "USD",
+        })
         .await;
-        insert_product_with_condition_currency(
-            &pool, "SKU-CC-2", "EUR New Guitar", "Gibson",
-            "Electric Guitars", 899.99, "reverb", "new", "EUR",
-        )
+        insert_product_with_condition_currency(ProductTestParams {
+            pool: &pool,
+            sku: "SKU-CC-2",
+            name: "EUR New Guitar",
+            brand: "Gibson",
+            category: "Electric Guitars",
+            price: 899.99,
+            source_id: "reverb",
+            condition: "new",
+            currency: "EUR",
+        })
         .await;
-        insert_product_with_condition_currency(
-            &pool, "SKU-CC-3", "USD Used Guitar", "Yamaha",
-            "Bass Guitars", 500.00, "reverb", "used", "USD",
-        )
+        insert_product_with_condition_currency(ProductTestParams {
+            pool: &pool,
+            sku: "SKU-CC-3",
+            name: "USD Used Guitar",
+            brand: "Yamaha",
+            category: "Bass Guitars",
+            price: 500.00,
+            source_id: "reverb",
+            condition: "used",
+            currency: "USD",
+        })
         .await;
 
         let filters = SearchFilters {
@@ -668,15 +722,29 @@ mod tests {
         let pool = setup_db().await;
         let svc = FtsSearchService::new(pool.clone());
 
-        insert_product_with_condition_currency(
-            &pool, "SKU-NULL-1", "New Guitar", "Fender",
-            "Electric Guitars", 999.99, "reverb", "new", "USD",
-        )
+        insert_product_with_condition_currency(ProductTestParams {
+            pool: &pool,
+            sku: "SKU-NULL-1",
+            name: "New Guitar",
+            brand: "Fender",
+            category: "Electric Guitars",
+            price: 999.99,
+            source_id: "reverb",
+            condition: "new",
+            currency: "USD",
+        })
         .await;
-        insert_product_with_condition_currency(
-            &pool, "SKU-NULL-2", "Refurb Guitar", "Gibson",
-            "Electric Guitars", 799.99, "reverb", "refurbished", "EUR",
-        )
+        insert_product_with_condition_currency(ProductTestParams {
+            pool: &pool,
+            sku: "SKU-NULL-2",
+            name: "Refurb Guitar",
+            brand: "Gibson",
+            category: "Electric Guitars",
+            price: 799.99,
+            source_id: "reverb",
+            condition: "refurbished",
+            currency: "EUR",
+        })
         .await;
 
         let filters = SearchFilters::default();

@@ -1657,11 +1657,11 @@ END;",
         ).unwrap();
         std::fs::write(dir.join("001_init.down.sql"), "DROP TABLE IF EXISTS schema_meta;").unwrap();
         std::fs::write(dir.join("002_add_table.sql"),
-            "CREATE TABLE t1 (id INTEGER PRIMARY KEY);".to_string()
+            "CREATE TABLE t1 (id INTEGER PRIMARY KEY);"
         ).unwrap();
         std::fs::write(dir.join("002_add_table.down.sql"), "DROP TABLE IF EXISTS t1;").unwrap();
         std::fs::write(dir.join("003_add_another.sql"),
-            "CREATE TABLE t2 (id INTEGER PRIMARY KEY);".to_string()
+            "CREATE TABLE t2 (id INTEGER PRIMARY KEY);"
         ).unwrap();
         std::fs::write(dir.join("003_add_another.down.sql"), "DROP TABLE IF EXISTS t2;").unwrap();
 
