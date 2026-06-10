@@ -93,7 +93,7 @@ impl MigrationRunner {
                 if trimmed.is_empty() {
                     continue;
                 }
-                sqlx::query(trimmed)
+                sqlx::query(sqlx::AssertSqlSafe(trimmed))
                     .execute(&mut *tx)
                     .await
                     .map_err(|e| MigrationError::SqlError {
@@ -921,31 +921,31 @@ END;",
         let m001 = include_str!("../migrations/001_init.sql");
         for stmt in split_statements(m001) {
             if !stmt.trim().is_empty() {
-                sqlx::query(&stmt).execute(&pool).await.unwrap();
+                sqlx::query(sqlx::AssertSqlSafe(stmt.as_str())).execute(&pool).await.unwrap();
             }
         }
         let m002 = include_str!("../migrations/002_add_url_validation.sql");
         for stmt in split_statements(m002) {
             if !stmt.trim().is_empty() {
-                sqlx::query(&stmt).execute(&pool).await.unwrap();
+                sqlx::query(sqlx::AssertSqlSafe(stmt.as_str())).execute(&pool).await.unwrap();
             }
         }
         let m003 = include_str!("../migrations/003_add_image_cache.sql");
         for stmt in split_statements(m003) {
             if !stmt.trim().is_empty() {
-                sqlx::query(&stmt).execute(&pool).await.unwrap();
+                sqlx::query(sqlx::AssertSqlSafe(stmt.as_str())).execute(&pool).await.unwrap();
             }
         }
         let m004 = include_str!("../migrations/004_add_price_source.sql");
         for stmt in split_statements(m004) {
             if !stmt.trim().is_empty() {
-                sqlx::query(&stmt).execute(&pool).await.unwrap();
+                sqlx::query(sqlx::AssertSqlSafe(stmt.as_str())).execute(&pool).await.unwrap();
             }
         }
         let m005 = include_str!("../migrations/005_add_settings.sql");
         for stmt in split_statements(m005) {
             if !stmt.trim().is_empty() {
-                sqlx::query(&stmt).execute(&pool).await.unwrap();
+                sqlx::query(sqlx::AssertSqlSafe(stmt.as_str())).execute(&pool).await.unwrap();
             }
         }
 

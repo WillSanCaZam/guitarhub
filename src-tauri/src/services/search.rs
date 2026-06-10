@@ -136,7 +136,7 @@ impl FtsSearchService {
         data_sql.push_str(&format!(" {} LIMIT ? OFFSET ?", order_by));
 
         // ── Execute count query ─────────────────────────────────────────
-        let mut count_query = sqlx::query_as::<_, (i64,)>(&count_sql).bind(&sanitized);
+        let mut count_query = sqlx::query_as::<_, (i64,)>(sqlx::AssertSqlSafe(count_sql.as_str())).bind(&sanitized);
         if let Some(ref category) = filters.category {
             count_query = count_query.bind(category);
         }
@@ -157,7 +157,7 @@ impl FtsSearchService {
 
         // ── Execute data query ──────────────────────────────────────────
         let mut data_query =
-            sqlx::query_as::<_, RawProductRow>(&data_sql).bind(&sanitized);
+            sqlx::query_as::<_, RawProductRow>(sqlx::AssertSqlSafe(data_sql.as_str())).bind(&sanitized);
         if let Some(ref category) = filters.category {
             data_query = data_query.bind(category);
         }

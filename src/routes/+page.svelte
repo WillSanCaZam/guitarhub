@@ -289,7 +289,7 @@
         <div class="app-info">
           <p class="app-name">GuitarHub</p>
           <p class="app-version">v{appVersion}</p>
-          <a class="app-link" href="https://github.com/user/guitarhub" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <a class="app-link" href="https://github.com/WillSanCaZam/guitarhub" target="_blank" rel="noopener noreferrer">GitHub</a>
           <p class="app-stack">Built with Tauri + Svelte 5</p>
         </div>
       </DashboardCell>

@@ -51,14 +51,14 @@
     <keyword>shopping</keyword>
   </keywords>
 
-  <url type="homepage">https://github.com/user/guitarhub</url>
-  <url type="bugtracker">https://github.com/user/guitarhub/issues</url>
+  <url type="homepage">https://github.com/WillSanCaZam/guitarhub</url>
+  <url type="bugtracker">https://github.com/WillSanCaZam/guitarhub/issues</url>
   <url type="donation">https://github.com/sponsors/user</url>
-  <url type="vcs-browser">https://github.com/user/guitarhub</url>
+  <url type="vcs-browser">https://github.com/WillSanCaZam/guitarhub</url>
 
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/user/guitarhub/main/docs/screenshots/catalog-view.png</image>
+      <image>https://raw.githubusercontent.com/WillSanCaZam/guitarhub/main/docs/screenshots/catalog-view.png</image>
       <caption>The main catalog browser</caption>
     </screenshot>
   </screenshots>
