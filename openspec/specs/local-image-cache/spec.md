@@ -1,6 +1,6 @@
 # Local Image Cache Specification
 
-> **v2** (2026-06-03) — Added MIME validation requirement from `mvp-foundation` / WU2-security-hardening.
+> **v3** (2026-06-10) — Added URL scheme validation from `mvp-hardening`. Only `https://` URLs accepted at the service layer.
 > Content-Type must match `["image/jpeg", "image/png", "image/webp", "image/avif", "image/gif"]`.
 > Byte-sniffing fallback removed.
 
@@ -19,6 +19,9 @@ The system MUST download the image from `image_url` on first request, store it i
 **Domain validation** (added v7): The system MUST validate the image URL domain against the configured allowlist before initiating any HTTP request. The allowlist MUST be read from `get_setting("allowed_image_domains")`. If the setting is empty, unparseable, or missing, the system MUST fall back to `["reverb.com", "mlstatic.com"]`. Domains not in the allowlist MUST be rejected before download.
 (Previously: no domain validation at the cache layer; now domain allowlist is configurable via settings)
 
+**URL scheme validation** (added v8): The system MUST reject any URL that does not start with `https://` at the service layer with `ImageCacheError::InvalidUrl`. The `tracing::warn!` path for `http://` URLs MUST be removed — non-HTTPS URLs MUST produce an error, not a warning. This validation MUST happen before any cache lookup or HTTP request, making the service-layer behavior consistent with the command-layer validation.
+(Previously: service layer warned on `http://` with `tracing::warn!` but allowed it through to the HTTP client; only the command layer rejected non-HTTPS URLs)
+
 #### Updated Scenarios
 
 | Case | Precondition | Action | Outcome |
@@ -29,6 +32,9 @@ The system MUST download the image from `image_url` on first request, store it i
 | Offline hit | Image cached, device offline | Request same URL | Return cached blob, no network call |
 | MIME rejected | URL returns `Content-Type: image/svg+xml` | Request, validate | REJECTED, not cached |
 | MIME missing | No `Content-Type` header | Request, validate | REJECTED, not cached |
+| HTTP URL rejected | URL is `http://img.reverb.com/pedal.jpg` | Request | REJECTED with `ImageCacheError::InvalidUrl` |
+| Non-HTTPS scheme rejected | URL is `file:///tmp/image.jpg` | Request | REJECTED with `ImageCacheError::InvalidUrl` |
+| IP literal URL rejected | URL is `http://192.168.1.1/image.jpg` | Request | REJECTED with `ImageCacheError::InvalidUrl` |
 
 ### Requirement: Deduplicate concurrent downloads
 

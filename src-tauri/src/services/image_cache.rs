@@ -110,20 +110,25 @@ impl ImageCacheService {
     ///
     /// Returns `(image_bytes, mime_type)`.
     pub async fn get(&self, url: &str) -> Result<(Vec<u8>, String), ImageCacheError> {
-        // 1. Validate URL
-        if !url.starts_with("https://") {
-            // Accept http:// for local dev/testing but log a warning
-            if url.starts_with("http://") {
-                tracing::warn!("Fetching non-HTTPS image URL: {url}");
-            } else {
-                return Err(ImageCacheError::InvalidUrl(url.to_string()));
-            }
-        }
+        validate_url_scheme(url)?;
+        self.get_with_coalescing(url).await
+    }
 
-        // 2. Hash the URL for cache key
+    /// Fetch with request coalescing (no URL scheme validation).
+    ///
+    /// Public only in test builds so HTTP mock server tests can bypass
+    /// the scheme check (httpmock does not support HTTPS).
+    #[cfg(test)]
+    pub async fn get_unvalidated(&self, url: &str) -> Result<(Vec<u8>, String), ImageCacheError> {
+        self.get_with_coalescing(url).await
+    }
+
+    /// Core fetch + coalescing logic (no URL validation).
+    async fn get_with_coalescing(&self, url: &str) -> Result<(Vec<u8>, String), ImageCacheError> {
+        // 1. Hash the URL for cache key
         let hash = hex_sha256(url);
 
-        // 3. Check in_flight for request coalescing.
+        // 2. Check in_flight for request coalescing.
         //
         // CRITICAL: We must drop the DashMap entry guard BEFORE awaiting,
         // otherwise the resolver (first request) cannot acquire the same
@@ -380,6 +385,25 @@ impl ImageCacheService {
     }
 }
 
+/// Validate that the URL uses the HTTPS scheme.
+///
+/// Rejects `http://` and any other non-HTTPS scheme with
+/// `ImageCacheError::InvalidUrl`. This runs at the service layer as
+/// defense-in-depth, matching the command-layer validation in
+/// `image_command.rs`.
+fn validate_url_scheme(url: &str) -> Result<(), ImageCacheError> {
+    if !url.starts_with("https://") {
+        if url.starts_with("http://") {
+            return Err(ImageCacheError::InvalidUrl(format!(
+                "HTTP URLs are not allowed: {url}",
+            )));
+        } else {
+            return Err(ImageCacheError::InvalidUrl(url.to_string()));
+        }
+    }
+    Ok(())
+}
+
 /// Domain check helper: read the allowed image domains from settings.
 async fn get_allowed_domains_from_repo(repo: &dyn SettingsRepository) -> Vec<String> {
     let raw = repo.get("allowed_image_domains").await;
@@ -514,14 +538,14 @@ mod tests {
         let svc = ImageCacheService::new(pool, 10 * 1024 * 1024, Duration::from_secs(3600), mock_settings());
 
         let url = format!("{}/test.png", server.base_url());
-        let (bytes, mime) = svc.get(&url).await.unwrap();
+        let (bytes, mime) = svc.get_unvalidated(&url).await.unwrap();
 
         assert_eq!(bytes, b"fake-png-bytes");
         assert_eq!(mime, "image/png");
         mock.assert_calls(1);
 
         // Second call should hit cache (no HTTP call)
-        let (bytes2, _) = svc.get(&url).await.unwrap();
+        let (bytes2, _) = svc.get_unvalidated(&url).await.unwrap();
         assert_eq!(bytes2, b"fake-png-bytes");
         mock.assert_calls(1); // Still 1 — cached
     }
@@ -624,7 +648,7 @@ mod tests {
         for _ in 0..10 {
             let svc = svc.clone();
             let url = url.clone();
-            handles.push(tokio::spawn(async move { svc.get(&url).await }));
+            handles.push(tokio::spawn(async move { svc.get_unvalidated(&url).await }));
         }
 
         // Await all
@@ -662,7 +686,7 @@ mod tests {
         for _ in 0..3 {
             let svc = svc.clone();
             let url = url.clone();
-            handles.push(tokio::spawn(async move { svc.get(&url).await }));
+            handles.push(tokio::spawn(async move { svc.get_unvalidated(&url).await }));
         }
 
         for handle in handles {
@@ -738,7 +762,7 @@ mod tests {
         let svc = ImageCacheService::new(pool.clone(), 50, Duration::from_secs(3600), mock_settings());
 
         let url = format!("{}/huge.jpg", server.base_url());
-        let (bytes, mime) = svc.get(&url).await.unwrap();
+        let (bytes, mime) = svc.get_unvalidated(&url).await.unwrap();
         assert_eq!(mime, "image/jpeg");
         assert_eq!(bytes.len(), 100);
 
@@ -784,13 +808,40 @@ mod tests {
         .unwrap();
 
         let url = format!("{}/refresh.jpg", server.base_url());
-        let (bytes, _) = svc.get(&url).await.unwrap();
+        let (bytes, _) = svc.get_unvalidated(&url).await.unwrap();
         assert_eq!(bytes, b"fresh-data", "should re-fetch stale entry when online");
 
         mock.assert_calls(1);
     }
 
-    // ── URL validation ──────────────────────────────────────────────────
+    // ── URL scheme validation ───────────────────────────────────────────
+
+    #[tokio::test]
+    async fn http_url_rejected_with_invalid_url() {
+        let pool = test_pool().await;
+        let svc = ImageCacheService::new_default(pool, mock_settings());
+
+        let result = svc.get("http://img.reverb.com/pedal.jpg").await;
+        assert!(
+            matches!(&result, Err(ImageCacheError::InvalidUrl(msg)) if msg.contains("HTTP")),
+            "expected InvalidUrl error for http:// URL, got {:?}",
+            result,
+        );
+    }
+
+    #[tokio::test]
+    async fn https_url_allowed_through_validation() {
+        let pool = test_pool().await;
+        let svc = ImageCacheService::new_default(pool, mock_settings());
+
+        // Should pass URL scheme validation but then fail at domain/network layer
+        let result = svc.get("https://img.reverb.com/pedal.jpg").await;
+        assert!(
+            !matches!(&result, Err(ImageCacheError::InvalidUrl(_))),
+            "https:// URL should not get InvalidUrl error, got {:?}",
+            result,
+        );
+    }
 
     #[tokio::test]
     async fn invalid_url_returns_error() {
