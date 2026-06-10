@@ -35,6 +35,8 @@ jobs:
       - run: npm ci
       - run: npx svelte-kit sync
       - run: npm run test
+      - run: npm run build
+      - run: npm run check
       - name: Signing dry-run (test key, non-release)
         run: |
           TMP_KEY=$(mktemp)

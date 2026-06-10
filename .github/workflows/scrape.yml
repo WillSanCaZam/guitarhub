@@ -13,6 +13,8 @@ jobs:
   scrape:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: write
     strategy:
       matrix:
         source: [reverb]
@@ -76,7 +78,19 @@ jobs:
           path: catalog-${{ matrix.source }}.json
           retention-days: 7
 
+      - name: Provision incoming/ directory
+        run: |
+          mkdir -p incoming/
+          cp catalog-${{ matrix.source }}.json incoming/
+
       - name: validate-input
         run: |
           source .venv/bin/activate
           python -m scraper.cli --validate-input --input-dir incoming/
+
+      - name: Deploy catalog to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: incoming/
+          keep_files: true

@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "wdio run e2e-tests/wdio.conf.ts"
+    "test:e2e": "wdio run e2e-tests/wdio.conf.ts",
+    "check": "svelte-check"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",
@@ -30,6 +31,7 @@
     "@wdio/spec-reporter": "^9.27.2",
     "jsdom": "^26.1.0",
     "svelte": "^5.0.0",
+    "svelte-check": "^4.0.0",
     "typescript": "^5.0.0",
     "vite": "^6.0.0",
     "vitest": "^3.2.6",
