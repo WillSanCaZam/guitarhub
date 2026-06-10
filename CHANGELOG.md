@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- macOS ARM64 (aarch64-apple-darwin) release builds via CI
+
+## [0.3.0] - 2026-06-10
+
+### Added
 
 - **ETag cache for catalog sync** — `CatalogSyncService` now uses `If-None-Match`/`304 Not Modified` to skip download when the remote catalog is unchanged. ETag and source_id are persisted in the settings table (key-value). (#3)
 - **Down migrations** — `MigrationRunner` supports `rollback(steps)` via `.down.sql` files. 9 down migration files created for the full migration chain (001→009). (#4)
@@ -71,6 +76,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - URL validation for images and webhooks with SSRF prevention (IP literal rejection, HTTPS enforcement, domain allowlist).
 
-[Unreleased]: https://github.com/WillSanCaZam/guitarhub/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/WillSanCaZam/guitarhub/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/WillSanCaZam/guitarhub/releases/tag/v0.3.0
 [0.2.0]: https://github.com/WillSanCaZam/guitarhub/releases/tag/v0.2.0
 [0.1.0]: https://github.com/WillSanCaZam/guitarhub/releases/tag/v0.1.0
