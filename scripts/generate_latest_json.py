@@ -27,11 +27,11 @@ PLATFORM_MAP = {
     },
     "darwin-aarch64": {
         "suffixes": ["darwin-aarch64", "aarch64-apple-darwin"],
-        "asset_template": "GuitarHub_{version}_aarch64.dmg",
+        "asset_template": "guitarhub_{version}_aarch64.dmg",
     },
     "darwin-x86_64": {
         "suffixes": ["darwin-x86_64", "x86_64-apple-darwin"],
-        "asset_template": "GuitarHub_{version}_x64.dmg",
+        "asset_template": "guitarhub_{version}_x64.dmg",
     },
 }
 
