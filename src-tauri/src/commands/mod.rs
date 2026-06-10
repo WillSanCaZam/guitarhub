@@ -8,3 +8,4 @@ pub mod price_command;
 pub mod settings_command;
 pub mod search_command;
 pub mod sync_command;
+pub mod wishlist_command;

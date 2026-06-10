@@ -60,11 +60,11 @@ Chain strategy: stacked-to-main
 
 ## Phase 4: Wishlist CRUD — Rust Backend
 
-- [ ] 4.1 Create `src-tauri/src/repository/wishlist.rs` with `WishlistItemInput`, `WishlistItem`, and `WishlistRepo` — struct with `new(pool)`, `add`, `remove`, `get_all` methods; follows `CollectionRepo` concrete-struct pattern
-- [ ] 4.2 Add `pub mod wishlist;` to `src-tauri/src/repository/mod.rs`
-- [ ] 4.3 Create `src-tauri/src/commands/wishlist_command.rs` with `add_to_wishlist`, `remove_from_wishlist`, `get_wishlist` commands — extracted `_cmd` functions for testability, matching `collection_command.rs` pattern
-- [ ] 4.4 Add `pub mod wishlist_command;` to `src-tauri/src/commands/mod.rs`
-- [ ] 4.5 Register 3 wishlist commands in `src-tauri/src/main.rs` `generate_handler![]`
+- [x] 4.1 Create `src-tauri/src/repository/wishlist.rs` with `WishlistItemInput`, `WishlistItem`, and `WishlistRepo` — struct with `new(pool)`, `add`, `remove`, `get_all` methods; follows `CollectionRepo` concrete-struct pattern
+- [x] 4.2 Add `pub mod wishlist;` to `src-tauri/src/repository/mod.rs`
+- [x] 4.3 Create `src-tauri/src/commands/wishlist_command.rs` with `add_to_wishlist`, `remove_from_wishlist`, `get_wishlist` commands — extracted `_cmd` functions for testability, matching `collection_command.rs` pattern
+- [x] 4.4 Add `pub mod wishlist_command;` to `src-tauri/src/commands/mod.rs`
+- [x] 4.5 Register 3 wishlist commands in `src-tauri/src/main.rs` `generate_handler![]`
 
 **Verification**: `cargo test` compiles and passes; wishlist commands are accessible via Tauri IPC.
 
@@ -72,10 +72,10 @@ Chain strategy: stacked-to-main
 
 ## Phase 5: Wishlist CRUD — Frontend
 
-- [ ] 5.1 Create `src/lib/types/wishlist.ts` with `WishlistItem` and `WishlistItemInput` interfaces matching Rust structs
-- [ ] 5.2 Create `src/lib/stores/wishlist.ts` with `writable<WishlistStore>`, `loadWishlist`, `addToWishlist`, `removeFromWishlist` — follows `collection.ts` pattern
-- [ ] 5.3 Create `src/routes/wishlist/+page.svelte` — renders wishlist items from `wishlistStore`, shows empty state, includes remove button per item
-- [ ] 5.4 Add wishlist nav link with count badge in `src/routes/+layout.svelte` — import `wishlistStore`, show item count, link to `/wishlist`
+- [x] 5.1 Create `src/lib/types/wishlist.ts` with `WishlistItem` and `WishlistItemInput` interfaces matching Rust structs
+- [x] 5.2 Create `src/lib/stores/wishlist.ts` with `writable<WishlistStore>`, `loadWishlist`, `addToWishlist`, `removeFromWishlist` — follows `collection.ts` pattern
+- [x] 5.3 Create `src/routes/wishlist/+page.svelte` — renders wishlist items from `wishlistStore`, shows empty state, includes remove button per item
+- [x] 5.4 Add wishlist nav link with count badge in `src/routes/+layout.svelte` — import `wishlistStore`, show item count, link to `/wishlist`
 
 **Verification**: App compiles; navigating to `/wishlist` shows wishlist page; badge updates on add/remove.
 
@@ -83,9 +83,9 @@ Chain strategy: stacked-to-main
 
 ## Phase 6: Tests
 
-- [ ] 6.1 Add unit tests for `WishlistRepo::add`, `remove`, `get_all` in `src-tauri/src/repository/wishlist.rs` — in-memory SQLite, same pattern as `CollectionRepo` tests
-- [ ] 6.2 Add unit tests for `add_to_wishlist_cmd`, `remove_from_wishlist_cmd`, `get_wishlist_cmd` in `src-tauri/src/commands/wishlist_command.rs` — in-memory pool, test round-trips
-- [ ] 6.3 Add test for `estimated_value` returning `None` for null SKU in `src-tauri/src/repository/collection.rs`
-- [ ] 6.4 Add test for `image_cache` watch channel drop returning `Err(ImageCacheError::DownloadFailed)` — verify no panic when sender is dropped
+- [x] 6.1 Add unit tests for `WishlistRepo::add`, `remove`, `get_all` in `src-tauri/src/repository/wishlist.rs` — in-memory SQLite, same pattern as `CollectionRepo` tests
+- [x] 6.2 Add unit tests for `add_to_wishlist_cmd`, `remove_from_wishlist_cmd`, `get_wishlist_cmd` in `src-tauri/src/commands/wishlist_command.rs` — in-memory pool, test round-trips
+- [x] 6.3 Add test for `estimated_value` returning `None` for null SKU in `src-tauri/src/repository/collection.rs`
+- [x] 6.4 Add test for `image_cache` watch channel drop returning `Err(ImageCacheError::DownloadFailed)` — verify no panic when sender is dropped (covered by 1.4's `concurrent_request_gets_error_when_fetcher_fails` test)
 
 **Verification**: `cargo test` — all tests pass, including new wishlist and estimated_value tests.

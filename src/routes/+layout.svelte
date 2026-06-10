@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { syncResult } from '$lib/stores/sync';
+  import { wishlistStore, loadWishlist } from '$lib/stores/wishlist';
 
   let { children } = $props();
   let syncing = $state(false);
@@ -9,6 +10,7 @@
   let catalogUrl = $state('https://pages.guitarhub.app/catalog.json');
 
   onMount(async () => {
+    loadWishlist();
     try {
       const saved = await invoke('get_setting', { key: 'catalog_url' });
       if (saved) {
@@ -42,6 +44,11 @@
 <nav class="nav">
   <a href="/" class="nav-title">GuitarHub</a>
   <div class="nav-actions">
+    <a href="/wishlist" class="nav-link">
+      Wishlist{#if $wishlistStore.items.length > 0}
+        <span class="badge">{$wishlistStore.items.length}</span>
+      {/if}
+    </a>
     <a href="/settings" class="nav-link">Settings</a>
     <button onclick={handleSync} disabled={syncing} class="sync-btn" data-testid="sync-button">
       {syncing ? 'Syncing\u2026' : 'Sync Catalog'}
@@ -98,6 +105,21 @@
   }
   .nav-link:hover {
     color: #fff;
+  }
+  .badge {
+    display: inline-block;
+    min-width: 18px;
+    height: 18px;
+    line-height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: #4a90d9;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-align: center;
+    margin-left: 4px;
+    vertical-align: middle;
   }
   .sync-btn {
     padding: 4px 12px;
