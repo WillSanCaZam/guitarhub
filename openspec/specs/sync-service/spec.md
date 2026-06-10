@@ -11,12 +11,16 @@ Provide a remote catalog download service with a full sync state machine, SQLite
 
 ### Requirement: SyncService trait MUST be defined
 
-The system MUST define a `SyncService` trait with method `async fn sync_catalog(&self, url: &str) -> Result<SyncResult, AppError>`. `SyncResult` MUST contain `products_loaded: u32`, `products_updated: u32`, `state: SyncState`, and `progress: f32`.
+The system MUST define a `SyncService` trait with method `async fn sync_catalog(&self, url: &str) -> Result<SyncResult, AppError>`. `SyncResult` MUST contain `products_loaded: u32`, `products_updated: u32`, `state: SyncState`, and `progress: f32`. All `SystemTime::now().duration_since(UNIX_EPOCH)` calls in `sync_command.rs` and `sync.rs` MUST use `unwrap_or_default()` instead of `unwrap()` to prevent panics on clock anomalies.
 
 | Case | Precondition | Action | Outcome |
 |------|-------------|--------|---------|
 | Trait compiles | Trait with `sync_catalog` defined | `cargo build` | Compiles successfully |
 | Real catalog upsert | Valid URL with 50 products | `sync_catalog(url)` | 50 rows in `products_meta`; `loaded: 50` |
+| Clock before UNIX_EPOCH | System clock returns time before `UNIX_EPOCH` | `sync_catalog` or `sync_command` computes timestamp | Timestamp defaults to `0` instead of panicking; sync proceeds without crash |
+| Alert dispatch timestamp is safe | Drops detected and `alert_channel` configured | `sync_command` builds `now` timestamp for cooldown | `now` computed with `unwrap_or_default()` — never panicking |
+| State machine transitions use safe timestamps | Sync state transitions through `downloading → validating → sanitizing → inserting → done` | `set_state` records `last_synced` | `last_synced` computed with `unwrap_or_default()` — never panicking |
+| Normal clock behavior | System clock returns a normal time | `sync_catalog` or `sync_command` computes timestamp | Timestamp is correct seconds since `UNIX_EPOCH`; identical to previous `unwrap()` path |
 
 ### Requirement: sync_catalog Tauri command MUST accept URL
 
