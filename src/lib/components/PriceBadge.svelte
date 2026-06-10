@@ -1,6 +1,20 @@
-<script>
+<script lang="ts">
+  type BadgeLevel = 'green' | 'amber';
+
+  interface Props {
+    level?: BadgeLevel;
+    pct?: number;
+    confidence?: number;
+    cnt_30d?: number;
+    source_count_30d?: number;
+    last_recorded_at?: number;
+    min_30d?: number;
+    avg_90d?: number;
+    current?: number;
+  }
+
   let {
-    level = 'green',
+    level = 'green' as BadgeLevel,
     pct = 0,
     confidence = 0,
     cnt_30d,
@@ -9,14 +23,14 @@
     min_30d,
     avg_90d,
     current,
-  } = $props();
+  }: Props = $props();
 
   /**
    * Map a 0-100 confidence score to one of three named tiers.
    * Tiers are derived in the UI from the numeric value; the server
    * returns only the number.
    */
-  function getTier(c) {
+  function getTier(c: number): string {
     if (c >= 80) return 'high';
     if (c >= 50) return 'medium';
     return 'low';
@@ -26,7 +40,7 @@
    * 3-dot glyph representing the tier. Filled count = tier rank.
    * `aria-hidden` because the tier is also surfaced in the aria-label.
    */
-  function dotsFor(t) {
+  function dotsFor(t: string): string {
     if (t === 'high') return '•••';
     if (t === 'medium') return '••○';
     return '•○○';

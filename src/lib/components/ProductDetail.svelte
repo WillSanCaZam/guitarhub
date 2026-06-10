@@ -1,7 +1,19 @@
-<script>
+<script lang="ts">
   import PriceChart from './PriceChart.svelte';
 
-  let { product } = $props();
+  interface ProductDetailProduct {
+    sku: string;
+    name: string;
+    brand?: string;
+    price?: number;
+    currency?: string;
+  }
+
+  interface Props {
+    product: ProductDetailProduct;
+  }
+
+  let { product }: Props = $props();
 </script>
 
 <div class="product-detail">

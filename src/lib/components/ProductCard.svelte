@@ -1,28 +1,44 @@
-<script>
+<script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
   import PriceBadge from './PriceBadge.svelte';
   import { addToCollection } from '$lib/stores/collection';
+  import type { PriceInsight } from '$lib/types/price';
 
-  let { product, inCollection = false } = $props();
+  interface ProductCardProduct {
+    sku: string;
+    name: string;
+    brand: string;
+    model?: string;
+    price: number;
+    currency?: string;
+    image_url?: string;
+  }
 
-  let imageData = $state('');
-  let imageError = $state(false);
-  let priceInsight = $state(null);
-  let adding = $state(false);
-  let added = $state(false);
+  interface Props {
+    product: ProductCardProduct;
+    inCollection?: boolean;
+  }
+
+  let { product, inCollection = false }: Props = $props();
+
+  let imageData = $state<string>('');
+  let imageError = $state<boolean>(false);
+  let priceInsight = $state<PriceInsight | null>(null);
+  let adding = $state<boolean>(false);
+  let added = $state<boolean>(false);
 
   onMount(async () => {
     // Load image first
     try {
-      imageData = await invoke('get_product_image', { imageUrl: product.image_url });
+      imageData = await invoke<string>('get_product_image', { imageUrl: product.image_url });
     } catch (e) {
       console.error('Failed to load product image:', e);
       imageError = true;
     }
     // Fetch price insight after product loads (avoid cascading)
     try {
-      priceInsight = await invoke('get_price_insight', { sku: product.sku });
+      priceInsight = await invoke<PriceInsight | null>('get_price_insight', { sku: product.sku });
     } catch (e) {
       // silent fail — badge is optional
     }

@@ -1,11 +1,36 @@
-<script>
+<script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
 
-  let { sku, windowDays = 365 } = $props();
-  let points = $state([]);
-  let loading = $state(true);
-  let error = $state(null);
+  interface PricePoint {
+    source_id: string;
+    price: number;
+    recorded_at: number;
+  }
+
+  interface SvgSource {
+    source_id: string;
+    points: string;
+    color: string;
+    count: number;
+  }
+
+  interface SvgData {
+    width: number;
+    height: number;
+    sources: SvgSource[];
+    insufficientSources: string[];
+  }
+
+  interface Props {
+    sku: string;
+    windowDays?: number;
+  }
+
+  let { sku, windowDays = 365 }: Props = $props();
+  let points = $state<PricePoint[]>([]);
+  let loading = $state<boolean>(true);
+  let error = $state<unknown>(null);
 
   onMount(async () => {
     if (!sku?.trim()) {
@@ -13,7 +38,7 @@
       return;
     }
     try {
-      points = await invoke('get_price_history', { sku, windowDays });
+      points = await invoke<PricePoint[]>('get_price_history', { sku, windowDays });
     } catch (e) {
       error = e;
     } finally {
@@ -28,13 +53,13 @@
 
   let svgData = $derived(computeSvgData(points));
 
-  function computeSvgData(points) {
+  function computeSvgData(points: PricePoint[]): SvgData {
     if (!points || points.length === 0) {
       return { width: 400, height: CHART_HEIGHT, sources: [], insufficientSources: [] };
     }
 
     // Group by source_id
-    const groups = {};
+    const groups: Record<string, PricePoint[]> = {};
     for (const p of points) {
       if (!groups[p.source_id]) groups[p.source_id] = [];
       groups[p.source_id].push(p);
@@ -56,7 +81,7 @@
     const height = CHART_HEIGHT;
 
     const sourceIds = Object.keys(groups);
-    const insufficientSources = [];
+    const insufficientSources: string[] = [];
 
     const sources = sourceIds.map((sid, idx) => {
       const pts = groups[sid];

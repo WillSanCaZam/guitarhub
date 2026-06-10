@@ -10,6 +10,8 @@ export interface SearchFilters {
   price_min: number | null;
   price_max: number | null;
   source: string | null;
+  condition: string | null;
+  listing_currency: string | null;
 }
 
 export interface RawProduct {

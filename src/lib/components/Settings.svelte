@@ -1,27 +1,35 @@
-<script>
+<script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
 
-  let alertChannel = $state('app');
-  let alertConfig = $state('');
-  let testResult = $state(null);
-  let testLoading = $state(false);
-  let exportResult = $state(null);
-  let saving = $state(false);
-  let saved = $state(false);
-  let allowedImageDomains = $state('');
+  interface Props {
+    // Settings has no external props — all state is internal
+  }
+
+  let {
+    // No props destructured
+  }: Props = $props();
+
+  let alertChannel = $state<string>('app');
+  let alertConfig = $state<string>('');
+  let testResult = $state<{ success: boolean; message: string } | null>(null);
+  let testLoading = $state<boolean>(false);
+  let exportResult = $state<{ success: boolean; size_bytes: number; file_count: number } | null>(null);
+  let saving = $state<boolean>(false);
+  let saved = $state<boolean>(false);
+  let allowedImageDomains = $state<string>('');
 
   onMount(async () => {
     try {
-      const savedChannel = await invoke('get_setting', { key: 'alert_channel' });
+      const savedChannel = await invoke<string | null>('get_setting', { key: 'alert_channel' });
       if (savedChannel) {
         alertChannel = savedChannel;
       }
-      const savedConfig = await invoke('get_setting', { key: 'alert_config' });
+      const savedConfig = await invoke<string | null>('get_setting', { key: 'alert_config' });
       if (savedConfig) {
         alertConfig = savedConfig;
       }
-      const savedDomains = await invoke('get_setting', { key: 'allowed_image_domains' });
+      const savedDomains = await invoke<string | null>('get_setting', { key: 'allowed_image_domains' });
       if (savedDomains) {
         allowedImageDomains = savedDomains;
       }
@@ -30,10 +38,10 @@
     }
   });
 
-  async function onChannelChange(newChannel) {
+  async function onChannelChange(newChannel: string) {
     alertChannel = newChannel;
     try {
-      await invoke('save_setting', { key: 'alert_channel', value: newChannel });
+      await invoke<void>('save_setting', { key: 'alert_channel', value: newChannel });
     } catch (e) {
       console.error('Failed to save channel:', e);
     }
@@ -41,7 +49,7 @@
 
   async function onConfigChange() {
     try {
-      await invoke('save_setting', { key: 'alert_config', value: alertConfig });
+      await invoke<void>('save_setting', { key: 'alert_config', value: alertConfig });
     } catch (e) {
       console.error('Failed to save config:', e);
     }
@@ -51,7 +59,7 @@
     testLoading = true;
     testResult = null;
     try {
-      const res = await invoke('test_alert_channel', {
+      const res = await invoke<{ success: boolean; message: string }>('test_alert_channel', {
         channel: alertChannel,
         config: alertChannel === 'app' ? '' : alertConfig,
       });
@@ -71,7 +79,7 @@
         filters: [{ name: 'ZIP Archive', extensions: ['zip'] }],
       });
       if (!path) return; // user cancelled
-      const result = await invoke('export_data', { path });
+      const result = await invoke<{ success: boolean; size_bytes: number; file_count: number }>('export_data', { path });
       exportResult = result;
     } catch (e) {
       exportResult = { success: false, size_bytes: 0, file_count: 0 };
@@ -80,7 +88,7 @@
 
   async function onDomainsChange() {
     try {
-      await invoke('save_setting', { key: 'allowed_image_domains', value: allowedImageDomains });
+      await invoke<void>('save_setting', { key: 'allowed_image_domains', value: allowedImageDomains });
     } catch (e) {
       console.error('Failed to save allowed image domains:', e);
     }
@@ -90,9 +98,9 @@
     saving = true;
     saved = false;
     try {
-      await invoke('save_setting', { key: 'alert_channel', value: alertChannel });
-      await invoke('save_setting', { key: 'alert_config', value: alertConfig });
-      await invoke('save_setting', { key: 'allowed_image_domains', value: allowedImageDomains });
+      await invoke<void>('save_setting', { key: 'alert_channel', value: alertChannel });
+      await invoke<void>('save_setting', { key: 'alert_config', value: alertConfig });
+      await invoke<void>('save_setting', { key: 'allowed_image_domains', value: allowedImageDomains });
       saved = true;
       setTimeout(() => {
         saved = false;
