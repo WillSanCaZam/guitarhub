@@ -246,7 +246,7 @@ impl CollectionRepo {
 ///
 /// 1. Average price from `price_history` in the last 90 days.
 /// 2. Fallback to `products_meta.price`.
-/// 3. Final fallback to `0.0`.
+/// 3. Returns `None` if no price data exists for this SKU.
 pub async fn estimated_value(sku: &str, pool: &SqlitePool) -> Result<Option<f64>, sqlx::Error> {
     let now = epoch_seconds();
     let window_90d = now - 90 * 86_400;
@@ -268,7 +268,7 @@ pub async fn estimated_value(sku: &str, pool: &SqlitePool) -> Result<Option<f64>
         .fetch_optional(pool)
         .await?;
 
-    Ok(fallback.or(Some(0.0)))
+    Ok(fallback)
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────
@@ -601,13 +601,30 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn estimated_value_zero_when_no_data() {
+    async fn estimated_value_none_when_no_data() {
         let pool = make_memory_pool().await;
         create_price_history_table(&pool).await;
         create_products_meta_table(&pool).await;
 
         let val = estimated_value("SKU-Z", &pool).await.unwrap();
-        assert_eq!(val, Some(0.0), "expected 0.0 fallback when no data exists");
+        assert_eq!(val, None, "expected None when no price data exists for SKU");
+    }
+
+    #[tokio::test]
+    async fn estimated_value_none_when_sku_is_null() {
+        let pool = make_memory_pool().await;
+        create_collection_items_table(&pool).await;
+        create_price_history_table(&pool).await;
+        create_products_meta_table(&pool).await;
+        let repo = CollectionRepo::new(pool.clone());
+
+        // Item with no SKU should have estimated_value None
+        let mut input = sample_input("No SKU Item");
+        input.sku = None;
+        let id = repo.add(&input).await.unwrap();
+        let item = repo.get_by_id(id).await.unwrap().unwrap();
+
+        assert_eq!(item.estimated_value, None, "item with no SKU should have estimated_value None");
     }
 
     // ── get_stats ─────────────────────────────────────────────────────────

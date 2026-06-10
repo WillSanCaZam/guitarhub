@@ -27,7 +27,7 @@ pub async fn sync_catalog(
         if let Some(channel) = channel {
             let now = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
+                .unwrap_or_default()
                 .as_secs() as i64;
 
             match channel.as_str() {

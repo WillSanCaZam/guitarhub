@@ -50,6 +50,7 @@ export async function addToCollection(product: {
   brand: string;
   price: number;
   currency?: string;
+  condition?: string;
   image_url?: string;
 }) {
   await invoke('add_to_collection', {
@@ -58,9 +59,9 @@ export async function addToCollection(product: {
       name: product.name,
       brand: product.brand,
       purchase_price: product.price,
-      purchase_currency: product.currency || 'USD',
+      purchase_currency: product.currency ?? 'USD',
       purchase_date: Math.floor(Date.now() / 1000),
-      condition: 'good',
+      condition: product.condition ?? 'good',
       image_url: product.image_url ?? null,
     },
   });

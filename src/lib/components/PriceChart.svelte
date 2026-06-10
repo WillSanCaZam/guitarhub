@@ -8,6 +8,10 @@
   let error = $state(null);
 
   onMount(async () => {
+    if (!sku?.trim()) {
+      loading = false;
+      return;
+    }
     try {
       points = await invoke('get_price_history', { sku, windowDays });
     } catch (e) {

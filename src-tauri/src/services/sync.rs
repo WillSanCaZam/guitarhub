@@ -53,7 +53,7 @@ impl CatalogSyncService {
     ) -> Result<(), AppError> {
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
+            .unwrap_or_default()
             .as_secs() as i64;
 
         sqlx::query(
@@ -111,7 +111,7 @@ impl CatalogSyncService {
         let mut drops: Vec<PriceDrop> = Vec::new();
         let synced_at = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
+            .unwrap_or_default()
             .as_secs() as i64;
 
         let price_history = PriceHistoryRepo::new(self.pool.clone());

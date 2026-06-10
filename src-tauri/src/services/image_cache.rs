@@ -85,7 +85,7 @@ impl ImageCacheService {
     ) -> Self {
         let http = Client::builder()
             .timeout(Duration::from_secs(30))
-            .user_agent("GuitarHub/0.1")
+            .user_agent("GuitarHub/0.2.0")
             .build()
             .expect("reqwest Client should build");
 
@@ -136,14 +136,21 @@ impl ImageCacheService {
                 let mut rx = tx.subscribe();
                 drop(occupied);
 
+                // If the sender is dropped without sending a value (e.g.
+                // fetcher cancelled or panicked), return a graceful error
+                // instead of panicking.
                 rx.wait_for(|v| v.is_some())
                     .await
-                    .expect("in_flight watch channel closed unexpectedly");
-                return rx
-                    .borrow()
-                    .as_ref()
-                    .expect("result should be Some after wait_for")
-                    .clone();
+                    .map_err(|_| {
+                        ImageCacheError::DownloadFailed(
+                            "in_flight watch channel closed unexpectedly".into(),
+                        )
+                    })?;
+                return rx.borrow().as_ref().cloned().ok_or_else(|| {
+                    ImageCacheError::DownloadFailed(
+                        "result should be Some after wait_for".into(),
+                    )
+                })?;
             }
             dashmap::mapref::entry::Entry::Vacant(vacant) => {
                 let (tx, _rx) = watch::channel(None);
@@ -629,6 +636,54 @@ mod tests {
         }
 
         // Only 1 HTTP call should have been made
+        mock.assert_calls(1);
+    }
+
+    // ── Subscriber gets error (not panic) when fetcher fails ──────────────
+    // This test validates that when the fetcher request fails (HTTP 500),
+    // all concurrent subscribers receive the error via the watch channel
+    // instead of panicking. The fix replaces `expect()` with `?` propagation.
+
+    #[tokio::test]
+    async fn concurrent_request_gets_error_when_fetcher_fails() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(GET).path("/fail.jpg");
+            then.status(500);
+        });
+
+        let pool = test_pool().await;
+        let svc = Arc::new(ImageCacheService::new_default(pool, mock_settings()));
+        let url = format!("{}/fail.jpg", server.base_url());
+
+        // Spawn 3 concurrent requests for the same URL — only 1 HTTP call
+        // should be made (coalescing), and all 3 should receive errors.
+        let mut handles = Vec::new();
+        for _ in 0..3 {
+            let svc = svc.clone();
+            let url = url.clone();
+            handles.push(tokio::spawn(async move { svc.get(&url).await }));
+        }
+
+        for handle in handles {
+            let result = handle.await.unwrap();
+            assert!(
+                result.is_err(),
+                "expected Err for HTTP 500, got: {:?}",
+                result
+            );
+            match result.unwrap_err() {
+                ImageCacheError::DownloadFailed(msg) => {
+                    assert!(
+                        msg.contains("500"),
+                        "expected HTTP 500 error, got: {msg}"
+                    );
+                }
+                other => panic!("expected DownloadFailed, got: {:?}", other),
+            }
+        }
+
+        // Only 1 HTTP call should have been made (coalesced)
         mock.assert_calls(1);
     }
 

@@ -64,7 +64,7 @@ pub async fn initialize_database(db_path: &str) -> anyhow::Result<AppState> {
 
     let http_client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(30))
-        .user_agent("GuitarHub/0.1")
+        .user_agent("GuitarHub/0.2.0")
         .build()
         .map_err(|e| anyhow::anyhow!("Failed to build HTTP client: {e}"))?;
 
