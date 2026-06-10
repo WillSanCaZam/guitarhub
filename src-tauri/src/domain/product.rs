@@ -79,6 +79,8 @@ pub struct SearchFilters {
     pub price_min: Option<f64>,
     pub price_max: Option<f64>,
     pub source: Option<String>,
+    pub condition: Option<String>,
+    pub listing_currency: Option<String>,
 }
 
 /// Sort order for product search results.
@@ -279,6 +281,8 @@ mod tests {
         assert!(filters.price_min.is_none());
         assert!(filters.price_max.is_none());
         assert!(filters.source.is_none());
+        assert!(filters.condition.is_none());
+        assert!(filters.listing_currency.is_none());
     }
 
     #[test]
@@ -288,6 +292,8 @@ mod tests {
             price_min: Some(100.0),
             price_max: Some(2000.0),
             source: Some("reverb".into()),
+            condition: Some("excellent".into()),
+            listing_currency: Some("USD".into()),
         };
         let json = serde_json::to_string(&filters).unwrap();
         let restored: SearchFilters = serde_json::from_str(&json).unwrap();
@@ -295,6 +301,8 @@ mod tests {
         assert!((restored.price_min.unwrap() - 100.0).abs() < f64::EPSILON);
         assert!((restored.price_max.unwrap() - 2000.0).abs() < f64::EPSILON);
         assert_eq!(restored.source.unwrap(), "reverb");
+        assert_eq!(restored.condition.unwrap(), "excellent");
+        assert_eq!(restored.listing_currency.unwrap(), "USD");
     }
 
     // ── SortOrder ───────────────────────────────────────────────────────

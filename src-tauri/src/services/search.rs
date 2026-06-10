@@ -130,6 +130,14 @@ impl FtsSearchService {
             count_sql.push_str(" AND m.source_id = ?");
             data_sql.push_str(" AND m.source_id = ?");
         }
+        if filters.condition.is_some() {
+            count_sql.push_str(" AND m.condition = ?");
+            data_sql.push_str(" AND m.condition = ?");
+        }
+        if filters.listing_currency.is_some() {
+            count_sql.push_str(" AND m.currency = ?");
+            data_sql.push_str(" AND m.currency = ?");
+        }
 
         // Add ORDER BY and LIMIT/OFFSET to data query
         let order_by = Self::order_by_clause(&sort);
@@ -148,6 +156,12 @@ impl FtsSearchService {
         }
         if let Some(ref source) = filters.source {
             count_query = count_query.bind(source);
+        }
+        if let Some(ref condition) = filters.condition {
+            count_query = count_query.bind(condition);
+        }
+        if let Some(ref listing_currency) = filters.listing_currency {
+            count_query = count_query.bind(listing_currency);
         }
 
         let (total,): (i64,) = count_query
@@ -169,6 +183,12 @@ impl FtsSearchService {
         }
         if let Some(ref source) = filters.source {
             data_query = data_query.bind(source);
+        }
+        if let Some(ref condition) = filters.condition {
+            data_query = data_query.bind(condition);
+        }
+        if let Some(ref listing_currency) = filters.listing_currency {
+            data_query = data_query.bind(listing_currency);
         }
         data_query = data_query.bind(limit).bind(offset);
 
@@ -359,6 +379,41 @@ mod tests {
         .unwrap();
     }
 
+    /// Insert a product with custom condition and currency for filter tests.
+    async fn insert_product_with_condition_currency(
+        pool: &SqlitePool,
+        sku: &str,
+        name: &str,
+        brand: &str,
+        category: &str,
+        price: f64,
+        source_id: &str,
+        condition: &str,
+        currency: &str,
+    ) {
+        let synced_at = 1000i64;
+        sqlx::query(
+            r#"INSERT INTO products_meta
+               (sku, source_id, name, brand, model, category, subcategory,
+                price, currency, condition, availability, url, image_url,
+                seller, location, synced_at)
+               VALUES (?1, ?2, ?3, ?4, '', ?5, '', ?6, ?7, ?8, 'in_stock',
+                       'https://example.com/' || ?1, '', 'Test Seller', 'USA', ?9)"#,
+        )
+        .bind(sku)
+        .bind(source_id)
+        .bind(name)
+        .bind(brand)
+        .bind(category)
+        .bind(price)
+        .bind(currency)
+        .bind(condition)
+        .bind(synced_at)
+        .execute(pool)
+        .await
+        .unwrap();
+    }
+
     // ── Test: sanitize_fts_input ────────────────────────────────────────
 
     #[test]
@@ -418,6 +473,8 @@ mod tests {
             price_min: None,
             price_max: None,
             source: None,
+            condition: None,
+            listing_currency: None,
         };
         let result = svc.search("guitar", &filters, SortOrder::Relevance, 1, 20).await.unwrap();
         assert_eq!(result.total, 1, "expected 1 product in Electric Guitars");
@@ -441,6 +498,8 @@ mod tests {
             price_min: Some(150.0),
             price_max: Some(400.0),
             source: None,
+            condition: None,
+            listing_currency: None,
         };
         let result = svc.search("guitar", &filters, SortOrder::Relevance, 1, 20).await.unwrap();
         assert_eq!(result.total, 1, "expected 1 product in price range 150-400");
@@ -463,6 +522,8 @@ mod tests {
             price_min: None,
             price_max: None,
             source: Some("reverb".into()),
+            condition: None,
+            listing_currency: None,
         };
         let result = svc.search("guitar", &filters, SortOrder::Relevance, 1, 20).await.unwrap();
         assert_eq!(result.total, 1, "expected 1 product from reverb");
@@ -485,10 +546,145 @@ mod tests {
             price_min: Some(1000.0),
             price_max: Some(2000.0),
             source: Some("reverb".into()),
+            condition: None,
+            listing_currency: None,
         };
         let result = svc.search("fender", &filters, SortOrder::Relevance, 1, 20).await.unwrap();
         assert_eq!(result.total, 1, "expected 1 product matching all filters");
         assert_eq!(result.products[0].sku, "SKU-C2");
+    }
+
+    // ── Test: search with condition filter ──────────────────────────────
+
+    #[tokio::test]
+    async fn search_filters_by_condition() {
+        let pool = setup_db().await;
+        let svc = FtsSearchService::new(pool.clone());
+
+        insert_product_with_condition_currency(
+            &pool, "SKU-COND-1", "New Guitar", "Fender",
+            "Electric Guitars", 999.99, "reverb", "new", "USD",
+        )
+        .await;
+        insert_product_with_condition_currency(
+            &pool, "SKU-COND-2", "Used Guitar", "Gibson",
+            "Electric Guitars", 799.99, "reverb", "used", "USD",
+        )
+        .await;
+
+        let filters = SearchFilters {
+            category: None,
+            price_min: None,
+            price_max: None,
+            source: None,
+            condition: Some("new".into()),
+            listing_currency: None,
+        };
+        let result = svc.search("guitar", &filters, SortOrder::Relevance, 1, 20)
+            .await
+            .unwrap();
+        assert_eq!(result.total, 1, "expected 1 product with condition 'new'");
+        assert_eq!(result.products.len(), 1);
+        assert_eq!(result.products[0].sku, "SKU-COND-1");
+    }
+
+    // ── Test: search with listing_currency filter ────────────────────────
+
+    #[tokio::test]
+    async fn search_filters_by_listing_currency() {
+        let pool = setup_db().await;
+        let svc = FtsSearchService::new(pool.clone());
+
+        insert_product_with_condition_currency(
+            &pool, "SKU-CUR-1", "USD Guitar", "Fender",
+            "Electric Guitars", 999.99, "reverb", "new", "USD",
+        )
+        .await;
+        insert_product_with_condition_currency(
+            &pool, "SKU-CUR-2", "EUR Guitar", "Gibson",
+            "Electric Guitars", 799.99, "reverb", "new", "EUR",
+        )
+        .await;
+
+        let filters = SearchFilters {
+            category: None,
+            price_min: None,
+            price_max: None,
+            source: None,
+            condition: None,
+            listing_currency: Some("EUR".into()),
+        };
+        let result = svc.search("guitar", &filters, SortOrder::Relevance, 1, 20)
+            .await
+            .unwrap();
+        assert_eq!(result.total, 1, "expected 1 product with currency EUR");
+        assert_eq!(result.products.len(), 1);
+        assert_eq!(result.products[0].sku, "SKU-CUR-2");
+    }
+
+    // ── Test: search with condition + currency combined ──────────────────
+
+    #[tokio::test]
+    async fn search_filters_by_condition_and_currency() {
+        let pool = setup_db().await;
+        let svc = FtsSearchService::new(pool.clone());
+
+        insert_product_with_condition_currency(
+            &pool, "SKU-CC-1", "USD New Guitar", "Fender",
+            "Electric Guitars", 999.99, "reverb", "new", "USD",
+        )
+        .await;
+        insert_product_with_condition_currency(
+            &pool, "SKU-CC-2", "EUR New Guitar", "Gibson",
+            "Electric Guitars", 899.99, "reverb", "new", "EUR",
+        )
+        .await;
+        insert_product_with_condition_currency(
+            &pool, "SKU-CC-3", "USD Used Guitar", "Yamaha",
+            "Bass Guitars", 500.00, "reverb", "used", "USD",
+        )
+        .await;
+
+        let filters = SearchFilters {
+            category: None,
+            price_min: None,
+            price_max: None,
+            source: None,
+            condition: Some("new".into()),
+            listing_currency: Some("EUR".into()),
+        };
+        let result = svc.search("guitar", &filters, SortOrder::Relevance, 1, 20)
+            .await
+            .unwrap();
+        assert_eq!(result.total, 1, "expected 1 product with condition 'new' AND currency EUR");
+        assert_eq!(result.products.len(), 1);
+        assert_eq!(result.products[0].sku, "SKU-CC-2");
+    }
+
+    // ── Test: search with null condition/currency (no filtering) ─────────
+
+    #[tokio::test]
+    async fn search_filters_null_condition_and_currency_returns_all() {
+        let pool = setup_db().await;
+        let svc = FtsSearchService::new(pool.clone());
+
+        insert_product_with_condition_currency(
+            &pool, "SKU-NULL-1", "New Guitar", "Fender",
+            "Electric Guitars", 999.99, "reverb", "new", "USD",
+        )
+        .await;
+        insert_product_with_condition_currency(
+            &pool, "SKU-NULL-2", "Refurb Guitar", "Gibson",
+            "Electric Guitars", 799.99, "reverb", "refurbished", "EUR",
+        )
+        .await;
+
+        let filters = SearchFilters::default();
+        let result = svc.search("guitar", &filters, SortOrder::Relevance, 1, 20)
+            .await
+            .unwrap();
+        assert_eq!(result.total, 2, "expected all products when condition+currency are null");
+        assert_eq!(result.products.len(), 2);
     }
 
     // ── Test: pagination ────────────────────────────────────────────────
