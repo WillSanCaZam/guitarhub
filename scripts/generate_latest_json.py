@@ -46,10 +46,20 @@ def detect_platform(sig_path: str) -> str | None:
     return None
 
 
+def build_url(version_tag: str, version: str, platform: str) -> str:
+    """Build the download URL for a platform's release asset."""
+    config = PLATFORM_MAP[platform]
+    asset_name = config["asset_template"].format(version=version)
+    return (
+        f"https://github.com/{OWNER_REPO}/releases/download/"
+        f"{version_tag}/{asset_name}"
+    )
+
+
 def main() -> None:
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 2:
         print(
-            "Usage: generate_latest_json.py <version_tag> <sig1> [<sig2> ...]",
+            "Usage: generate_latest_json.py <version_tag> [sig1 sig2 ...]",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -84,17 +94,17 @@ def main() -> None:
                 print(f"Warning: empty signature in '{path}', skipping", file=sys.stderr)
                 continue
 
-            config = PLATFORM_MAP[platform]
-            asset_name = config["asset_template"].format(version=version)
-            url = (
-                f"https://github.com/{OWNER_REPO}/releases/download/"
-                f"{version_tag}/{asset_name}"
-            )
+            url = build_url(version_tag, version, platform)
             platforms[platform] = {"signature": signature, "url": url}
 
+    # If no signatures found, emit unsigned entries for all known platforms.
+    # This lets the auto-updater know about new versions even when
+    # TAURI_PRIVATE_KEY is not configured in CI.
     if not platforms:
-        print("Error: no valid signatures found", file=sys.stderr)
-        sys.exit(1)
+        print("Warning: no signatures found — generating unsigned latest.json", file=sys.stderr)
+        for platform in PLATFORM_MAP:
+            url = build_url(version_tag, version, platform)
+            platforms[platform] = {"signature": "", "url": url}
 
     payload = {
         "version": version,

@@ -143,24 +143,15 @@ jobs:
           pattern: guitarhub-sig-*
           merge-multiple: true
           path: sig-artifacts
-      - name: Check for signature files
-        id: check-sigs
-        run: |
-          sig_count=$(ls -1 sig-artifacts/*.sig 2>/dev/null | wc -l)
-          echo "Found $sig_count signature file(s)"
-          echo "count=$sig_count" >> "$GITHUB_OUTPUT"
+      - name: Ensure sig directory exists
+        run: mkdir -p sig-artifacts
       - name: Generate latest.json
-        if: steps.check-sigs.outputs.count != '0'
         run: python source/scripts/generate_latest_json.py ${{ github.ref_name }} sig-artifacts/*.sig
-      - name: Skip latest.json (no signatures)
-        if: steps.check-sigs.outputs.count == '0'
-        run: echo "No signature files found — skipping latest.json generation"
       - uses: actions/checkout@v4
         with:
           ref: gh-pages
           path: gh-pages
       - name: Publish latest.json
-        if: steps.check-sigs.outputs.count != '0'
         run: |
           cp latest.json gh-pages/latest.json
           cd gh-pages
@@ -169,7 +160,6 @@ jobs:
           git add latest.json
           git diff --cached --quiet || git commit -m "chore: update latest.json to ${{ github.ref_name }}"
       - name: Push with retry
-        if: steps.check-sigs.outputs.count != '0'
         working-directory: gh-pages
         run: |
           for i in 1 2 3; do
