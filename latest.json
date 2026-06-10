@@ -1,23 +1,19 @@
 {
-  "version": "0.1.0",
-  "notes": "MVP release \u2014 see GitHub Release for details",
-  "pub_date": "2026-06-06T02:55:50Z",
+  "version": "0.3.0",
+  "notes": "",
+  "pub_date": "2026-06-10T18:09:13Z",
   "platforms": {
     "linux-x86_64": {
       "signature": "",
-      "url": "https://github.com/WillSanCaZam/guitarhub/releases/download/v0.1.0/GuitarHub_0.1.0_amd64.deb"
-    },
-    "windows-x86_64": {
-      "signature": "",
-      "url": ""
-    },
-    "darwin-x86_64": {
-      "signature": "",
-      "url": ""
+      "url": "https://github.com/WillSanCaZam/guitarhub/releases/download/v0.3.0/guitarhub_0.3.0_amd64.deb"
     },
     "darwin-aarch64": {
       "signature": "",
-      "url": ""
+      "url": "https://github.com/WillSanCaZam/guitarhub/releases/download/v0.3.0/guitarhub_0.3.0_aarch64.dmg"
+    },
+    "darwin-x86_64": {
+      "signature": "",
+      "url": "https://github.com/WillSanCaZam/guitarhub/releases/download/v0.3.0/guitarhub_0.3.0_x64.dmg"
     }
   }
 }
