@@ -9,4 +9,20 @@ export const SELECTORS = {
   settingsNav: 'a[href="/settings"]',
   settingsForm: '[data-testid="settings-form"]',
   dashboardGrid: '.bento-grid',
+
+  // FilterBar
+  filterToggle: '[data-testid="filter-toggle"]',
+  filterCategory: '[data-testid="filter-category"]',
+  clearCategory: '[data-testid="clear-category"]',
+  filterPriceMin: '[data-testid="filter-price-min"]',
+  clearPriceMin: '[data-testid="clear-price-min"]',
+  filterPriceMax: '[data-testid="filter-price-max"]',
+  clearPriceMax: '[data-testid="clear-price-max"]',
+  filterCondition: '[data-testid="filter-condition"]',
+  clearCondition: '[data-testid="clear-condition"]',
+  filterCurrency: '[data-testid="filter-currency"]',
+  clearCurrency: '[data-testid="clear-currency"]',
+  filterSort: '[data-testid="filter-sort"]',
+  clearSort: '[data-testid="clear-sort"]',
+  filterClearAll: '[data-testid="filter-clear-all"]',
 };

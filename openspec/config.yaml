@@ -51,8 +51,8 @@ rules:
     tdd: true
     test_command: "make test"
   verify:
-    test_command: "cargo test && pytest scraper/tests/unit scraper/tests/contract -v"
+    test_command: "cargo test && pytest scraper/tests/unit scraper/tests/contract -v && npm run test:coverage"
     build_command: "cargo build"
-    coverage_threshold: 0
+    coverage_threshold: 70
   archive:
     - Warn before merging destructive deltas

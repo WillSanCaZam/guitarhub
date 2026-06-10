@@ -34,6 +34,7 @@ async fn main() -> anyhow::Result<()> {
             guitarhub_lib::commands::dashboard_command::get_total_products,
             guitarhub_lib::commands::dashboard_command::get_wishlist_count,
             guitarhub_lib::commands::dashboard_command::get_recent_searches,
+            guitarhub_lib::commands::dashboard_command::get_categories,
             guitarhub_lib::commands::dashboard_command::record_search,
             guitarhub_lib::commands::collection_command::add_to_collection,
             guitarhub_lib::commands::collection_command::remove_from_collection,

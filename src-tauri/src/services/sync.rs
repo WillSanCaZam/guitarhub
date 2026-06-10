@@ -3,8 +3,11 @@
 use crate::domain::product::{CatalogFile, RawProduct, SyncState};
 use crate::repository::price_drop_notifications::PriceDropNotificationsRepo;
 use crate::repository::price_history::PriceHistoryRepo;
+use crate::repository::sqlite::settings::SqliteSettingsRepository;
 use crate::services::price_drop::{is_price_drop, PriceDrop, Thresholds, COOLDOWN_SECS};
+use crate::repository::settings::SettingsRepository;
 use crate::AppError;
+use sha2::{Digest, Sha256};
 use sqlx::SqlitePool;
 
 /// Trait abstracting catalog synchronization from various sources.
@@ -211,25 +214,70 @@ impl CatalogSyncService {
     }
 }
 
+/// Hash a URL for use as a settings key.
+fn hash_url(url: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(url.as_bytes());
+    hasher.finalize().iter().map(|b| format!("{b:02x}")).collect()
+}
+
 #[async_trait::async_trait]
 impl SyncService for CatalogSyncService {
     async fn sync_catalog(&self, url: &str) -> Result<SyncResult, AppError> {
-        // ── Download ─────────────────────────────────────────────────────
-        let response = self
-            .http_client
-            .get(url)
+        // ── Conditional request (ETag / If-None-Match) ────────────────────
+        let url_hash = hash_url(url);
+        let etag_key = format!("sync.etag:{url_hash}");
+        let source_id_key = format!("sync.source_id:{url_hash}");
+        let settings = SqliteSettingsRepository::new(self.pool.clone());
+        let stored_etag = settings.get(&etag_key).await;
+
+        let mut request = self.http_client.get(url);
+        if let Some(ref etag) = stored_etag {
+            request = request.header("If-None-Match", etag);
+        }
+
+        let response = request
             .send()
             .await
             .map_err(|e| AppError::Network(e.to_string()))?;
 
+        // ── 304 Not Modified — catalog unchanged, skip sync ──────────────
+        if response.status() == 304 {
+            let source_id = settings.get(&source_id_key).await
+                .unwrap_or_else(|| "unknown".to_string());
+            return Ok(SyncResult {
+                source_id,
+                products_loaded: 0,
+                products_updated: 0,
+                state: SyncState::Done,
+                progress: 1.0,
+                drops: vec![],
+                drops_sent: 0,
+            });
+        }
+
         if !response.status().is_success() {
             return Err(AppError::Network(format!("HTTP {}", response.status())));
+        }
+
+        // ── Save ETag for future conditional requests ────────────────────
+        if let Some(etag) = response
+            .headers()
+            .get("etag")
+            .and_then(|v| v.to_str().ok())
+        {
+            if !etag.is_empty() {
+                let _ = settings.save(&etag_key, etag).await;
+            }
         }
 
         let catalog: CatalogFile = response
             .json()
             .await
             .map_err(|e| AppError::InvalidInput(format!("Invalid catalog JSON: {e}")))?;
+
+        // Remember the source_id so we can reconstruct a result on 304.
+        let _ = settings.save(&source_id_key, &catalog.source_id).await;
 
         let source_id = &catalog.source_id;
 
@@ -541,6 +589,17 @@ mod tests {
         .await
         .unwrap();
 
+        // settings table — needed for ETag cache in conditional requests.
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS settings (
+                key   TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
         pool
     }
 
@@ -821,5 +880,175 @@ mod tests {
         .await
         .unwrap();
         assert!(last_synced > 0, "last_synced should be a positive timestamp");
+    }
+
+    // ── ETag: first request stores the ETag ──────────────────────────────────
+
+    #[tokio::test]
+    async fn sync_etag_first_request_stores_etag() {
+        let server = MockServer::start();
+        let body = sample_catalog_json("etag-test", &[single_product()]);
+        let mock = server.mock(|when, then| {
+            when.method(GET).path("/catalog.json");
+            then.status(200)
+                .header("Content-Type", "application/json")
+                .header("ETag", "\"abc123\"")
+                .body(body);
+        });
+
+        let pool = setup_db().await;
+        let client = reqwest::Client::new();
+        let svc = CatalogSyncService::new(pool.clone(), client);
+        let url = format!("{}/catalog.json", server.base_url());
+
+        let result = svc.sync_catalog(&url).await.expect("sync should succeed");
+        assert_eq!(result.products_loaded, 1);
+        mock.assert_calls(1);
+
+        // ETag should be stored in settings
+        let url_hash = hash_url(&url);
+        let stored: Option<String> = sqlx::query_scalar(
+            "SELECT value FROM settings WHERE key = ?",
+        )
+        .bind(format!("sync.etag:{url_hash}"))
+        .fetch_optional(&pool)
+        .await
+        .unwrap();
+        assert_eq!(stored, Some("\"abc123\"".to_string()));
+    }
+
+    // ── ETag: second request sends If-None-Match ─────────────────────────────
+
+    #[tokio::test]
+    async fn sync_etag_with_stored_etag_sends_if_none_match_and_handles_304() {
+        let server = MockServer::start();
+        let pool = setup_db().await;
+        let client = reqwest::Client::new();
+        let svc = CatalogSyncService::new(pool.clone(), client);
+        let url = format!("{}/catalog.json", server.base_url());
+
+        // Pre-seed an ETag in settings so sync_catalog sends If-None-Match.
+        let url_hash = hash_url(&url);
+        sqlx::query("INSERT OR REPLACE INTO settings (key, value) VALUES (?1, ?2)")
+            .bind(format!("sync.etag:{url_hash}"))
+            .bind("\"pre-seeded\"")
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query("INSERT OR REPLACE INTO settings (key, value) VALUES (?1, ?2)")
+            .bind(format!("sync.source_id:{url_hash}"))
+            .bind("etag-test-3")
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        // Server expects If-None-Match header and returns 304.
+        let mock = server.mock(|when, then| {
+            when.method(GET)
+                .path("/catalog.json")
+                .header("If-None-Match", "\"pre-seeded\"");
+            then.status(304);
+        });
+
+        let result = svc.sync_catalog(&url).await.expect("sync with 304");
+        assert_eq!(result.products_loaded, 0, "304 must report 0 products");
+        assert_eq!(result.products_updated, 0, "304 must report 0 updates");
+        assert_eq!(result.source_id, "etag-test-3");
+        assert_eq!(result.state, SyncState::Done);
+        mock.assert_calls(1);
+    }
+
+    // ── ETag: 304 returns stored source_id ───────────────────────────────────
+
+    #[tokio::test]
+    async fn sync_etag_200_saves_etag_then_304_uses_it() {
+        let server = MockServer::start();
+        let body = sample_catalog_json("etag-cycle", &[single_product()]);
+
+        // First request: GET without If-None-Match → 200 + ETag
+        let mut mock_200 = server.mock(|when, then| {
+            when.method(GET).path("/catalog.json");
+            then.status(200)
+                .header("Content-Type", "application/json")
+                .header("ETag", "\"cycle-tag\"")
+                .body(body);
+        });
+
+        let pool = setup_db().await;
+        let client = reqwest::Client::new();
+        let svc = CatalogSyncService::new(pool.clone(), client);
+        let url = format!("{}/catalog.json", server.base_url());
+
+        let r1 = svc.sync_catalog(&url).await.expect("first sync");
+        assert_eq!(r1.products_loaded, 1);
+        mock_200.assert_calls(1);
+
+        // Verify ETag was stored
+        let url_hash = hash_url(&url);
+        let etag: Option<String> = sqlx::query_scalar(
+            "SELECT value FROM settings WHERE key = ?",
+        )
+        .bind(format!("sync.etag:{url_hash}"))
+        .fetch_optional(&pool)
+        .await
+        .unwrap();
+        assert_eq!(etag, Some("\"cycle-tag\"".to_string()));
+
+        // Remove the 200 mock so it won't match again.
+        // httpmock 0.8 matches first-registered first, so subsequent
+        // requests to /catalog.json would still hit mock_200 unless
+        // we delete it or add a more-specific mock. We delete mock_200
+        // by replacing it with a mock that never matches (high port).
+        mock_200.delete();
+
+        // Second request: ETag cached → send If-None-Match → 304
+        let mock_304 = server.mock(|when, then| {
+            when.method(GET)
+                .path("/catalog.json")
+                .header("If-None-Match", "\"cycle-tag\"");
+            then.status(304);
+        });
+
+        let r2 = svc.sync_catalog(&url).await.expect("second sync (304)");
+        assert_eq!(r2.products_loaded, 0, "304 must report 0 products");
+        assert_eq!(r2.products_updated, 0, "304 must report 0 updates");
+        assert_eq!(r2.source_id, "etag-cycle", "304 uses stored source_id");
+        mock_304.assert_calls(1);
+    }
+
+    // ── ETag: without stored ETag, normal sync proceeds ──────────────────────
+
+    #[tokio::test]
+    async fn sync_etag_no_stored_etag_still_succeeds() {
+        let server = MockServer::start();
+        let body = sample_catalog_json("no-etag-test", &[single_product()]);
+        let mock = server.mock(|when, then| {
+            when.method(GET).path("/catalog.json");
+            then.status(200)
+                .header("Content-Type", "application/json")
+                // No ETag header in response — should still work
+                .body(body);
+        });
+
+        let pool = setup_db().await;
+        let client = reqwest::Client::new();
+        let svc = CatalogSyncService::new(pool.clone(), client);
+        let url = format!("{}/catalog.json", server.base_url());
+
+        let result = svc.sync_catalog(&url).await.expect("sync should succeed");
+        assert_eq!(result.products_loaded, 1);
+        assert_eq!(result.source_id, "no-etag-test");
+        mock.assert_calls(1);
+
+        // No ETag should be stored
+        let url_hash = hash_url(&url);
+        let stored: Option<String> = sqlx::query_scalar(
+            "SELECT value FROM settings WHERE key = ?",
+        )
+        .bind(format!("sync.etag:{url_hash}"))
+        .fetch_optional(&pool)
+        .await
+        .unwrap();
+        assert!(stored.is_none(), "no ETag header → no stored ETag");
     }
 }

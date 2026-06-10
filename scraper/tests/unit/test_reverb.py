@@ -82,6 +82,8 @@ class TestExtractProducts:
         assert product.name == "Fender American Professional II Stratocaster"
         assert product.brand == "Fender"
         assert product.model == "American Professional II Stratocaster"
+        assert product.category == "Electric Guitars"
+        assert product.subcategory == ""
         assert product.price == 1599.99
         assert product.currency == "USD"
         assert product.condition == "brand_new"
@@ -101,6 +103,8 @@ class TestExtractProducts:
         assert "Gibson Les Paul Standard '50s" in product.name
         assert product.brand == "Gibson"
         assert product.model == "Les Paul Standard '50s"
+        assert product.category == "Electric Guitars"
+        assert product.subcategory == ""
         assert product.price == 2499.99
         assert product.currency == "USD"
         assert product.condition == "excellent"
@@ -123,12 +127,52 @@ class TestExtractProducts:
         assert product.price == 99.99
         assert product.brand == ""
         assert product.model == ""
+        assert product.category == "Electric Guitars"
+        assert product.subcategory == ""
         assert product.condition == ""
         assert product.seller == ""
         assert product.location == ""
         assert product.currency == "USD"
         assert product.availability == "in_stock"
         assert product.image_url == ""
+
+    def test_category_from_product_type(self) -> None:
+        """Adapter uses product_type to populate category."""
+        adapter = ReverbAdapter(product_type="acoustic-guitars")
+        listing = {
+            "id": 1,
+            "title": "Test Acoustic",
+            "price": {"amount": "100.00"},
+            "_links": {"web": {"href": "https://reverb.com/item/1"}},
+        }
+        product = adapter._map_listing(listing)
+        assert product is not None
+        assert product.category == "Acoustic Guitars"
+
+    def test_category_fallback_for_unknown_product_type(self) -> None:
+        """Unknown product_type falls back to title-cased slug."""
+        adapter = ReverbAdapter(product_type="rare-vintage-gear")
+        listing = {
+            "id": 1,
+            "title": "Rare Vintage Item",
+            "price": {"amount": "500.00"},
+            "_links": {"web": {"href": "https://reverb.com/item/1"}},
+        }
+        product = adapter._map_listing(listing)
+        assert product is not None
+        assert product.category == "Rare Vintage Gear"
+
+    def test_scrape_uses_product_type_in_url(self) -> None:
+        """scrape() builds API URL with the adapter's product_type."""
+        adapter = ReverbAdapter(product_type="bass-guitars", session=MagicMock())
+        adapter._fetch_json = MagicMock(return_value={
+            "listings": [],
+            "current_page": 1,
+            "total_pages": 1,
+        })
+        adapter.scrape()
+        call_url = adapter._fetch_json.call_args[0][0]
+        assert "product_type=bass-guitars" in call_url
 
     def test_skip_listing_without_title(self, adapter) -> None:
         """Listings missing a title are skipped."""

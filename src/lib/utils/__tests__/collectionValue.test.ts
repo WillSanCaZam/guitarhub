@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { calculateCollectionGainLoss, formatGainLoss } from '../collectionValue';
-import type { CollectionItem } from '../types/collection';
+import type { CollectionItem } from '../../types/collection';
 
 const makeItem = (purchase_price: number | null, estimated_value: number | null): CollectionItem => ({
   id: 1,

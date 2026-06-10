@@ -33,7 +33,8 @@ describe('PriceBadge', () => {
     });
     const badge = screen.getByRole('status');
     const title = badge.getAttribute('title');
-    const lines = title.split('\n');
+    expect(title).not.toBeNull();
+    const lines = title!.split('\n');
     expect(lines).toHaveLength(3);
     expect(lines[0]).toBe('Confidence: 78% (Medium)');
     expect(lines[1]).toBe('45 data points · 2 sources · last 2 days ago');
@@ -50,7 +51,8 @@ describe('PriceBadge', () => {
     });
     const badge = screen.getByRole('status');
     const title = badge.getAttribute('title');
-    const lines = title.split('\n');
+    expect(title).not.toBeNull();
+    const lines = title!.split('\n');
     expect(lines).toHaveLength(1);
     expect(lines[0]).toBe('Confidence: 78% (Medium)');
   });

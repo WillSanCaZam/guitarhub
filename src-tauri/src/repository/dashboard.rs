@@ -45,6 +45,15 @@ impl DashboardRepo {
         Ok(rows)
     }
 
+    /// Return distinct categories sorted alphabetically.
+    pub async fn get_categories(&self) -> Result<Vec<String>, AppError> {
+        let rows: Vec<String> =
+            sqlx::query_scalar("SELECT DISTINCT category FROM products_meta ORDER BY category")
+                .fetch_all(&self.pool)
+                .await?;
+        Ok(rows)
+    }
+
     /// Record or update a search query's timestamp.
     pub async fn record_search(&self, query: &str) -> Result<(), AppError> {
         let now = std::time::SystemTime::now()
@@ -255,6 +264,35 @@ mod tests {
         assert_eq!(result.len(), 10);
         assert_eq!(result[0], "query-14");
         assert_eq!(result[9], "query-5");
+    }
+
+    #[tokio::test]
+    async fn get_categories_empty_table_returns_empty_vec() {
+        let repo = DashboardRepo::new(memory_pool().await);
+        let result = repo.get_categories().await.unwrap();
+        assert!(result.is_empty());
+    }
+
+    #[tokio::test]
+    async fn get_categories_with_rows_returns_distinct_sorted() {
+        let pool = memory_pool().await;
+        let repo = DashboardRepo::new(pool.clone());
+        for (i, cat) in ["Pedal", "Guitar", "Amplifier", "Bass", "Guitar"].iter().enumerate() {
+            sqlx::query(
+                "INSERT INTO products_meta (sku, source_id, category, url, synced_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5)",
+            )
+            .bind(format!("SKU-{i}"))
+            .bind("test")
+            .bind(cat)
+            .bind("https://example.com")
+            .bind(0i64)
+            .execute(&pool)
+            .await
+            .unwrap();
+        }
+        let result = repo.get_categories().await.unwrap();
+        assert_eq!(result, vec!["Amplifier", "Bass", "Guitar", "Pedal"]);
     }
 
     #[tokio::test]

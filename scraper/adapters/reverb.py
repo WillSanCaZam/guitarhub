@@ -34,12 +34,29 @@ class ReverbAdapter:
 
     BASE_URL = "https://reverb.com/api/listings"
 
+    # Reverb product_type slugs → human-readable category names.
+    PRODUCT_TYPE_CATEGORIES: dict[str, str] = {
+        "electric-guitars": "Electric Guitars",
+        "acoustic-guitars": "Acoustic Guitars",
+        "bass-guitars": "Bass Guitars",
+        "guitar-amplifiers": "Amplifiers",
+        "bass-amplifiers": "Amplifiers",
+        "pedals": "Pedals & Effects",
+        "effects-pedals": "Pedals & Effects",
+        "drums-percussion": "Drums & Percussion",
+        "keyboards-synths": "Keyboards & Synths",
+        "pro-audio": "Pro Audio",
+        "string-instruments": "String Instruments",
+        "wind-instruments": "Wind Instruments",
+    }
+
     def __init__(
         self,
         source_id: str = "reverb",
         session: requests.Session | None = None,
         delay: float = 1.0,
         max_pages: int = 10,
+        product_type: str = "electric-guitars",
     ):
         """Initialize the adapter.
 
@@ -48,11 +65,14 @@ class ReverbAdapter:
             session: Optional pre-configured requests Session (for testing).
             delay: Seconds to wait between pagination requests.
             max_pages: Maximum number of pages to scrape.
+            product_type: Reverb product_type slug used in API URL and
+                category mapping (default: "electric-guitars").
         """
         self.source_id = source_id
         self.session = session or self._build_session()
         self.delay = delay
         self.max_pages = max_pages
+        self.product_type = product_type
 
     # ── ScraperPort interface ──────────────────────────────────────────
 
@@ -60,7 +80,8 @@ class ReverbAdapter:
         """Scrape Reverb marketplace and return a CatalogFile.
 
         Args:
-            url: Ignored; the adapter always uses the JSON API.
+            url: Ignored; the adapter builds the API URL from
+                ``self.product_type``.
 
         Returns:
             CatalogFile with scraped products.
@@ -74,7 +95,7 @@ class ReverbAdapter:
 
         while page <= self.max_pages:
             page_url = (
-                f"{self.BASE_URL}?product_type=electric-guitars"
+                f"{self.BASE_URL}?product_type={self.product_type}"
                 f"&per_page=24&page={page}"
             )
             logger.info("Fetching page %d: %s", page, page_url)
@@ -242,11 +263,21 @@ class ReverbAdapter:
         seller = listing.get("shop_name", "")
         location = listing.get("slug", "")
 
+        # Derive category from the product_type used in the API request.
+        # The list endpoint doesn't return per-listing category data, but
+        # we know the product_type from the URL filter. Fall back to the
+        # slug itself if the mapping is unknown.
+        category = self.PRODUCT_TYPE_CATEGORIES.get(
+            self.product_type, self.product_type.replace("-", " ").title()
+        )
+
         return CatalogProduct(
             sku=sku,
             name=title.strip(),
             brand=brand.strip(),
             model=model.strip(),
+            category=category,
+            subcategory="",
             price=price,
             currency=currency,
             condition=condition.strip().lower(),

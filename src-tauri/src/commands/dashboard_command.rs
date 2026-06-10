@@ -26,6 +26,13 @@ pub async fn get_recent_searches(state: State<'_, AppState>) -> Result<Vec<Strin
     repo.get_recent_searches().await
 }
 
+/// Return distinct product categories sorted alphabetically.
+#[tauri::command]
+pub async fn get_categories(state: State<'_, AppState>) -> Result<Vec<String>, AppError> {
+    let repo = DashboardRepo::new(state.pool.clone());
+    repo.get_categories().await
+}
+
 /// Record a search query for recent-searches tracking.
 #[tauri::command]
 pub async fn record_search(query: String, state: State<'_, AppState>) -> Result<(), AppError> {

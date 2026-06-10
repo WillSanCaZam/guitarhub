@@ -13,6 +13,7 @@ pub struct MigrationRunner {
 }
 
 /// A migration file discovered in the migrations directory.
+#[derive(Debug, Clone)]
 pub struct DiscoveredMigration {
     pub version: u32,
     pub filename: String,
@@ -42,7 +43,7 @@ impl MigrationRunner {
     /// Returns `MigrationError` if a gap is detected, the version is corrupt,
     /// or any migration SQL fails.
     pub async fn run(&self) -> Result<(), MigrationError> {
-        let discovered = self.discover()?;
+        let discovered = self.discover_up()?;
         let current = self.current_version().await?;
 
         let pending: Vec<&DiscoveredMigration> = discovered
@@ -59,7 +60,6 @@ impl MigrationRunner {
         }
 
         // Validate that the pending sequence has no gaps.
-        // E.g., if current is v1 and only v3 is pending, v2 is missing → error.
         for (i, migration) in pending.iter().enumerate() {
             let expected = current as usize + i + 1;
             if migration.version as usize != expected {
@@ -79,7 +79,6 @@ impl MigrationRunner {
                 }
             })?;
 
-            // ── Transaction start ──
             let mut tx = self.pool.begin().await.map_err(|e| {
                 MigrationError::SqlError {
                     filename: migration.filename.clone(),
@@ -87,7 +86,6 @@ impl MigrationRunner {
                 }
             })?;
 
-            // Execute each statement in the migration file.
             for statement in split_statements(&sql) {
                 let trimmed = statement.trim();
                 if trimmed.is_empty() {
@@ -102,7 +100,6 @@ impl MigrationRunner {
                     })?;
             }
 
-            // Update the schema version in schema_meta.
             sqlx::query(
                 "INSERT INTO schema_meta (key, value) VALUES ('db_version', ?1)
                  ON CONFLICT(key) DO UPDATE SET value = excluded.value",
@@ -115,7 +112,6 @@ impl MigrationRunner {
                 source: e,
             })?;
 
-            // ── Transaction commit ──
             tx.commit().await.map_err(|e| MigrationError::SqlError {
                 filename: migration.filename.clone(),
                 source: e,
@@ -125,6 +121,107 @@ impl MigrationRunner {
         }
 
         Ok(())
+    }
+
+    /// Roll back `steps` migrations by applying their `.down.sql` files
+    /// in reverse version order.
+    ///
+    /// Each down migration runs in its own transaction. After each step the
+    /// `db_version` is decremented.
+    ///
+    /// Returns an error if:
+    /// - The database is at version 0 (nothing to roll back).
+    /// - A `.down.sql` file is missing for the target version.
+    pub async fn rollback(&self, steps: u32) -> Result<(), MigrationError> {
+        let current = self.current_version().await?;
+        if current == 0 {
+            return Ok(());
+        }
+
+        let target = current.saturating_sub(steps);
+        let downs = self.discover_down()?;
+
+        for version in (target + 1..=current).rev() {
+            let down = downs
+                .iter()
+                .find(|m| m.version == version)
+                .cloned()
+                .ok_or_else(|| MigrationError::IoError {
+                    filename: format!("{:03}_*.down.sql", version),
+                    source: std::io::Error::new(
+                        std::io::ErrorKind::NotFound,
+                        format!("down migration for v{version} not found"),
+                    ),
+                })?;
+
+            let sql = std::fs::read_to_string(&down.path).map_err(|e| {
+                MigrationError::IoError {
+                    filename: down.filename.clone(),
+                    source: e,
+                }
+            })?;
+
+            let mut tx = self.pool.begin().await.map_err(|e| {
+                MigrationError::SqlError {
+                    filename: down.filename.clone(),
+                    source: e,
+                }
+            })?;
+
+            for statement in split_statements(&sql) {
+                let trimmed = statement.trim();
+                if trimmed.is_empty() {
+                    continue;
+                }
+                sqlx::query(sqlx::AssertSqlSafe(trimmed))
+                    .execute(&mut *tx)
+                    .await
+                    .map_err(|e| MigrationError::SqlError {
+                        filename: down.filename.clone(),
+                        source: e,
+                    })?;
+            }
+
+            let new_version = version - 1;
+            sqlx::query(
+                "INSERT INTO schema_meta (key, value) VALUES ('db_version', ?1)
+                 ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            )
+            .bind(new_version.to_string())
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| MigrationError::SqlError {
+                filename: down.filename.clone(),
+                source: e,
+            })?;
+
+            tx.commit().await.map_err(|e| MigrationError::SqlError {
+                filename: down.filename.clone(),
+                source: e,
+            })?;
+
+            tracing::info!("Rolled back migration v{version} → v{new_version}");
+        }
+
+        Ok(())
+    }
+
+    /// Discover all `.sql` files (non-down) sorted by version.
+    fn discover_up(&self) -> Result<Vec<DiscoveredMigration>, MigrationError> {
+        Ok(self
+            .discover()?
+            .into_iter()
+            .filter(|m| !m.filename.ends_with(".down.sql"))
+            .collect())
+    }
+
+    /// Discover all `.down.sql` files sorted by version.
+    fn discover_down(&self) -> Result<Vec<DiscoveredMigration>, MigrationError> {
+        Ok(self
+            .discover()?
+            .into_iter()
+            .filter(|m| m.filename.ends_with(".down.sql"))
+            .collect())
     }
 
     /// Discover all `.sql` files in the migrations directory sorted by version.
@@ -1486,6 +1583,173 @@ END;",
         .await
         .unwrap();
         assert_eq!(version, "8", "db_version should be 8 after 001→008");
+    }
+
+    // ── rollback() tests ────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn rollback_is_noop_when_version_is_0() {
+        let pool = make_memory_pool().await;
+        let dir = temp_dir_with_files(&[]);
+        let runner = MigrationRunner::new(pool, dir);
+        runner.rollback(1).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn rollback_single_step_reverts_version() {
+        let pool = make_memory_pool().await;
+        let dir = temp_dir_with_files(&[
+            "001_init.sql", "001_init.down.sql",
+            "002_add_table.sql", "002_add_table.down.sql",
+        ]);
+
+        // Create up migrations
+        std::fs::write(
+            dir.join("001_init.sql"),
+            "CREATE TABLE schema_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+             INSERT INTO schema_meta VALUES ('db_version', '1');",
+        ).unwrap();
+        std::fs::write(
+            dir.join("001_init.down.sql"),
+            "DROP TABLE IF EXISTS schema_meta;",
+        ).unwrap();
+        std::fs::write(
+            dir.join("002_add_table.sql"),
+            "CREATE TABLE test_table (id INTEGER PRIMARY KEY);
+             INSERT OR REPLACE INTO schema_meta (key, value) VALUES ('db_version', '2');",
+        ).unwrap();
+        std::fs::write(
+            dir.join("002_add_table.down.sql"),
+            "DROP TABLE IF EXISTS test_table;",
+        ).unwrap();
+
+        // Apply both
+        let runner = MigrationRunner::new(pool.clone(), dir.clone());
+        runner.run().await.unwrap();
+        assert_eq!(runner.current_version().await.unwrap(), 2);
+
+        // Roll back 1 step
+        runner.rollback(1).await.unwrap();
+        assert_eq!(runner.current_version().await.unwrap(), 1);
+
+        // Table should be dropped by down migration
+        let exists: bool = sqlx::query_scalar(
+            "SELECT COUNT(*) > 0 FROM sqlite_master WHERE type='table' AND name='test_table'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap_or(false);
+        assert!(!exists, "test_table should have been dropped by down migration");
+    }
+
+    #[tokio::test]
+    async fn rollback_multiple_steps_reverts_all() {
+        let pool = make_memory_pool().await;
+        let dir = temp_dir_with_files(&[
+            "001_init.sql", "001_init.down.sql",
+            "002_add_table.sql", "002_add_table.down.sql",
+            "003_add_another.sql", "003_add_another.down.sql",
+        ]);
+
+        std::fs::write(dir.join("001_init.sql"),
+            "CREATE TABLE schema_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+             INSERT INTO schema_meta VALUES ('db_version', '1');",
+        ).unwrap();
+        std::fs::write(dir.join("001_init.down.sql"), "DROP TABLE IF EXISTS schema_meta;").unwrap();
+        std::fs::write(dir.join("002_add_table.sql"),
+            "CREATE TABLE t1 (id INTEGER PRIMARY KEY);".to_string()
+        ).unwrap();
+        std::fs::write(dir.join("002_add_table.down.sql"), "DROP TABLE IF EXISTS t1;").unwrap();
+        std::fs::write(dir.join("003_add_another.sql"),
+            "CREATE TABLE t2 (id INTEGER PRIMARY KEY);".to_string()
+        ).unwrap();
+        std::fs::write(dir.join("003_add_another.down.sql"), "DROP TABLE IF EXISTS t2;").unwrap();
+
+        // Apply all 3
+        let runner = MigrationRunner::new(pool.clone(), dir.clone());
+        runner.run().await.unwrap();
+        assert_eq!(runner.current_version().await.unwrap(), 3);
+
+        // Verify tables exist
+        let _: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM t1")
+            .fetch_one(&pool).await.unwrap();
+        let _: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM t2")
+            .fetch_one(&pool).await.unwrap();
+
+        // Roll back 2 steps (v3→v1)
+        runner.rollback(2).await.unwrap();
+        assert_eq!(runner.current_version().await.unwrap(), 1);
+
+        // t1 and t2 should be gone; schema_meta should still exist
+        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM schema_meta")
+            .fetch_one(&pool).await.unwrap();
+        assert_eq!(count, 1, "schema_meta should still have db_version row");
+        assert!(
+            sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM t1")
+                .fetch_one(&pool).await.is_err() ||
+            sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM t1")
+                .fetch_one(&pool).await.unwrap() == 0,
+            "t1 should not exist or be empty"
+        );
+    }
+
+    #[tokio::test]
+    async fn rollback_errors_when_down_file_missing() {
+        let pool = make_memory_pool().await;
+        let dir = temp_dir_with_files(&["001_init.sql"]);
+        std::fs::write(dir.join("001_init.sql"),
+            "CREATE TABLE schema_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+             INSERT INTO schema_meta VALUES ('db_version', '1');",
+        ).unwrap();
+
+        // Apply migration
+        let runner = MigrationRunner::new(pool.clone(), dir.clone());
+        runner.run().await.unwrap();
+        assert_eq!(runner.current_version().await.unwrap(), 1);
+
+        // Attempt rollback without .down.sql → should error
+        let err = runner.rollback(1).await.unwrap_err();
+        let msg = err.to_string();
+        assert!(
+            msg.contains("down migration for v1 not found") || msg.contains("not found"),
+            "expected 'not found' error, got: {err}"
+        );
+    }
+
+    #[tokio::test]
+    async fn rollback_down_file_applied_correctly() {
+        let pool = make_memory_pool().await;
+        let dir = temp_dir_with_files(&[
+            "001_init.sql", "001_init.down.sql",
+        ]);
+
+        std::fs::write(dir.join("001_init.sql"),
+            "CREATE TABLE schema_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+             INSERT INTO schema_meta VALUES ('db_version', '1');
+             CREATE TABLE my_table (id INTEGER PRIMARY KEY, val TEXT);",
+        ).unwrap();
+        std::fs::write(dir.join("001_init.down.sql"),
+            "DROP TABLE IF EXISTS my_table;",
+        ).unwrap();
+
+        // Apply
+        let runner = MigrationRunner::new(pool.clone(), dir.clone());
+        runner.run().await.unwrap();
+        assert_eq!(runner.current_version().await.unwrap(), 1);
+
+        // Verify my_table exists
+        let _: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM my_table")
+            .fetch_one(&pool).await.unwrap();
+
+        // Roll back
+        runner.rollback(1).await.unwrap();
+        assert_eq!(runner.current_version().await.unwrap(), 0);
+
+        // my_table should be gone
+        let has_table: bool = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='my_table'",
+        ).fetch_one(&pool).await.unwrap_or(0) > 0;
+        assert!(!has_table, "my_table should have been dropped by down migration");
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────
