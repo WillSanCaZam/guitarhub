@@ -18,5 +18,9 @@ build/
 # AI tool internal cache
 .atl/
 
+# Coverage reports
+coverage/
+.coverage
+
 # macOS
 .DS_Store
