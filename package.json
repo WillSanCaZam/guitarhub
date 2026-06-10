@@ -36,5 +36,9 @@
     "vite": "^6.0.0",
     "vitest": "^3.2.6",
     "webdriverio": "^9.27.2"
+  },
+  "overrides": {
+    "serialize-javascript": "7.0.5",
+    "cookie": "0.7.2"
   }
 }
