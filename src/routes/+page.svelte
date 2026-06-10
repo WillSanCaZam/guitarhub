@@ -1,24 +1,28 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
+  import { get } from 'svelte/store';
   import ProductCard from '$lib/components/ProductCard.svelte';
   import DashboardCell from '$lib/components/DashboardCell.svelte';
   import Settings from '$lib/components/Settings.svelte';
+  import FilterBar from '$lib/components/FilterBar.svelte';
   import { pageFromOffset } from '$lib/types/search';
   import type { SearchResult } from '$lib/types/search';
   import { syncResult } from '$lib/stores/sync';
   import { dashboardStats } from '$lib/stores/dashboard';
   import { collectionStore, loadCollection, loadCollectionStats } from '$lib/stores/collection';
   import { calculateCollectionGainLoss, formatGainLoss } from '$lib/utils/collectionValue';
+  import { filterStore, restoreFiltersFromUrl, syncFiltersToUrl, DEFAULT_FILTERS } from '$lib/stores/filter';
+  import type { FilterState } from '$lib/stores/filter';
   import pkg from '../../package.json';
 
   let query = $state('');
-  let results = $state([]);
+  let results: import('$lib/types/search').RawProduct[] = $state([]);
   let total = $state(0);
   let page = $state(1);
   let pageSize = $state(20);
   let loading = $state(false);
-  let error = $state(null);
+  let error: string | null = $state(null);
   let searched = $state(false);
 
   async function loadDashboard() {
@@ -45,9 +49,22 @@
 
   onMount(() => {
     loadDashboard();
+
+    // Restore filters from URL on mount
+    const restored = restoreFiltersFromUrl();
+    const hasFilters = restored.category !== null
+      || restored.price_min !== null
+      || restored.price_max !== null
+      || restored.source !== null
+      || restored.condition !== null
+      || restored.listing_currency !== null
+      || restored.sort !== 'relevance';
+    if (hasFilters) {
+      filterStore.set(restored);
+    }
   });
 
-  async function search(reset) {
+  async function search(reset: boolean) {
     const q = query.trim();
     if (q.length < 3) return;
 
@@ -59,10 +76,19 @@
     error = null;
 
     try {
+      const currentFilters = get(filterStore);
+
       const res = await invoke<SearchResult>('search_products', {
         query: q,
-        filters: { category: null, price_min: null, price_max: null, source: null },
-        sort: 'relevance',
+        filters: {
+          category: currentFilters.category,
+          price_min: currentFilters.price_min,
+          price_max: currentFilters.price_max,
+          source: currentFilters.source,
+          condition: currentFilters.condition,
+          listing_currency: currentFilters.listing_currency,
+        },
+        sort: currentFilters.sort,
         page: targetPage,
         pageSize
       });
@@ -82,7 +108,7 @@
     search(true);
   }
 
-  function handleKeydown(e) {
+  function handleKeydown(e: KeyboardEvent) {
     if (e.key === 'Enter') {
       search(true);
     }
@@ -110,27 +136,31 @@
   <div class="bento-grid">
     <!-- Cell 1: Hero (Search Results) -->
     <div class="cell cell-hero">
-      <DashboardCell title="Search" icon="🔍" loading={false} empty={!searched} emptyMessage="Search to find guitar deals" emptyIcon="🔍">
-        <div class="search-bar">
-          <input
-            type="text"
-            bind:value={query}
-            onkeydown={handleKeydown}
-            placeholder="Search guitars, basses, amps... (min. 3 characters)"
-            disabled={loading}
-            class="search-input"
-            data-testid="search-input"
-          />
-          <button
-            onclick={handleSearch}
-            disabled={loading || query.trim().length < 3}
-            class="search-btn"
-            data-testid="search-button"
-          >
-            Search
-          </button>
-        </div>
+      <!-- Search bar is always rendered outside DashboardCell's empty/loading conditions -->
+      <div class="search-bar">
+        <input
+          type="text"
+          bind:value={query}
+          onkeydown={handleKeydown}
+          placeholder="Search guitars, basses, amps... (min. 3 characters)"
+          disabled={loading}
+          class="search-input"
+          data-testid="search-input"
+        />
+        <button
+          onclick={handleSearch}
+          disabled={loading || query.trim().length < 3}
+          class="search-btn"
+          data-testid="search-button"
+        >
+          Search
+        </button>
+      </div>
 
+      <!-- FilterBar between search bar and results -->
+      <FilterBar />
+
+      <DashboardCell title="Search" icon="🔍" loading={false} empty={false}>
         {#if error}
           <div class="error-banner" role="alert">
             Search failed: {error}
@@ -164,6 +194,12 @@
               </button>
             </div>
           {/if}
+        {:else if !searched}
+          <div class="empty-state" role="status">
+            <span class="search-hint-icon" aria-hidden="true">🔍</span>
+            <p>Search to find guitar deals</p>
+            <p class="empty-hint">Type at least 3 characters and press Enter or click Search.</p>
+          </div>
         {/if}
       </DashboardCell>
     </div>
@@ -442,6 +478,13 @@
   .empty-hint {
     font-size: 0.9rem !important;
     color: #999;
+  }
+
+  .search-hint-icon {
+    font-size: 1.5rem;
+    display: block;
+    margin-bottom: 8px;
+    opacity: 0.6;
   }
 
   .results-meta {
