@@ -1,0 +1,46 @@
+/* Shared dashboard utility styles */
+/* Used by: +page.svelte, CollectionStatsCell.svelte, DashboardCell.svelte, SearchPanel.svelte */
+
+/* Stat display */
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 4px;
+}
+
+/* Loading spinner */
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #ddd;
+  border-top-color: #1a1a2e;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .stat-value {
+    color: #e8e8f0;
+  }
+
+  .stat-label {
+    color: #aaa;
+  }
+
+  .spinner {
+    border-color: #444;
+    border-top-color: #e8e8f0;
+  }
+}

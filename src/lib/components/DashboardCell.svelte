@@ -126,19 +126,6 @@
     font-size: 0.95rem;
   }
 
-  .spinner {
-    width: 18px;
-    height: 18px;
-    border: 2px solid #ddd;
-    border-top-color: #1a1a2e;
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
   .empty-wrap {
     display: flex;
     flex-direction: column;
@@ -177,11 +164,6 @@
 
     .loading-wrap {
       color: #aaa;
-    }
-
-    .spinner {
-      border-color: #444;
-      border-top-color: #e8e8f0;
     }
 
     .empty-wrap {
