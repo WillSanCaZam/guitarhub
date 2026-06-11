@@ -7,6 +7,22 @@ import { syncResult } from '$lib/stores/sync';
 import { collectionStore } from '$lib/stores/collection';
 import { filterStore } from '$lib/stores/filter';
 
+// Mock @tanstack/svelte-virtual to prevent infinite $effect loop in jsdom.
+// In jsdom, DOM measurements return 0 causing Virtualizer.setOptions to
+// trigger store writes that re-enter the $effect indefinitely.
+vi.mock('@tanstack/svelte-virtual', () => ({
+  createVirtualizer: () => ({
+    subscribe: (fn: (value: unknown) => void) => {
+      fn({
+        setOptions: () => {}, // no-op breaks the infinite loop
+        getTotalSize: () => 0,
+        getVirtualItems: () => [],
+      });
+      return () => {}; // unsubscribe
+    },
+  }),
+}));
+
 describe('Dashboard Page', () => {
   beforeEach(() => {
     vi.resetAllMocks();

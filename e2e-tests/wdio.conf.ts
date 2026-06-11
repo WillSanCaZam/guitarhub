@@ -34,7 +34,7 @@ onShutdown(() => {
 export const config: Options.Testrunner = {
   runner: 'local',
   framework: 'mocha',
-  specs: ['./e2e-tests/specs/**/*.spec.ts'],
+  specs: ['./specs/**/*.spec.ts'],
   maxInstances: 1,
   hostname: '127.0.0.1',
   port: 4444,
@@ -56,7 +56,7 @@ export const config: Options.Testrunner = {
 
   onPrepare: () => {
     spawnSync(
-      'cargo',
+      'npx',
       ['tauri', 'build', '--debug', '--no-bundle'],
       {
         cwd: path.resolve(path.dirname(new URL(import.meta.url).pathname), '..'),

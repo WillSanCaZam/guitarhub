@@ -1,6 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SEED_DB_PATH = path.join(__dirname, '../fixtures/seed.db');
 
 function getDefaultDbPath(): string {
