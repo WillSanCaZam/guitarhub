@@ -14,18 +14,16 @@ license = { text = "MIT" }
 strict = true
 warn_unused_ignores = true
 
+# Tests intentionally call constructors with missing args (validation tests)
+# and use MagicMock method assignment for mocking.
 [[tool.mypy.overrides]]
 module = "scraper.tests.*"
-disallow_untyped_defs = false
-allow_untyped_decorators = true
-allow_untyped_calls = true
 disable_error_code = ["call-arg", "union-attr", "method-assign", "no-untyped-def", "no-any-return", "type-arg"]
 
-# Pre-existing issues in adapters — out of scope for fix-ci-pipeline
+# Reverb adapter uses dual-session pattern (curl_cffi fallback to requests)
+# which causes assignment/attr-defined issues. Out of scope for fix-ci-pipeline.
 [[tool.mypy.overrides]]
 module = "scraper.adapters.reverb"
-disable_error_code = ["assignment", "attr-defined", "unused-ignore", "var-annotated", "no-any-return", "type-arg"]
+disable_error_code = ["assignment", "attr-defined", "no-any-return", "type-arg"]
 
-[[tool.mypy.overrides]]
-module = "scraper.domain"
-disable_error_code = ["call-arg"]
+

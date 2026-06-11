@@ -20,7 +20,7 @@ try:
     import curl_cffi.requests as curl_requests
     HAS_CURL_CFFI = True
 except ImportError:
-    curl_requests = None  # type: ignore[assignment]
+    curl_requests = None
     HAS_CURL_CFFI = False
 
 from scraper.domain import CatalogFile, CatalogProduct
@@ -153,7 +153,7 @@ class ReverbAdapter:
         }
 
         if HAS_CURL_CFFI:
-            session = curl_requests.Session()  # type: ignore[union-attr]
+            session = curl_requests.Session()
             session.headers.update(headers)
             return session
 
@@ -179,7 +179,7 @@ class ReverbAdapter:
         """
         try:
             if HAS_CURL_CFFI and isinstance(
-                self.session, curl_requests.Session  # type: ignore[union-attr]
+                self.session, curl_requests.Session
             ):
                 response = self.session.get(
                     url, timeout=30, impersonate="chrome120"
