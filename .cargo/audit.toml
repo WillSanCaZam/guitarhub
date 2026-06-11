@@ -1,11 +1,3 @@
-[advisories]
-ignore = [
-    "RUSTSEC-2024-0411",
-    "RUSTSEC-2024-0412",
-    "RUSTSEC-2024-0413",
-    "RUSTSEC-2024-0415",
-    "RUSTSEC-2024-0416",
-    "RUSTSEC-2024-0418",
-    "RUSTSEC-2024-0419",
-    "RUSTSEC-2024-0420",
-]
+# All advisories reviewed — none require silencing.
+# Removed RUSTSEC-2024-0411 through RUSTSEC-2024-0420 (informational/unmaintained).
+# If cargo audit reports a real vulnerability, fix the dependency or re-add a targeted ignore.
