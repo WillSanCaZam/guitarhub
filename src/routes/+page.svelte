@@ -1,29 +1,19 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
-  import { get } from 'svelte/store';
   import ProductCard from '$lib/components/ProductCard.svelte';
   import DashboardCell from '$lib/components/DashboardCell.svelte';
   import Settings from '$lib/components/Settings.svelte';
-  import FilterBar from '$lib/components/FilterBar.svelte';
-  import { pageFromOffset } from '$lib/types/search';
-  import type { SearchResult } from '$lib/types/search';
+  import SearchPanel from '$lib/components/SearchPanel.svelte';
+  import SyncStatusCell from '$lib/components/SyncStatusCell.svelte';
+  import CollectionStatsCell from '$lib/components/CollectionStatsCell.svelte';
+  import type { RawProduct } from '$lib/types/search';
   import { syncResult } from '$lib/stores/sync';
   import { dashboardStats } from '$lib/stores/dashboard';
   import { collectionStore, loadCollection, loadCollectionStats } from '$lib/stores/collection';
-  import { calculateCollectionGainLoss, formatGainLoss } from '$lib/utils/collectionValue';
-  import { filterStore, restoreFiltersFromUrl, syncFiltersToUrl, DEFAULT_FILTERS } from '$lib/stores/filter';
-  import type { FilterState } from '$lib/stores/filter';
+  import { filterStore, restoreFiltersFromUrl } from '$lib/stores/filter';
   import pkg from '../../package.json';
-
-  let query = $state('');
-  let results: import('$lib/types/search').RawProduct[] = $state([]);
-  let total = $state(0);
-  let page = $state(1);
-  let pageSize = $state(20);
-  let loading = $state(false);
-  let error: string | null = $state(null);
-  let searched = $state(false);
+  import '$lib/styles/dashboard.css';
 
   async function loadDashboard() {
     dashboardStats.update(s => ({ ...s, loading: true, error: null }));
@@ -64,171 +54,29 @@
     }
   });
 
-  async function search(reset: boolean) {
-    const q = query.trim();
-    if (q.length < 3) return;
+  let featuredProduct: RawProduct | null = $state(null);
 
-    const targetPage = reset ? 1 : page + 1;
-    const offset = (targetPage - 1) * pageSize;
-    const limit = pageSize;
-
-    loading = true;
-    error = null;
-
-    try {
-      const currentFilters = get(filterStore);
-
-      const res = await invoke<SearchResult>('search_products', {
-        query: q,
-        filters: {
-          category: currentFilters.category,
-          price_min: currentFilters.price_min,
-          price_max: currentFilters.price_max,
-          source: currentFilters.source,
-          condition: currentFilters.condition,
-          listing_currency: currentFilters.listing_currency,
-        },
-        sort: currentFilters.sort,
-        page: targetPage,
-        pageSize
-      });
-
-      results = reset ? res.products : [...results, ...res.products];
-      total = res.total;
-      page = pageFromOffset(res.offset, res.limit);
-      searched = true;
-    } catch (e) {
-      error = String(e);
-    } finally {
-      loading = false;
-    }
-  }
-
-  function handleSearch() {
-    search(true);
-  }
-
-  function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Enter') {
-      search(true);
-    }
-  }
-
-  function loadMore() {
-    if (!loading) {
-      search(false);
-    }
-  }
-
-  let hasMore = $derived(total > page * pageSize);
-
-  let drops = $derived($syncResult?.drops ?? []);
-  let dropsSent = $derived($syncResult?.drops_sent ?? 0);
-
-  let featuredProduct = $derived(results.length > 0 ? results[0] : null);
   let appVersion = pkg.version;
-
-  let collectionGainLoss = $derived(calculateCollectionGainLoss($collectionStore.items));
-  let collectionGainLossFormatted = $derived(formatGainLoss(collectionGainLoss));
 </script>
 
 <div class="page">
   <div class="bento-grid">
     <!-- Cell 1: Hero (Search Results) -->
     <div class="cell cell-hero">
-      <!-- Search bar is always rendered outside DashboardCell's empty/loading conditions -->
-      <div class="search-bar">
-        <input
-          type="text"
-          bind:value={query}
-          onkeydown={handleKeydown}
-          placeholder="Search guitars, basses, amps... (min. 3 characters)"
-          disabled={loading}
-          class="search-input"
-          data-testid="search-input"
-        />
-        <button
-          onclick={handleSearch}
-          disabled={loading || query.trim().length < 3}
-          class="search-btn"
-          data-testid="search-button"
-        >
-          Search
-        </button>
-      </div>
-
-      <!-- FilterBar between search bar and results -->
-      <FilterBar />
-
-      <DashboardCell title="Search" icon="🔍" loading={false} empty={false}>
-        {#if error}
-          <div class="error-banner" role="alert">
-            Search failed: {error}
-          </div>
-        {/if}
-
-        {#if loading && results.length === 0}
-          <div class="loading-state" aria-busy="true">
-            <span class="spinner"></span>
-            Searching...
-          </div>
-        {:else if searched && results.length === 0 && !loading}
-          <div class="empty-state" role="status">
-            <p>No products found for "{query.trim()}"</p>
-            <p class="empty-hint">Try a different search term or browse all products.</p>
-          </div>
-        {:else if results.length > 0}
-          <div class="results-meta">
-            <span>{total} result{total !== 1 ? 's' : ''} found</span>
-            <span>Page {page}</span>
-          </div>
-          <div class="product-grid">
-            {#each results as item (item.sku)}
-              <ProductCard product={item} inCollection={$collectionStore.collectedSkus.has(item.sku)} />
-            {/each}
-          </div>
-          {#if hasMore}
-            <div class="load-more-wrap">
-              <button onclick={loadMore} disabled={loading} class="load-more-btn">
-                {loading ? 'Loading...' : 'Load More'}
-              </button>
-            </div>
-          {/if}
-        {:else if !searched}
-          <div class="empty-state" role="status">
-            <span class="search-hint-icon" aria-hidden="true">🔍</span>
-            <p>Search to find guitar deals</p>
-            <p class="empty-hint">Type at least 3 characters and press Enter or click Search.</p>
-          </div>
-        {/if}
-      </DashboardCell>
+      <SearchPanel
+        {filterStore}
+        collectionStore={$collectionStore}
+        onfeaturedchange={(product) => { featuredProduct = product; }}
+      />
     </div>
 
     <!-- Cell 2: Wide (Sync Status) -->
     <div class="cell cell-wide">
-      <DashboardCell title="Sync Status" icon="🔄" loading={false} empty={drops.length === 0} emptyMessage="Sync catalog to see price drops" emptyIcon="🔄">
-        {#if drops.length > 0}
-          <div class="sync-toast">
-            {drops.length} price drop(s) detected
-            {#if dropsSent > 0}
-              , {dropsSent} sent
-            {/if}
-          </div>
-          <ul class="drop-list">
-            {#each drops.slice(0, 3) as drop}
-              <li class="drop-item">
-                <span class="drop-sku">{drop.sku}</span>
-                <span class="drop-price">
-                  ${drop.previous_price.toFixed(2)} → ${drop.new_price.toFixed(2)}
-                </span>
-                <span class="drop-reason">{drop.reason}</span>
-              </li>
-            {/each}
-          </ul>
-        {:else}
-          <p class="sync-idle">No recent price drops. Last sync: {$syncResult?.state ?? 'idle'}</p>
-        {/if}
-      </DashboardCell>
+      <SyncStatusCell
+        drops={$syncResult?.drops ?? []}
+        dropsSent={$syncResult?.drops_sent ?? 0}
+        syncState={$syncResult?.state ?? 'idle'}
+      />
     </div>
 
     <!-- Cell 3: Standard (Total Products) -->
@@ -285,38 +133,11 @@
 
     <!-- Cell 8: Standard (Collection Stats) -->
     <div class="cell cell-standard" data-testid="collection-cell">
-      <a href="/collection" class="cell-link">
-        <DashboardCell
-          title="Collection"
-          icon="🎸"
-          loading={$collectionStore.loading}
-          empty={!$collectionStore.stats || $collectionStore.stats.total_items === 0}
-          emptyMessage="Start adding gear to track your collection value"
-          emptyIcon="🎸"
-        >
-          {#if $collectionStore.stats && $collectionStore.stats.total_items > 0}
-            <div class="collection-stats">
-              <div class="stat">
-                <span class="stat-value">{$collectionStore.stats.total_items}</span>
-                <span class="stat-label">items</span>
-              </div>
-              <div class="stat">
-                <span class="stat-value">${$collectionStore.stats.total_value.toFixed(0)}</span>
-                <span class="stat-label">total value</span>
-              </div>
-              <div class="stat">
-                <span class="stat-value gain-loss-{collectionGainLossFormatted.colorClass}">{collectionGainLossFormatted.text}</span>
-                <span class="stat-label">gain/loss</span>
-              </div>
-              {#if $collectionStore.stats.top_item_name}
-                <div class="top-item">
-                  Top: {$collectionStore.stats.top_item_name} (${$collectionStore.stats.top_item_value.toFixed(0)})
-                </div>
-              {/if}
-            </div>
-          {/if}
-        </DashboardCell>
-      </a>
+      <CollectionStatsCell
+        stats={$collectionStore.stats}
+        items={$collectionStore.items}
+        loading={$collectionStore.loading}
+      />
     </div>
 
     <!-- Cell 9: Standard (App Info) -->
@@ -389,209 +210,6 @@
     }
   }
 
-  /* Search styles within hero cell */
-  .search-bar {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-  }
-
-  .search-input {
-    flex: 1;
-    padding: 10px 14px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 1rem;
-    box-sizing: border-box;
-    background: rgba(255, 255, 255, 0.8);
-  }
-
-  .search-input:focus {
-    outline: none;
-    border-color: #1a1a2e;
-    box-shadow: 0 0 0 2px rgba(26,26,46,0.15);
-  }
-
-  .search-btn {
-    padding: 10px 20px;
-    background: #1a1a2e;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.95rem;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-
-  .search-btn:hover:not(:disabled) {
-    background: #2a2a4e;
-  }
-
-  .search-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .error-banner {
-    padding: 12px 16px;
-    background: #f8d7da;
-    color: #721c24;
-    border-radius: 6px;
-    margin-bottom: 16px;
-    font-size: 0.9rem;
-  }
-
-  .loading-state {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 48px 0;
-    color: #666;
-    font-size: 1rem;
-  }
-
-  .spinner {
-    width: 20px;
-    height: 20px;
-    border: 2px solid #ddd;
-    border-top-color: #1a1a2e;
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: 48px 0;
-    color: #666;
-  }
-
-  .empty-state p {
-    margin: 0 0 8px;
-    font-size: 1.1rem;
-  }
-
-  .empty-hint {
-    font-size: 0.9rem !important;
-    color: #999;
-  }
-
-  .search-hint-icon {
-    font-size: 1.5rem;
-    display: block;
-    margin-bottom: 8px;
-    opacity: 0.6;
-  }
-
-  .results-meta {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 12px;
-    font-size: 0.85rem;
-    color: #666;
-  }
-
-  .product-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 16px;
-  }
-
-  .load-more-wrap {
-    display: flex;
-    justify-content: center;
-    margin-top: 24px;
-  }
-
-  .load-more-btn {
-    padding: 10px 32px;
-    background: #fff;
-    color: #333;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-
-  .load-more-btn:hover:not(:disabled) {
-    background: #f0f0f0;
-  }
-
-  .load-more-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  /* Sync cell styles */
-  .sync-toast {
-    padding: 8px 12px;
-    background: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-    border-radius: 6px;
-    margin-bottom: 10px;
-    font-size: 0.9rem;
-  }
-
-  .drop-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .drop-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.85rem;
-    padding: 6px 8px;
-    background: rgba(0, 0, 0, 0.03);
-    border-radius: 6px;
-  }
-
-  .drop-sku {
-    font-weight: 600;
-    color: #1a1a2e;
-  }
-
-  .drop-price {
-    color: #28a745;
-    font-family: monospace;
-  }
-
-  .drop-reason {
-    color: #666;
-    font-size: 0.8rem;
-  }
-
-  .sync-idle {
-    margin: 0;
-    color: #888;
-    font-size: 0.9rem;
-  }
-
-  /* Stat cell styles */
-  .stat-value {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #1a1a2e;
-    line-height: 1;
-  }
-
-  .stat-label {
-    font-size: 0.85rem;
-    color: #666;
-    margin-top: 4px;
-  }
-
   /* Recent searches */
   .recent-list {
     list-style: none;
@@ -628,37 +246,6 @@
 
   .shortcut-icon {
     margin-right: 6px;
-  }
-
-  /* Collection cell */
-  .cell-link {
-    display: block;
-    text-decoration: none;
-    color: inherit;
-  }
-
-  .collection-stats {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .top-item {
-    font-size: 0.8rem;
-    color: #666;
-    margin-top: 4px;
-  }
-
-  .gain-loss-gain {
-    color: #28a745;
-  }
-
-  .gain-loss-loss {
-    color: #dc3545;
-  }
-
-  .gain-loss-neutral {
-    color: #666;
   }
 
   /* App info */
@@ -699,50 +286,9 @@
   }
 
   @media (prefers-color-scheme: dark) {
-    .search-input {
-      background: rgba(30, 30, 40, 0.6);
-      border-color: #444;
-      color: #e8e8f0;
-    }
-
-    .search-input::placeholder {
-      color: #888;
-    }
-
-    .search-input:focus {
-      border-color: #e8e8f0;
-      box-shadow: 0 0 0 2px rgba(232, 232, 240, 0.15);
-    }
-
-    .load-more-btn {
-      background: rgba(30, 30, 40, 0.6);
-      color: #e8e8f0;
-      border-color: #444;
-    }
-
-    .load-more-btn:hover:not(:disabled) {
-      background: rgba(50, 50, 65, 0.7);
-    }
-
-    .drop-item {
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    .drop-sku {
-      color: #e8e8f0;
-    }
-
-    .stat-value {
-      color: #e8e8f0;
-    }
-
     .recent-item {
       color: #ccc;
       background: rgba(255, 255, 255, 0.05);
-    }
-
-    .sync-idle {
-      color: #aaa;
     }
 
     .app-name {
@@ -760,27 +306,9 @@
     .app-stack {
       color: #888;
     }
-
-    .top-item {
-      color: #aaa;
-    }
-
-    .gain-loss-gain {
-      color: #4ade80;
-    }
-
-    .gain-loss-loss {
-      color: #f87171;
-    }
-
-    .gain-loss-neutral {
-      color: #aaa;
-    }
   }
 
   @media (max-width: 768px) {
-    .search-btn,
-    .load-more-btn,
     .settings-shortcut {
       min-height: 44px;
     }
@@ -790,11 +318,6 @@
       min-height: 44px;
       display: flex;
       align-items: center;
-    }
-
-    .drop-item {
-      padding: 10px 8px;
-      min-height: 44px;
     }
   }
 </style>
