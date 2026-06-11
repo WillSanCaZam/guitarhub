@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
   import { get } from 'svelte/store';
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, untrack } from 'svelte';
   import type { Writable } from 'svelte/store';
   import { createVirtualizer } from '@tanstack/svelte-virtual';
   import ProductCard from './ProductCard.svelte';
@@ -53,12 +53,18 @@
   });
 
   // Keep virtualizer options in sync with reactive state
+  // Untrack setOptions to prevent infinite loop: the virtualizer writes
+  // to internal Svelte stores, which would otherwise re-trigger this effect.
   $effect(() => {
-    $virtualizer.setOptions({
-      count: rowCount,
-      getScrollElement: () => scrollContainer ?? null,
-      estimateSize: () => ESTIMATED_ROW_HEIGHT,
-      overscan: 3,
+    const count = rowCount;
+    const container = scrollContainer;
+    untrack(() => {
+      $virtualizer.setOptions({
+        count,
+        getScrollElement: () => container ?? null,
+        estimateSize: () => ESTIMATED_ROW_HEIGHT,
+        overscan: 3,
+      });
     });
   });
 

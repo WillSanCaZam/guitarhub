@@ -15,7 +15,8 @@
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",
-    "@tauri-apps/plugin-dialog": "^2.0.0"
+    "@tauri-apps/plugin-dialog": "^2.0.0",
+    "@tanstack/svelte-virtual": "^3.13.28"
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.0",

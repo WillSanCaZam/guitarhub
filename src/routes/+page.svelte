@@ -66,7 +66,7 @@
       <SearchPanel
         {filterStore}
         collectionStore={$collectionStore}
-        onfeaturedchange={(product) => { featuredProduct = product; }}
+        onfeaturedChange={(product: RawProduct | null) => { featuredProduct = product; }}
       />
     </div>
 
