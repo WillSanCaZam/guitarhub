@@ -33,8 +33,8 @@
       if (savedDomains) {
         allowedImageDomains = savedDomains;
       }
-    } catch (e) {
-      console.error('Failed to load settings:', e);
+    } catch {
+      // Settings failed to load — defaults remain
     }
   });
 
@@ -42,16 +42,16 @@
     alertChannel = newChannel;
     try {
       await invoke<void>('save_setting', { key: 'alert_channel', value: newChannel });
-    } catch (e) {
-      console.error('Failed to save channel:', e);
+    } catch {
+      // Channel save failed silently
     }
   }
 
   async function onConfigChange() {
     try {
       await invoke<void>('save_setting', { key: 'alert_config', value: alertConfig });
-    } catch (e) {
-      console.error('Failed to save config:', e);
+    } catch {
+      // Config save failed silently
     }
   }
 
@@ -89,8 +89,8 @@
   async function onDomainsChange() {
     try {
       await invoke<void>('save_setting', { key: 'allowed_image_domains', value: allowedImageDomains });
-    } catch (e) {
-      console.error('Failed to save allowed image domains:', e);
+    } catch {
+      // Domain save failed silently
     }
   }
 
@@ -105,8 +105,8 @@
       setTimeout(() => {
         saved = false;
       }, 2000);
-    } catch (e) {
-      console.error('Failed to save settings:', e);
+    } catch {
+      // Settings save failed silently
     } finally {
       saving = false;
     }

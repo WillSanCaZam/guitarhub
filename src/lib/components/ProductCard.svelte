@@ -32,8 +32,7 @@
     // Load image first
     try {
       imageData = await invoke<string>('get_product_image', { imageUrl: product.image_url });
-    } catch (e) {
-      console.error('Failed to load product image:', e);
+    } catch {
       imageError = true;
     }
     // Fetch price insight after product loads (avoid cascading)
@@ -51,8 +50,8 @@
       await addToCollection(product);
       added = true;
       setTimeout(() => { added = false; }, 2000);
-    } catch (e) {
-      console.error('Failed to add to collection:', e);
+    } catch {
+      // Error handled by try/catch — user can retry
     } finally {
       adding = false;
     }
