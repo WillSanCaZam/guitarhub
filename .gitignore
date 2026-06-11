@@ -24,3 +24,8 @@ coverage/
 
 # macOS
 .DS_Store
+
+# AI tool configuration (personal, not part of project)
+.agents/
+.claude/
+skills-lock.json
