@@ -31,6 +31,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
       - name: Install system deps (Linux)
         if: runner.os == 'Linux'
         run: |
