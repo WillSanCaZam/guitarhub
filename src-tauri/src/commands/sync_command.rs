@@ -19,69 +19,85 @@ pub async fn sync_catalog(
     let service = CatalogSyncService::new(state.pool.clone(), state.http_client.clone());
     let mut result = service.sync_catalog(&url).await?;
 
-    if !result.drops.is_empty() {
-        let settings_repo = SqliteSettingsRepository::new(state.pool.clone());
-        let channel = settings_repo.get("alert_channel").await;
-        let config = settings_repo.get("alert_config").await;
+    dispatch_price_drops(&mut result, &app, &state.pool, &state.http_client).await;
 
-        if let Some(channel) = channel {
-            let now = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_secs() as i64;
+    Ok(result)
+}
 
-            match channel.as_str() {
-                "app" => {
-                    let repo = PriceDropNotificationsRepo::new(state.pool.clone());
-                    for drop in &result.drops {
-                        let title = format!("Price Drop: {}", drop.sku);
-                        let message = format!(
-                            "{} dropped from ${:.2} to ${:.2}",
-                            drop.sku, drop.previous_price, drop.new_price
-                        );
-                        match app
-                            .notification()
-                            .builder()
-                            .title(&title)
-                            .body(&message)
-                            .show()
-                        {
-                            Ok(_) => {
-                                if let Err(e) =
-                                    repo.upsert(&drop.sku, now, drop.new_price, "app").await
-                                {
-                                    tracing::error!(
-                                        "failed to record notification cooldown: {}",
-                                        e
-                                    );
-                                }
-                                result.drops_sent += 1;
+/// Dispatch price drop alerts through the configured channel.
+///
+/// This function handles both "app" notifications (via Tauri's notification API)
+/// and external dispatchers (ntfy, webhook). It updates `result.drops_sent` with
+/// the count of successfully dispatched alerts.
+async fn dispatch_price_drops(
+    result: &mut SyncResult,
+    app: &AppHandle,
+    pool: &sqlx::SqlitePool,
+    http_client: &reqwest::Client,
+) {
+    if result.drops.is_empty() {
+        return;
+    }
+
+    let settings_repo = SqliteSettingsRepository::new(pool.clone());
+    let channel = settings_repo.get("alert_channel").await;
+    let config = settings_repo.get("alert_config").await;
+
+    if let Some(channel) = channel {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64;
+
+        match channel.as_str() {
+            "app" => {
+                let repo = PriceDropNotificationsRepo::new(pool.clone());
+                for drop in &result.drops {
+                    let title = format!("Price Drop: {}", drop.sku);
+                    let message = format!(
+                        "{} dropped from ${:.2} to ${:.2}",
+                        drop.sku, drop.previous_price, drop.new_price
+                    );
+                    match app
+                        .notification()
+                        .builder()
+                        .title(&title)
+                        .body(&message)
+                        .show()
+                    {
+                        Ok(_) => {
+                            if let Err(e) =
+                                repo.upsert(&drop.sku, now, drop.new_price, "app").await
+                            {
+                                tracing::error!(
+                                    "failed to record notification cooldown: {}",
+                                    e
+                                );
                             }
-                            Err(e) => {
-                                tracing::error!("alert dispatch failed: {}", e);
-                            }
+                            result.drops_sent += 1;
+                        }
+                        Err(e) => {
+                            tracing::error!("alert dispatch failed: {}", e);
                         }
                     }
                 }
-                _ => {
-                    if let Some(dispatcher) = try_build_dispatcher(&channel, config.as_deref()) {
-                        let sent = dispatch_drops(
-                            &result.drops,
-                            dispatcher.as_ref(),
-                            &state.pool,
-                            &state.http_client,
-                            &channel,
-                            now,
-                        )
-                        .await;
-                        result.drops_sent += sent;
-                    }
+            }
+            _ => {
+                if let Some(dispatcher) = try_build_dispatcher(&channel, config.as_deref()) {
+                    let sent = dispatch_drops(
+                        &result.drops,
+                        dispatcher.as_ref(),
+                        pool,
+                        http_client,
+                        &channel,
+                        now,
+                    )
+                    .await;
+                    result.drops_sent += sent;
                 }
             }
         }
     }
-
-    Ok(result)
 }
 
 /// Attempt to build an `AlertDispatcher` from a channel string and optional config.
