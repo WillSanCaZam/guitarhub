@@ -75,9 +75,9 @@ impl ProductRepository for SqliteProductRepository {
             let result = sqlx::query(
                 r#"INSERT OR REPLACE INTO products_meta
                    (sku, source_id, name, brand, model, category, subcategory,
-                    price, currency, condition, availability, url, image_url,
-                    seller, location, synced_at)
-                   VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)"#,
+                    specs_json, price, currency, condition, availability, url,
+                    image_url, seller, location, synced_at)
+                   VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)"#,
             )
             .bind(&p.sku)
             .bind(source_id)
@@ -86,6 +86,7 @@ impl ProductRepository for SqliteProductRepository {
             .bind(&p.model)
             .bind(&p.category)
             .bind(&p.subcategory)
+            .bind(&p.specs_json)
             .bind(p.price)
             .bind(&p.currency)
             .bind(&p.condition)
