@@ -12,7 +12,7 @@ use guitarhub_lib::repository::price_drop_notifications::PriceDropNotificationsR
 use guitarhub_lib::repository::price_history::PriceHistoryRepo;
 use guitarhub_lib::services::alert_service::{AlertDispatcher, AppNotificationAlert};
 use guitarhub_lib::services::search::FtsSearchService;
-use guitarhub_lib::services::sync::{CatalogSyncService, SyncService};
+use guitarhub_lib::services::sync::CatalogSyncService;
 use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::SqlitePool;
 use std::io::Write;
