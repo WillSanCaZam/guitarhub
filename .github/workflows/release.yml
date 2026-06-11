@@ -167,7 +167,15 @@ jobs:
       - name: Push with retry
         working-directory: gh-pages
         run: |
+          pushed=false
           for i in 1 2 3; do
-            git pull --rebase && git push && break
+            if git pull --rebase && git push; then
+              pushed=true
+              break
+            fi
             sleep 5
           done
+          if [ "$pushed" != "true" ]; then
+            echo "Push failed after 3 attempts"
+            exit 1
+          fi
