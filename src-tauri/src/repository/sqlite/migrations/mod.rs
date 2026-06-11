@@ -1586,7 +1586,7 @@ END;",
         .fetch_one(&pool)
         .await
         .unwrap();
-        assert_eq!(version, "9", "db_version should be 9 after 001→009");
+        assert_eq!(version, "8", "db_version should be 8 after 001→008");
     }
 
     // ── rollback() tests ────────────────────────────────────────────────
