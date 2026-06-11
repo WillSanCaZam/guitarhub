@@ -138,6 +138,40 @@ pub struct RawProduct {
     pub location: String,
 }
 
+impl RawProduct {
+    /// Sanitize product fields: trim whitespace, normalize case, validate price.
+    pub fn sanitize(&mut self) {
+        self.sku = self.sku.trim().to_string();
+        self.name = self.name.trim().to_string();
+        self.brand = self.brand.trim().to_string();
+        self.model = self.model.trim().to_string();
+        self.category = self.category.trim().to_string();
+        self.subcategory = self.subcategory.trim().to_string();
+        self.currency = self.currency.trim().to_uppercase();
+        self.condition = self.condition.trim().to_lowercase();
+        self.availability = self.availability.trim().to_lowercase();
+        self.url = self.url.trim().to_string();
+        self.image_url = self.image_url.trim().to_string();
+        self.specs_json = self.specs_json.trim().to_string();
+        self.seller = self.seller.trim().to_string();
+        self.location = self.location.trim().to_string();
+
+        if self.price < 0.0 {
+            self.price = 0.0;
+        }
+
+        if self.brand.is_empty() {
+            self.brand = "Unknown".to_string();
+        }
+        if self.category.is_empty() {
+            self.category = "Unknown".to_string();
+        }
+        if self.condition.is_empty() {
+            self.condition = "unknown".to_string();
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -362,5 +396,89 @@ mod tests {
         let product: RawProduct = serde_json::from_str(json).expect("should deserialize");
         assert_eq!(product.sku, "TEST-001");
         assert_eq!(product.specs_json, "");
+    }
+
+    // ── RawProduct::sanitize ────────────────────────────────────────────
+
+    #[test]
+    fn sanitize_trims_whitespace() {
+        let mut product = RawProduct {
+            sku: "  SKU-123  ".to_string(),
+            name: "  Fender Strat  ".to_string(),
+            brand: "  Fender  ".to_string(),
+            model: "  Stratocaster  ".to_string(),
+            category: "  Electric  ".to_string(),
+            subcategory: "  Solid Body  ".to_string(),
+            price: 999.99,
+            currency: "  usd  ".to_string(),
+            condition: "  MINT  ".to_string(),
+            availability: "  In Stock  ".to_string(),
+            url: "  https://example.com  ".to_string(),
+            image_url: "  https://img.example.com/1.jpg  ".to_string(),
+            specs_json: "  {}  ".to_string(),
+            seller: "  Guitar Center  ".to_string(),
+            location: "  New York  ".to_string(),
+        };
+
+        product.sanitize();
+
+        assert_eq!(product.sku, "SKU-123");
+        assert_eq!(product.name, "Fender Strat");
+        assert_eq!(product.brand, "Fender");
+        assert_eq!(product.currency, "USD");
+        assert_eq!(product.condition, "mint");
+        assert_eq!(product.availability, "in stock");
+    }
+
+    #[test]
+    fn sanitize_normalizes_negative_price() {
+        let mut product = RawProduct {
+            sku: "SKU-1".to_string(),
+            name: "Test".to_string(),
+            brand: "Brand".to_string(),
+            model: "Model".to_string(),
+            category: "Category".to_string(),
+            subcategory: "Sub".to_string(),
+            price: -100.0,
+            currency: "USD".to_string(),
+            condition: "new".to_string(),
+            availability: "in stock".to_string(),
+            url: "https://example.com".to_string(),
+            image_url: "https://img.example.com".to_string(),
+            specs_json: "{}".to_string(),
+            seller: "Seller".to_string(),
+            location: "Location".to_string(),
+        };
+
+        product.sanitize();
+
+        assert_eq!(product.price, 0.0);
+    }
+
+    #[test]
+    fn sanitize_fills_empty_required_fields() {
+        let mut product = RawProduct {
+            sku: "SKU-1".to_string(),
+            name: "Test".to_string(),
+            brand: "".to_string(),
+            model: "Model".to_string(),
+            category: "".to_string(),
+            subcategory: "Sub".to_string(),
+            price: 500.0,
+            currency: "USD".to_string(),
+            condition: "".to_string(),
+            availability: "in stock".to_string(),
+            url: "https://example.com".to_string(),
+            image_url: "https://img.example.com".to_string(),
+            specs_json: "{}".to_string(),
+            seller: "Seller".to_string(),
+            location: "Location".to_string(),
+        };
+
+        product.sanitize();
+
+        assert_eq!(product.brand, "Unknown");
+        assert_eq!(product.category, "Unknown");
+        assert_eq!(product.condition, "unknown");
     }
 }

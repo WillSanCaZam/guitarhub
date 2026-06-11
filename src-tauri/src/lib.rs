@@ -94,6 +94,8 @@ pub enum AppError {
     Internal(String),
     #[error("sync already in progress")]
     SyncInProgress,
+    #[error("IO error: {0}")]
+    Io(String),
 }
 
 impl serde::Serialize for AppError {
@@ -114,6 +116,12 @@ impl From<sqlx::Error> for AppError {
 impl From<anyhow::Error> for AppError {
     fn from(e: anyhow::Error) -> Self {
         AppError::Internal(e.to_string())
+    }
+}
+
+impl From<std::io::Error> for AppError {
+    fn from(e: std::io::Error) -> Self {
+        AppError::Io(e.to_string())
     }
 }
 
@@ -175,6 +183,23 @@ mod tests {
         let app_err: AppError = anyhow_err.into();
         assert!(
             app_err.to_string().contains("internal error"),
+            "got: {}",
+            app_err
+        );
+    }
+
+    #[test]
+    fn app_error_io_display() {
+        let err = AppError::Io("file not found".into());
+        assert_eq!(err.to_string(), "IO error: file not found");
+    }
+
+    #[test]
+    fn app_error_from_io_error() {
+        let io_err = std::io::Error::new(std::io::ErrorKind::NotFound, "no such file");
+        let app_err: AppError = io_err.into();
+        assert!(
+            app_err.to_string().contains("IO error"),
             "got: {}",
             app_err
         );
