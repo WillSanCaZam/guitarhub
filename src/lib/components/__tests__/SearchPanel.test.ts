@@ -3,22 +3,26 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { writable } from 'svelte/store';
 import SearchPanel from '../SearchPanel.svelte';
 import { invoke } from '@tauri-apps/api/core';
+import type { SortOrder } from '$lib/types/search';
+import type { CollectionStore } from '$lib/stores/collection';
+import type { FilterState } from '$lib/stores/filter';
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
 }));
 
-const defaultFilterStore = writable({
+const defaultFilterStore = writable<FilterState>({
   category: null,
   price_min: null,
   price_max: null,
   source: null,
   condition: null,
   listing_currency: null,
-  sort: 'relevance',
+  sort: 'relevance' as SortOrder,
 });
 
-const mockCollectionStore = {
+const mockCollectionStore: CollectionStore = {
+  stats: null,
   collectedSkus: new Set<string>(),
   items: [],
   loading: false,
