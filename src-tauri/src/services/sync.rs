@@ -206,6 +206,55 @@ impl CatalogSyncService {
         }
         Ok((total, updated, drops))
     }
+
+    /// Read a local catalog JSON file and upsert all products into the database.
+    ///
+    /// This is similar to `sync_catalog` but reads from a local file instead of
+    /// fetching from HTTP. Useful for testing and manual imports.
+    pub async fn sync_local_catalog(&self, path: &str) -> Result<SyncResult, AppError> {
+        // Read the local file
+        let json_content = std::fs::read_to_string(path)
+            .map_err(|e| AppError::InvalidInput(format!("Failed to read file {}: {}", path, e)))?;
+
+        // Parse the catalog
+        let catalog: CatalogFile = serde_json::from_str(&json_content)
+            .map_err(|e| AppError::InvalidInput(format!("Invalid catalog JSON: {}", e)))?;
+
+        let source_id = &catalog.source_id;
+
+        // Check concurrent
+        self.check_not_running(source_id).await?;
+
+        // State machine
+        self.set_state(source_id, SyncState::Downloading.as_str(), None)
+            .await?;
+
+        self.set_state(source_id, SyncState::Validating.as_str(), None)
+            .await?;
+
+        self.set_state(source_id, SyncState::Sanitizing.as_str(), None)
+            .await?;
+
+        self.set_state(source_id, SyncState::Inserting.as_str(), None)
+            .await?;
+
+        let (loaded, updated, drops) = self
+            .upsert_products(source_id, &catalog.products)
+            .await?;
+
+        self.set_state(source_id, SyncState::Done.as_str(), None)
+            .await?;
+
+        Ok(SyncResult {
+            source_id: source_id.clone(),
+            products_loaded: loaded,
+            products_updated: updated,
+            state: SyncState::Done,
+            progress: 1.0,
+            drops,
+            drops_sent: 0,
+        })
+    }
 }
 
 /// Hash a URL for use as a settings key.
