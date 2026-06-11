@@ -153,7 +153,7 @@ class ReverbAdapter:
         }
 
         if HAS_CURL_CFFI:
-            session = curl_requests.Session()
+            session: Any = curl_requests.Session()
             session.headers.update(headers)
             return session
 
