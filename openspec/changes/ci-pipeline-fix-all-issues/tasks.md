@@ -41,14 +41,14 @@ Chain strategy: stacked-to-main
 
 ## Phase 3: Quality & Hygiene
 
-- [ ] 3.1 Add `exit 1` to release.yml retry loop so failures propagate.
-- [ ] 3.2 Remove `console.error` calls from `src/lib/components/ProductCard.svelte` and `src/lib/components/Settings.svelte`.
-- [ ] 3.3 Fix export test migration chain: add migration 009 to `src-tauri/src/commands/export_command.rs` and `src-tauri/src/repository/sqlite/migrations/mod.rs` `apply_full_migration_chain`.
-- [ ] 3.4 Add component tests: `src/lib/components/__tests__/CollectionStatsCell.test.ts`, `ProductDetail.test.ts`, `SyncStatusCell.test.ts`, `SearchPanel.test.ts`.
-- [ ] 3.5 Add store tests: `src/lib/stores/__tests__/dashboard.test.ts`, `sync.test.ts`, `wishlist.test.ts`.
-- [ ] 3.6 Pin Rust toolchain in `rust-toolchain.toml` to `channel = "1.85.0"`.
-- [ ] 3.7 Add `npm` and `pip` ecosystems to `.github/dependabot.yml`.
-- [ ] 3.8 Add vitest coverage thresholds (lines 80%) to `vitest.config.ts`.
-- [ ] 3.9 Create `.github/PULL_REQUEST_TEMPLATE.md` and `.github/ISSUE_TEMPLATE/` (bug_report.md, feature_request.md).
-- [ ] 3.10 Remove unused `vitest.e2e.config.ts`.
+- [x] 3.1 Add `exit 1` to release.yml retry loop so failures propagate.
+- [x] 3.2 Remove `console.error` calls from `src/lib/components/ProductCard.svelte` and `src/lib/components/Settings.svelte`.
+- [x] 3.3 Fix export test migration chain: add migration 009 to `src-tauri/src/commands/export_command.rs` and `src-tauri/src/repository/sqlite/migrations/mod.rs` `apply_full_migration_chain`.
+- [x] 3.4 Add component tests: `src/lib/components/__tests__/CollectionStatsCell.test.ts`, `ProductDetail.test.ts`, `SyncStatusCell.test.ts`, `SearchPanel.test.ts`.
+- [x] 3.5 Add store tests: `src/lib/stores/__tests__/dashboard.test.ts`, `sync.test.ts`, `wishlist.test.ts`.
+- [x] 3.6 Pin Rust toolchain in `rust-toolchain.toml` to `channel = "1.85.0"`.
+- [x] 3.7 Add `npm` and `pip` ecosystems to `.github/dependabot.yml`.
+- [x] 3.8 Add vitest coverage thresholds (lines 80%) to `vitest.config.ts`.
+- [x] 3.9 Create `.github/PULL_REQUEST_TEMPLATE.md` and `.github/ISSUE_TEMPLATE/` (bug_report.md, feature_request.md).
+- [x] 3.10 Remove unused `vitest.e2e.config.ts`.
 - [ ] 3.11 Fix `@types/jest` / vitest type conflicts in `package.json` and `tsconfig.json`.
