@@ -3,9 +3,10 @@
 use crate::domain::product::{CatalogFile, RawProduct, SyncState};
 use crate::repository::price_drop_notifications::PriceDropNotificationsRepo;
 use crate::repository::price_history::PriceHistoryRepo;
+use crate::repository::product::{ProductRepository, SqliteProductRepository};
 use crate::repository::sqlite::settings::SqliteSettingsRepository;
-use crate::services::price_drop::{is_price_drop, PriceDrop, Thresholds, COOLDOWN_SECS};
 use crate::repository::settings::SettingsRepository;
+use crate::services::price_drop::{is_price_drop, PriceDrop, Thresholds, COOLDOWN_SECS};
 use crate::AppError;
 use sha2::{Digest, Sha256};
 use sqlx::SqlitePool;
@@ -15,6 +16,9 @@ use sqlx::SqlitePool;
 pub trait SyncService: Send + Sync {
     /// Fetch a remote catalog JSON and upsert all products into the database.
     async fn sync_catalog(&self, url: &str) -> Result<SyncResult, AppError>;
+    
+    /// Read a local catalog JSON file and upsert all products into the database.
+    async fn sync_local_catalog(&self, path: &str) -> Result<SyncResult, AppError>;
 }
 
 /// Result returned after a catalog sync operation.
@@ -102,6 +106,10 @@ impl CatalogSyncService {
     /// write each new price to `price_history`, then detect drops
     /// that pass the materiality check AND the per-SKU cooldown.
     ///
+    /// The insertion phase uses a batch transaction via `ProductRepository`
+    /// for atomicity and performance. Price history recording and drop
+    /// detection run in a best-effort per-product loop AFTER the batch insert.
+    ///
     /// Returns `(loaded, updated, drops)`. `drops` is the list of
     /// `PriceDrop`s the caller should dispatch to the alert channel.
     async fn upsert_products(
@@ -110,7 +118,6 @@ impl CatalogSyncService {
         products: &[RawProduct],
     ) -> Result<(u32, u32, Vec<PriceDrop>), AppError> {
         let total = products.len() as u32;
-        let mut updated = 0u32;
         let mut drops: Vec<PriceDrop> = Vec::new();
         let synced_at = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -119,6 +126,7 @@ impl CatalogSyncService {
 
         let price_history = PriceHistoryRepo::new(self.pool.clone());
         let cooldown_repo = PriceDropNotificationsRepo::new(self.pool.clone());
+        let product_repo = SqliteProductRepository::new(self.pool.clone());
         let thresholds = Thresholds::default();
         // Channel is hardcoded "app" for service-layer drops — the command
         // layer is responsible for switching to ntfy/webhook based on
@@ -126,9 +134,11 @@ impl CatalogSyncService {
         // lives in sync_command, not in the service layer.)
         let channel = "app";
 
+        // Phase 1: Read previous prices BEFORE the batch insert.
+        // This ensures we capture the OLD price for drop detection,
+        // not the price we're about to insert.
+        let mut prev_prices: Vec<Option<f64>> = Vec::with_capacity(products.len());
         for p in products {
-            // Read the previous price from price_history BEFORE we insert
-            // the new row (so this sync's "previous" stays the OLD value).
             let prev_price = match price_history.get_last_price(&p.sku).await {
                 Ok(p) => p,
                 Err(e) => {
@@ -140,35 +150,19 @@ impl CatalogSyncService {
                     None
                 }
             };
+            prev_prices.push(prev_price);
+        }
 
-            // Existing INSERT OR REPLACE into products_meta — unchanged.
-            let result = sqlx::query(
-                r#"INSERT OR REPLACE INTO products_meta
-                   (sku, source_id, name, brand, model, category, subcategory,
-                    price, currency, condition, availability, url, image_url,
-                    seller, location, synced_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
-            )
-            .bind(&p.sku)
-            .bind(source_id)
-            .bind(&p.name)
-            .bind(&p.brand)
-            .bind(&p.model)
-            .bind(&p.category)
-            .bind(&p.subcategory)
-            .bind(p.price)
-            .bind(&p.currency)
-            .bind(&p.condition)
-            .bind(&p.availability)
-            .bind(&p.url)
-            .bind(&p.image_url)
-            .bind(&p.seller)
-            .bind(&p.location)
-            .bind(synced_at)
-            .execute(&self.pool)
-            .await
-            .map_err(|e| AppError::Database(e.to_string()))?;
-            updated += result.rows_affected() as u32;
+        // Phase 2: Batch insert all products in a single transaction.
+        // If any product fails, the entire batch is rolled back (atomic).
+        let updated = product_repo
+            .batch_upsert_products(source_id, products, synced_at)
+            .await?;
+
+        // Phase 3: Per-product price history recording and drop detection.
+        // These are best-effort — failures are logged but do not abort the sync.
+        for (i, p) in products.iter().enumerate() {
+            let prev_price = prev_prices[i];
 
             // Write the new price to price_history. A failure here is logged
             // but does NOT abort the sync — the product is already in
@@ -271,7 +265,7 @@ impl SyncService for CatalogSyncService {
             }
         }
 
-        let catalog: CatalogFile = response
+        let mut catalog: CatalogFile = response
             .json()
             .await
             .map_err(|e| AppError::InvalidInput(format!("Invalid catalog JSON: {e}")))?;
@@ -291,8 +285,58 @@ impl SyncService for CatalogSyncService {
         self.set_state(source_id, SyncState::Validating.as_str(), None)
             .await?;
 
+        // ── Sanitizing ───────────────────────────────────────────────────
         self.set_state(source_id, SyncState::Sanitizing.as_str(), None)
             .await?;
+
+        catalog.products.iter_mut().for_each(|p| p.sanitize());
+
+        self.set_state(source_id, SyncState::Inserting.as_str(), None)
+            .await?;
+
+        let (loaded, updated, drops) = self
+            .upsert_products(source_id, &catalog.products)
+            .await?;
+
+        self.set_state(source_id, SyncState::Done.as_str(), None)
+            .await?;
+
+        Ok(SyncResult {
+            source_id: source_id.clone(),
+            products_loaded: loaded,
+            products_updated: updated,
+            state: SyncState::Done,
+            progress: 1.0,
+            drops,
+            drops_sent: 0,
+        })
+    }
+
+    async fn sync_local_catalog(&self, path: &str) -> Result<SyncResult, AppError> {
+        let content = tokio::fs::read_to_string(path)
+            .await
+            .map_err(|e| AppError::Io(format!("Failed to read local catalog: {e}")))?;
+
+        let mut catalog: CatalogFile = serde_json::from_str(&content)
+            .map_err(|e| AppError::InvalidInput(format!("Invalid catalog JSON: {e}")))?;
+
+        let source_id = &catalog.source_id;
+
+        // ── Check concurrent ─────────────────────────────────────────────
+        self.check_not_running(source_id).await?;
+
+        // ── State machine ────────────────────────────────────────────────
+        self.set_state(source_id, SyncState::Downloading.as_str(), None)
+            .await?;
+
+        self.set_state(source_id, SyncState::Validating.as_str(), None)
+            .await?;
+
+        // ── Sanitizing ───────────────────────────────────────────────────
+        self.set_state(source_id, SyncState::Sanitizing.as_str(), None)
+            .await?;
+
+        catalog.products.iter_mut().for_each(|p| p.sanitize());
 
         self.set_state(source_id, SyncState::Inserting.as_str(), None)
             .await?;
@@ -674,6 +718,84 @@ mod tests {
         .await
         .unwrap();
         assert_eq!(status, "done");
+    }
+
+    #[tokio::test]
+    async fn sync_local_catalog_succeeds() {
+        let pool = setup_db().await;
+        let client = reqwest::Client::new();
+        let svc = CatalogSyncService::new(pool.clone(), client);
+
+        let body = sample_catalog_json("local-test", &[single_product()]);
+        
+        use std::io::Write;
+        let mut temp_file = tempfile::NamedTempFile::new().unwrap();
+        write!(temp_file, "{}", body).unwrap();
+
+        let result = svc.sync_local_catalog(temp_file.path().to_str().unwrap()).await.expect("sync should succeed");
+        assert_eq!(result.source_id, "local-test");
+        assert_eq!(result.products_loaded, 1);
+        assert_eq!(result.state, SyncState::Done);
+        assert!((result.progress - 1.0).abs() < f32::EPSILON);
+
+        // Verify products inserted
+        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM products_meta")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(count, 1);
+    }
+
+    #[tokio::test]
+    async fn sync_local_catalog_detects_15pct_drop() {
+        use crate::repository::price_history::PriceHistoryRepo;
+        use std::io::Write;
+
+        let pool = setup_db().await;
+        let price_history = PriceHistoryRepo::new(pool.clone());
+        let svc = CatalogSyncService::new(pool.clone(), reqwest::Client::new());
+
+        // Seed: write a $1000 history row, recorded 1 hour ago.
+        let one_hour_ago = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64
+            - 3600;
+        price_history
+            .record_price("SKU-LOCAL-DROP", 1000.0, "local-source", one_hour_ago)
+            .await
+            .unwrap();
+
+        // Now sync: catalog has SKU-LOCAL-DROP at $850 (15% drop).
+        let mut prod = single_product();
+        prod["sku"] = serde_json::json!("SKU-LOCAL-DROP");
+        prod["price"] = serde_json::json!(850.0);
+        
+        let body = sample_catalog_json("local-source", &[prod]);
+        let mut temp_file = tempfile::NamedTempFile::new().unwrap();
+        write!(temp_file, "{}", body).unwrap();
+
+        let result = svc
+            .sync_local_catalog(temp_file.path().to_str().unwrap())
+            .await
+            .expect("sync_local_catalog must succeed");
+
+        // Exactly 1 drop detected
+        assert_eq!(result.drops.len(), 1, "expected exactly 1 drop, got {:?}", result.drops);
+        let drop = &result.drops[0];
+        assert_eq!(drop.sku, "SKU-LOCAL-DROP");
+        assert!(
+            (drop.previous_price - 1000.0).abs() < f64::EPSILON,
+            "expected previous_price=1000.0, got {}",
+            drop.previous_price
+        );
+        assert!(
+            (drop.new_price - 850.0).abs() < f64::EPSILON,
+            "expected new_price=850.0, got {}",
+            drop.new_price
+        );
+        
+        assert_eq!(result.state, SyncState::Done);
     }
 
     // ── Test: HTTP error handling ───────────────────────────────────────────

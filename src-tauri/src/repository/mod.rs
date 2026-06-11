@@ -4,6 +4,7 @@ pub mod collection;
 pub mod dashboard;
 pub mod price_drop_notifications;
 pub mod price_history;
+pub mod product;
 pub mod settings;
 pub mod sqlite;
 pub mod wishlist;
