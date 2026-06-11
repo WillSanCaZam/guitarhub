@@ -35,7 +35,7 @@ mod tests {
     use crate::AppError;
     use crate::repository::sqlite::migrations::MigrationRunner;
 
-    /// Create an in-memory pool using the REAL migration chain (001→008).
+    /// Create an in-memory pool using the REAL migration chain (001→009).
     ///
     /// Mirrors the helper in `services::export_service::tests` — using the
     /// real schema here means command-level tests validate the same contract
@@ -92,6 +92,11 @@ mod tests {
         std::fs::write(
             dir.join("008_collection_items.sql"),
             include_str!("../repository/sqlite/migrations/008_collection_items.sql"),
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("009_add_recent_searches.sql"),
+            include_str!("../repository/sqlite/migrations/009_add_recent_searches.sql"),
         )
         .unwrap();
 

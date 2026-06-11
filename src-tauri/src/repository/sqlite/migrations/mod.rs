@@ -947,6 +947,8 @@ END;",
             "005_add_settings.sql",
             "006_wishlist_schema.sql",
             "007_price_drop_notifications.sql",
+            "008_collection_items.sql",
+            "009_add_recent_searches.sql",
         ]);
         std::fs::write(dir.join("001_init.sql"), include_str!("../migrations/001_init.sql")).unwrap();
         std::fs::write(dir.join("002_add_url_validation.sql"), include_str!("../migrations/002_add_url_validation.sql")).unwrap();
@@ -955,6 +957,8 @@ END;",
         std::fs::write(dir.join("005_add_settings.sql"), include_str!("../migrations/005_add_settings.sql")).unwrap();
         std::fs::write(dir.join("006_wishlist_schema.sql"), include_str!("../migrations/006_wishlist_schema.sql")).unwrap();
         std::fs::write(dir.join("007_price_drop_notifications.sql"), include_str!("../migrations/007_price_drop_notifications.sql")).unwrap();
+        std::fs::write(dir.join("008_collection_items.sql"), include_str!("../migrations/008_collection_items.sql")).unwrap();
+        std::fs::write(dir.join("009_add_recent_searches.sql"), include_str!("../migrations/009_add_recent_searches.sql")).unwrap();
 
         let runner = MigrationRunner::new(pool.clone(), dir.clone());
         runner.run().await.unwrap();
