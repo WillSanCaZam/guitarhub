@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
-import { dashboardStats, loadDashboard } from '../dashboard';
+import { dashboardState, loadDashboard } from '../dashboard.svelte';
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
@@ -14,7 +14,7 @@ vi.mock('$lib/stores/collection.svelte', () => ({
 describe('loadDashboard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    dashboardStats.set({ totalProducts: 0, wishlistCount: 0, recentSearches: [], loading: true, error: null });
+    Object.assign(dashboardState, { totalProducts: 0, wishlistCount: 0, recentSearches: [], loading: true, error: null });
   });
 
   it('sets loading true then updates stats on success', async () => {
@@ -25,12 +25,11 @@ describe('loadDashboard', () => {
 
     await loadDashboard();
 
-    const state = getSnapshot(dashboardStats);
-    expect(state.totalProducts).toBe(42);
-    expect(state.wishlistCount).toBe(7);
-    expect(state.recentSearches).toEqual(['guitar', 'bass']);
-    expect(state.loading).toBe(false);
-    expect(state.error).toBeNull();
+    expect(dashboardState.totalProducts).toBe(42);
+    expect(dashboardState.wishlistCount).toBe(7);
+    expect(dashboardState.recentSearches).toEqual(['guitar', 'bass']);
+    expect(dashboardState.loading).toBe(false);
+    expect(dashboardState.error).toBeNull();
   });
 
   it('sets error on failure', async () => {
@@ -38,16 +37,7 @@ describe('loadDashboard', () => {
 
     await loadDashboard();
 
-    const state = getSnapshot(dashboardStats);
-    expect(state.loading).toBe(false);
-    expect(state.error).toBe('Error: IPC failed');
+    expect(dashboardState.loading).toBe(false);
+    expect(dashboardState.error).toBe('Error: IPC failed');
   });
 });
-
-/** Read current value from a writable store. */
-function getSnapshot<T>(store: { subscribe: (fn: (v: T) => void) => () => void }): T {
-  let value: T;
-  const unsub = store.subscribe((v) => { value = v; });
-  unsub();
-  return value!;
-}

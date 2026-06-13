@@ -2,16 +2,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/svelte';
 import Page from '../+page.svelte';
 import { invoke } from '@tauri-apps/api/core';
-import { dashboardStats } from '$lib/stores/dashboard';
-import { syncResult } from '$lib/stores/sync';
+import { dashboardState } from '$lib/stores/dashboard.svelte';
+import { syncState } from '$lib/stores/sync.svelte';
 import { collectionState } from '$lib/stores/collection.svelte';
 import { filterState } from '$lib/stores/filter.svelte';
 
 describe('Dashboard Page', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    dashboardStats.set({ totalProducts: 0, wishlistCount: 0, recentSearches: [], loading: false, error: null });
-    syncResult.set({ drops: [], drops_sent: 0, state: 'idle' });
+    Object.assign(dashboardState, { totalProducts: 0, wishlistCount: 0, recentSearches: [], loading: false, error: null });
+    if (syncState) {
+      Object.assign(syncState, { drops: [], drops_sent: 0, state: 'idle' });
+    }
     collectionState.items = [];
     collectionState.stats = null;
     collectionState.collectedSkus = new Set();

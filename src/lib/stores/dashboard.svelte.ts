@@ -1,4 +1,3 @@
-import { writable } from 'svelte/store';
 import { invoke } from '@tauri-apps/api/core';
 import { loadCollectionStats, loadCollection } from './collection.svelte';
 
@@ -18,25 +17,24 @@ const defaultStats: DashboardStats = {
   error: null,
 };
 
-export const dashboardStats = writable<DashboardStats>({ ...defaultStats });
+export const dashboardState: DashboardStats = $state({ ...defaultStats });
 
 export async function loadDashboard() {
-  dashboardStats.update(s => ({ ...s, loading: true, error: null }));
+  dashboardState.loading = true;
+  dashboardState.error = null;
   try {
     const [totalProducts, wishlistCount, recentSearches] = await Promise.all([
       invoke<number>('get_total_products'),
       invoke<number>('get_wishlist_count'),
       invoke<string[]>('get_recent_searches')
     ]);
-    dashboardStats.set({
-      totalProducts,
-      wishlistCount,
-      recentSearches,
-      loading: false,
-      error: null,
-    });
+    dashboardState.totalProducts = totalProducts;
+    dashboardState.wishlistCount = wishlistCount;
+    dashboardState.recentSearches = recentSearches;
+    dashboardState.loading = false;
   } catch (e) {
-    dashboardStats.update(s => ({ ...s, loading: false, error: String(e) }));
+    dashboardState.loading = false;
+    dashboardState.error = String(e);
   }
   loadCollectionStats();
   loadCollection();

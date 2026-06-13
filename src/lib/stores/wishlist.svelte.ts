@@ -1,4 +1,3 @@
-import { writable } from 'svelte/store';
 import { invoke } from '@tauri-apps/api/core';
 import type { WishlistItem, WishlistItemInput } from '$lib/types/wishlist';
 
@@ -14,15 +13,18 @@ const defaultStore: WishlistStore = {
   error: null,
 };
 
-export const wishlistStore = writable<WishlistStore>({ ...defaultStore });
+export const wishlistState: WishlistStore = $state({ ...defaultStore });
 
 export async function loadWishlist() {
-  wishlistStore.update(s => ({ ...s, loading: true, error: null }));
+  wishlistState.loading = true;
+  wishlistState.error = null;
   try {
     const items = await invoke<WishlistItem[]>('get_wishlist');
-    wishlistStore.update(s => ({ ...s, items, loading: false }));
+    wishlistState.items = items;
+    wishlistState.loading = false;
   } catch (e) {
-    wishlistStore.update(s => ({ ...s, loading: false, error: String(e) }));
+    wishlistState.loading = false;
+    wishlistState.error = String(e);
   }
 }
 

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { wishlistStore, loadWishlist, removeFromWishlist } from '$lib/stores/wishlist';
+  import { wishlistState, loadWishlist, removeFromWishlist } from '$lib/stores/wishlist.svelte';
 
   onMount(() => {
     loadWishlist();
@@ -17,15 +17,15 @@
     <h1>Wishlist</h1>
   </header>
 
-  {#if $wishlistStore.loading}
+  {#if wishlistState.loading}
     <p class="status">Loading&hellip;</p>
-  {:else if $wishlistStore.error}
-    <p class="error">{$wishlistStore.error}</p>
-  {:else if $wishlistStore.items.length === 0}
+  {:else if wishlistState.error}
+    <p class="error">{wishlistState.error}</p>
+  {:else if wishlistState.items.length === 0}
     <p class="empty-state">Your wishlist is empty</p>
   {:else}
     <ul class="wishlist-list">
-      {#each $wishlistStore.items as item (item.id)}
+      {#each wishlistState.items as item (item.id)}
         <li class="wishlist-item">
           <div class="item-info">
             <span class="item-name">{item.name ?? item.sku ?? 'Unknown'}</span>

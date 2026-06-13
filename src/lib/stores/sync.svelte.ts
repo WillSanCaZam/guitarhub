@@ -1,5 +1,3 @@
-import { writable } from 'svelte/store';
-
 export interface SyncResult {
   source_id?: string;
   products_loaded?: number;
@@ -16,4 +14,4 @@ export interface SyncResult {
   drops_sent?: number;
 }
 
-export const syncResult = writable<SyncResult | null>(null);
+export const syncState: SyncResult | null = $state(null);

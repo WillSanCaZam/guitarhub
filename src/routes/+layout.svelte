@@ -1,8 +1,8 @@
 <script>
   import { onMount } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
-  import { syncResult } from '$lib/stores/sync';
-  import { wishlistStore, loadWishlist } from '$lib/stores/wishlist';
+  import { syncState } from '$lib/stores/sync.svelte';
+  import { wishlistState, loadWishlist } from '$lib/stores/wishlist.svelte';
   import { authState } from '$lib/stores/auth.svelte';
   import HealthCheck from '$lib/components/community/HealthCheck.svelte';
   import AppShell from '$lib/components/layout/AppShell.svelte';
@@ -36,7 +36,7 @@
     syncError = null;
     try {
       const result = await invoke('sync_catalog', { url: catalogUrl });
-      syncResult.set(result);
+      Object.assign(syncState, result);
     } catch (e) {
       syncError = String(e);
       setTimeout(() => { syncError = null; }, 5000);
@@ -53,8 +53,8 @@
     <a href="/" class="nav-title">GuitarHub</a>
     <div class="nav-actions">
       <a href="/wishlist" class="nav-link">
-        Wishlist{#if $wishlistStore.items.length > 0}
-          <span class="badge">{$wishlistStore.items.length}</span>
+        Wishlist{#if $wishlistState.items.length > 0}
+          <span class="badge">{$wishlistState.items.length}</span>
         {/if}
       </a>
       <a href="/settings" class="nav-link">Settings</a>

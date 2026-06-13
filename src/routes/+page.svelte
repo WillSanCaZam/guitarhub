@@ -7,8 +7,8 @@
   import SyncStatusCell from '$lib/components/SyncStatusCell.svelte';
   import CollectionStatsCell from '$lib/components/CollectionStatsCell.svelte';
   import type { RawProduct } from '$lib/types/search';
-  import { syncResult } from '$lib/stores/sync';
-  import { dashboardStats, loadDashboard } from '$lib/stores/dashboard';
+  import { syncState } from '$lib/stores/sync.svelte';
+  import { dashboardState, loadDashboard } from '$lib/stores/dashboard.svelte';
   import { collectionState } from '$lib/stores/collection.svelte';
   import { filterState, restoreFiltersFromUrl } from '$lib/stores/filter.svelte';
   import pkg from '../../package.json';
@@ -51,17 +51,17 @@
     <!-- Cell 2: Wide (Sync Status) -->
     <div class="cell cell-wide">
       <SyncStatusCell
-        drops={$syncResult?.drops ?? []}
-        dropsSent={$syncResult?.drops_sent ?? 0}
-        syncState={$syncResult?.state ?? 'idle'}
+        drops={syncState?.drops ?? []}
+        dropsSent={syncState?.drops_sent ?? 0}
+        syncState={syncState?.state ?? 'idle'}
       />
     </div>
 
     <!-- Cell 3: Standard (Total Products) -->
     <div class="cell cell-standard">
-      <DashboardCell title="Products" icon="🎸" loading={$dashboardStats.loading} empty={$dashboardStats.totalProducts === 0} emptyMessage="No products in catalog yet" emptyIcon="🎸">
-        {#if !$dashboardStats.loading}
-          <div class="stat-value">{$dashboardStats.totalProducts.toLocaleString()}</div>
+      <DashboardCell title="Products" icon="🎸" loading={dashboardState.loading} empty={dashboardState.totalProducts === 0} emptyMessage="No products in catalog yet" emptyIcon="🎸">
+        {#if !dashboardState.loading}
+          <div class="stat-value">{dashboardState.totalProducts.toLocaleString()}</div>
           <div class="stat-label">in catalog</div>
         {/if}
       </DashboardCell>
@@ -69,9 +69,9 @@
 
     <!-- Cell 4: Standard (Wishlist Count) -->
     <div class="cell cell-standard">
-      <DashboardCell title="Wishlist" icon="❤️" loading={$dashboardStats.loading} empty={$dashboardStats.wishlistCount === 0} emptyMessage="Wishlist is empty" emptyIcon="❤️">
-        {#if !$dashboardStats.loading}
-          <div class="stat-value">{$dashboardStats.wishlistCount.toLocaleString()}</div>
+      <DashboardCell title="Wishlist" icon="❤️" loading={dashboardState.loading} empty={dashboardState.wishlistCount === 0} emptyMessage="Wishlist is empty" emptyIcon="❤️">
+        {#if !dashboardState.loading}
+          <div class="stat-value">{dashboardState.wishlistCount.toLocaleString()}</div>
           <div class="stat-label">items saved</div>
         {/if}
       </DashboardCell>
@@ -79,10 +79,10 @@
 
     <!-- Cell 5: Standard (Recent Searches) -->
     <div class="cell cell-standard">
-      <DashboardCell title="Recent Searches" icon="🕓" loading={$dashboardStats.loading} empty={$dashboardStats.recentSearches.length === 0} emptyMessage="Start searching to see history" emptyIcon="🕓">
-        {#if !$dashboardStats.loading && $dashboardStats.recentSearches.length > 0}
+      <DashboardCell title="Recent Searches" icon="🕓" loading={dashboardState.loading} empty={dashboardState.recentSearches.length === 0} emptyMessage="Start searching to see history" emptyIcon="🕓">
+        {#if !dashboardState.loading && dashboardState.recentSearches.length > 0}
           <ul class="recent-list">
-            {#each $dashboardStats.recentSearches as search}
+            {#each dashboardState.recentSearches as search}
               <li class="recent-item">{search}</li>
             {/each}
           </ul>
