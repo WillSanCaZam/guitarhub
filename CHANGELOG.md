@@ -6,8 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-13
+
 ### Added
-- macOS ARM64 (aarch64-apple-darwin) release builds via CI
+
+- **Community Hub** — Auth (OAuth/JWT), user profiles, practice streaks, lessons, riffs, feed, comments, follows, challenges, and leaderboards.
+- **Navigation Shell** — Adaptive sidebar/bottom nav with AppShell, Sidebar, and BottomNav components.
+- **Design System** — Acoustic Dark Modern design tokens, shared UI atoms (Button, Card, Avatar, Badge, Chip, Input, ProgressBar).
+- **Community Routes** — Explore, Feed, Lessons, My Gear, Profile, and Saved Riffs pages.
+- **Community Backend** — Auth, community, and profile Tauri commands/services; SQLite migration 010 for community schema.
+- **Svelte 5 Store Migration** — All 8 stores now use `$state` runes (zero `writable()` imports).
+
+### Changed
+
+- README version badge updated to v0.4.0.
+- Removed unused `beautifulsoup4` dependency from scraper.
+- Migrated `dashboard.ts`, `sync.ts`, `wishlist.ts` to Svelte 5 runes.
 
 ## [0.3.0] - 2026-06-10
 
@@ -76,7 +90,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - URL validation for images and webhooks with SSRF prevention (IP literal rejection, HTTPS enforcement, domain allowlist).
 
-[Unreleased]: https://github.com/WillSanCaZam/guitarhub/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/WillSanCaZam/guitarhub/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/WillSanCaZam/guitarhub/releases/tag/v0.4.0
 [0.3.0]: https://github.com/WillSanCaZam/guitarhub/releases/tag/v0.3.0
 [0.2.0]: https://github.com/WillSanCaZam/guitarhub/releases/tag/v0.2.0
 [0.1.0]: https://github.com/WillSanCaZam/guitarhub/releases/tag/v0.1.0
