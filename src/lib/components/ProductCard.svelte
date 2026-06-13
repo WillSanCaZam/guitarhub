@@ -2,7 +2,7 @@
   import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
   import PriceBadge from './PriceBadge.svelte';
-  import { addToCollection } from '$lib/stores/collection';
+  import { addToCollection } from '$lib/stores/collection.svelte';
   import type { PriceInsight } from '$lib/types/price';
 
   interface ProductCardProduct {

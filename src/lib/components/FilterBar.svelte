@@ -1,34 +1,12 @@
 <script lang="ts">
-  import { filterStore, syncFiltersToUrl, DEFAULT_FILTERS } from '$lib/stores/filter';
-  import type { FilterState } from '$lib/stores/filter';
+  import { filterState, updateFilter, clearFilter, clearAllFilters } from '$lib/stores/filter.svelte';
+  import type { FilterState } from '$lib/stores/filter.svelte';
 
   let expanded = $state(false);
 
   const CONDITION_OPTIONS = ['new', 'used', 'refurbished', 'unknown'];
   const CURRENCY_OPTIONS = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY'];
   const SORT_OPTIONS = ['relevance', 'price_asc', 'price_desc', 'name_asc', 'name_desc'] as const;
-
-  function updateField<K extends keyof FilterState>(field: K, value: FilterState[K]): void {
-    filterStore.update((state) => {
-      const next = { ...state, [field]: value };
-      syncFiltersToUrl(next);
-      return next;
-    });
-  }
-
-  function clearField(field: keyof FilterState): void {
-    filterStore.update((state) => {
-      const next = { ...state, [field]: field === 'sort' ? 'relevance' as const : null };
-      syncFiltersToUrl(next);
-      return next;
-    });
-  }
-
-  function handleClearAll(): void {
-    const defaults = { ...DEFAULT_FILTERS };
-    filterStore.set(defaults);
-    syncFiltersToUrl(defaults);
-  }
 </script>
 
 <div class="filter-bar">
@@ -50,14 +28,14 @@
           <button
             class="clear-field-btn"
             data-testid="clear-category"
-            onclick={() => clearField('category')}
+            onclick={() => clearFilter('category')}
             aria-label="Clear category filter"
           >×</button>
         </div>
         <select
           id="filter-category"
           data-testid="filter-category"
-          onchange={(e) => updateField('category', (e.target as HTMLSelectElement).value || null)}
+          onchange={(e) => updateFilter('category', (e.target as HTMLSelectElement).value || null)}
         >
           <option value="">All</option>
           <option value="Guitar">Guitar</option>
@@ -81,7 +59,7 @@
           <button
             class="clear-field-btn"
             data-testid="clear-price-min"
-            onclick={() => clearField('price_min')}
+            onclick={() => clearFilter('price_min')}
             aria-label="Clear minimum price filter"
           >×</button>
         </div>
@@ -96,7 +74,7 @@
             data-testid="filter-price-min"
             oninput={(e) => {
               const val = (e.target as HTMLInputElement).value;
-              updateField('price_min', val ? Number(val) : null);
+              updateFilter('price_min', val ? Number(val) : null);
             }}
           />
         </div>
@@ -109,7 +87,7 @@
           <button
             class="clear-field-btn"
             data-testid="clear-price-max"
-            onclick={() => clearField('price_max')}
+            onclick={() => clearFilter('price_max')}
             aria-label="Clear maximum price filter"
           >×</button>
         </div>
@@ -124,7 +102,7 @@
             data-testid="filter-price-max"
             oninput={(e) => {
               const val = (e.target as HTMLInputElement).value;
-              updateField('price_max', val ? Number(val) : null);
+              updateFilter('price_max', val ? Number(val) : null);
             }}
           />
         </div>
@@ -137,14 +115,14 @@
           <button
             class="clear-field-btn"
             data-testid="clear-condition"
-            onclick={() => clearField('condition')}
+            onclick={() => clearFilter('condition')}
             aria-label="Clear condition filter"
           >×</button>
         </div>
         <select
           id="filter-condition"
           data-testid="filter-condition"
-          onchange={(e) => updateField('condition', (e.target as HTMLSelectElement).value || null)}
+          onchange={(e) => updateFilter('condition', (e.target as HTMLSelectElement).value || null)}
         >
           <option value="">Any</option>
           {#each CONDITION_OPTIONS as opt}
@@ -160,14 +138,14 @@
           <button
             class="clear-field-btn"
             data-testid="clear-currency"
-            onclick={() => clearField('listing_currency')}
+            onclick={() => clearFilter('listing_currency')}
             aria-label="Clear currency filter"
           >×</button>
         </div>
         <select
           id="filter-currency"
           data-testid="filter-currency"
-          onchange={(e) => updateField('listing_currency', (e.target as HTMLSelectElement).value || null)}
+          onchange={(e) => updateFilter('listing_currency', (e.target as HTMLSelectElement).value || null)}
         >
           <option value="">Any</option>
           {#each CURRENCY_OPTIONS as opt}
@@ -183,14 +161,14 @@
           <button
             class="clear-field-btn"
             data-testid="clear-sort"
-            onclick={() => clearField('sort')}
+            onclick={() => clearFilter('sort')}
             aria-label="Clear sort order"
           >×</button>
         </div>
         <select
           id="filter-sort"
           data-testid="filter-sort"
-          onchange={(e) => updateField('sort', (e.target as HTMLSelectElement).value as FilterState['sort'])}
+          onchange={(e) => updateFilter('sort', (e.target as HTMLSelectElement).value as FilterState['sort'])}
         >
           {#each SORT_OPTIONS as opt}
             <option value={opt}>{opt.replace('_', ' ')}</option>
@@ -203,7 +181,7 @@
         <button
           class="clear-all-btn"
           data-testid="filter-clear-all"
-          onclick={handleClearAll}
+          onclick={clearAllFilters}
         >
           Clear All Filters
         </button>

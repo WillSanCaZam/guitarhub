@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import CollectionView from '$lib/components/CollectionView.svelte';
-  import { loadCollection, loadCollectionStats } from '$lib/stores/collection';
+  import { loadCollection, loadCollectionStats } from '$lib/stores/collection.svelte';
 
   onMount(() => {
     loadCollection();

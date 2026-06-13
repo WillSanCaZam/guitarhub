@@ -18,6 +18,9 @@
   let saving = $state<boolean>(false);
   let saved = $state<boolean>(false);
   let allowedImageDomains = $state<string>('');
+  let communityServerUrl = $state<string>('');
+  let communityTestResult = $state<{ success: boolean; message: string } | null>(null);
+  let communityTestLoading = $state<boolean>(false);
 
   onMount(async () => {
     try {
@@ -32,6 +35,10 @@
       const savedDomains = await invoke<string | null>('get_setting', { key: 'allowed_image_domains' });
       if (savedDomains) {
         allowedImageDomains = savedDomains;
+      }
+      const savedServerUrl = await invoke<string | null>('get_setting', { key: 'community_server_url' });
+      if (savedServerUrl) {
+        communityServerUrl = savedServerUrl;
       }
     } catch (e) {
       console.error('Failed to load settings:', e);
@@ -94,6 +101,21 @@
     }
   }
 
+  async function testCommunityConnection() {
+    communityTestLoading = true;
+    communityTestResult = null;
+    try {
+      const ok = await invoke<boolean>('health_check', { server_url: communityServerUrl });
+      communityTestResult = ok
+        ? { success: true, message: 'Connected!' }
+        : { success: false, message: 'Server unreachable' };
+    } catch (e) {
+      communityTestResult = { success: false, message: String(e) };
+    } finally {
+      communityTestLoading = false;
+    }
+  }
+
   async function saveAll() {
     saving = true;
     saved = false;
@@ -101,6 +123,7 @@
       await invoke<void>('save_setting', { key: 'alert_channel', value: alertChannel });
       await invoke<void>('save_setting', { key: 'alert_config', value: alertConfig });
       await invoke<void>('save_setting', { key: 'allowed_image_domains', value: allowedImageDomains });
+      await invoke<void>('save_setting', { key: 'community_server_url', value: communityServerUrl });
       saved = true;
       setTimeout(() => {
         saved = false;
@@ -201,6 +224,32 @@
     <p class="hint">
       Only images from these domains will be loaded. Leave empty to use the defaults (reverb.com, mlstatic.com).
     </p>
+  </fieldset>
+
+  <fieldset class="community-section">
+    <legend>Community Server</legend>
+
+    <div class="config-input">
+      <label for="community-server-url">
+        Server URL:
+      </label>
+      <input
+        id="community-server-url"
+        type="text"
+        bind:value={communityServerUrl}
+        placeholder="https://community.guitarhub.app"
+      />
+    </div>
+
+    <button onclick={testCommunityConnection} disabled={communityTestLoading}>
+      {communityTestLoading ? 'Testing...' : 'Test Connection'}
+    </button>
+
+    {#if communityTestResult}
+      <p class="test-result" class:success={communityTestResult.success} class:error={!communityTestResult.success}>
+        {communityTestResult.success ? communityTestResult.message : 'Failed: ' + communityTestResult.message}
+      </p>
+    {/if}
   </fieldset>
 
   <fieldset class="export-section">

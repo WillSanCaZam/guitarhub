@@ -1,24 +1,22 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
-  import { get } from 'svelte/store';
   import { onMount, onDestroy, untrack } from 'svelte';
-  import type { Writable } from 'svelte/store';
   import { createVirtualizer } from '@tanstack/svelte-virtual';
   import ProductCard from './ProductCard.svelte';
   import DashboardCell from './DashboardCell.svelte';
   import FilterBar from './FilterBar.svelte';
   import { pageFromOffset } from '$lib/types/search';
   import type { SearchResult, RawProduct } from '$lib/types/search';
-  import type { FilterState } from '$lib/stores/filter';
-  import type { CollectionStore } from '$lib/stores/collection';
+  import type { FilterState } from '$lib/stores/filter.svelte';
+  import type { CollectionStore } from '$lib/stores/collection.svelte';
 
   interface Props {
-    filterStore: Writable<FilterState>;
+    filterState: FilterState;
     collectionStore: CollectionStore;
     onfeaturedChange?: (product: RawProduct | null) => void;
   }
 
-  let { filterStore, collectionStore, onfeaturedChange }: Props = $props();
+  let { filterState, collectionStore, onfeaturedChange }: Props = $props();
 
   let query = $state('');
   let results: RawProduct[] = $state([]);
@@ -100,7 +98,7 @@
     error = null;
 
     try {
-      const currentFilters = get(filterStore);
+      const currentFilters = filterState;
 
       const res = await invoke<SearchResult>('search_products', {
         query: q,

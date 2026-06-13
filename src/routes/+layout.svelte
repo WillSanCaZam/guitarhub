@@ -3,14 +3,19 @@
   import { invoke } from '@tauri-apps/api/core';
   import { syncResult } from '$lib/stores/sync';
   import { wishlistStore, loadWishlist } from '$lib/stores/wishlist';
+  import { authState } from '$lib/stores/auth.svelte';
+  import HealthCheck from '$lib/components/community/HealthCheck.svelte';
+  import AppShell from '$lib/components/layout/AppShell.svelte';
 
   let { children } = $props();
   let syncing = $state(false);
   let syncError = $state(null);
   let catalogUrl = $state('https://pages.guitarhub.app/catalog.json');
+  let currentPath = $state('/');
 
   onMount(async () => {
     loadWishlist();
+    currentPath = window.location.pathname;
     try {
       const saved = await invoke('get_setting', { key: 'catalog_url' });
       if (saved) {
@@ -41,50 +46,49 @@
   }
 </script>
 
-<nav class="nav">
-  <a href="/" class="nav-title">GuitarHub</a>
-  <div class="nav-actions">
-    <a href="/wishlist" class="nav-link">
-      Wishlist{#if $wishlistStore.items.length > 0}
-        <span class="badge">{$wishlistStore.items.length}</span>
-      {/if}
-    </a>
-    <a href="/settings" class="nav-link">Settings</a>
-    <button onclick={handleSync} disabled={syncing} class="sync-btn" data-testid="sync-button">
-      {syncing ? 'Syncing\u2026' : 'Sync Catalog'}
-    </button>
-    {#if syncError}
-      <span class="sync-error">{syncError}</span>
-    {/if}
-  </div>
-</nav>
+<HealthCheck />
 
-<div class="content">
+<AppShell {currentPath} serverReachable={authState.serverReachable}>
+  <div class="legacy-header">
+    <a href="/" class="nav-title">GuitarHub</a>
+    <div class="nav-actions">
+      <a href="/wishlist" class="nav-link">
+        Wishlist{#if $wishlistStore.items.length > 0}
+          <span class="badge">{$wishlistStore.items.length}</span>
+        {/if}
+      </a>
+      <a href="/settings" class="nav-link">Settings</a>
+      <button onclick={handleSync} disabled={syncing} class="sync-btn" data-testid="sync-button">
+        {syncing ? 'Syncing\u2026' : 'Sync Catalog'}
+      </button>
+      {#if syncError}
+        <span class="sync-error">{syncError}</span>
+      {/if}
+    </div>
+  </div>
+
   {@render children()}
-</div>
+</AppShell>
 
 <style>
   :global(body) {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-      Ubuntu, Cantarell, sans-serif;
-    background: #f5f5f5;
-    color: #333;
+    font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+      Ubuntu, Cantarell, sans-serif);
+    background: var(--color-surface, #121218);
+    color: var(--color-on-surface, #e8e8f0);
   }
-  .nav {
+  .legacy-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 16px;
+    padding: 0 var(--spacing-md, 16px);
     height: 48px;
-    background: #1a1a2e;
-    color: #fff;
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    background: var(--color-surface-container, #1c1c26);
+    color: var(--color-on-surface, #e8e8f0);
   }
   .nav-title {
-    color: #fff;
+    color: var(--color-on-surface, #fff);
     text-decoration: none;
     font-size: 1.1rem;
     font-weight: 700;
@@ -95,16 +99,16 @@
   .nav-actions {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: var(--spacing-sm, 12px);
   }
   .nav-link {
-    color: #aaa;
+    color: var(--color-on-surface-variant, #aaa);
     text-decoration: none;
     font-size: 0.85rem;
-    transition: color 0.15s;
+    transition: color var(--transition-fast, 0.15s);
   }
   .nav-link:hover {
-    color: #fff;
+    color: var(--color-on-surface, #fff);
   }
   .badge {
     display: inline-block;
@@ -113,36 +117,33 @@
     line-height: 18px;
     padding: 0 5px;
     border-radius: 9px;
-    background: #4a90d9;
-    color: #fff;
+    background: var(--color-secondary, #4a90d9);
+    color: var(--color-on-secondary, #fff);
     font-size: 0.7rem;
     font-weight: 600;
     text-align: center;
-    margin-left: 4px;
+    margin-left: var(--spacing-2xs, 4px);
     vertical-align: middle;
   }
   .sync-btn {
-    padding: 4px 12px;
-    border: 1px solid rgba(255,255,255,0.3);
-    border-radius: 4px;
+    padding: var(--spacing-2xs, 4px) var(--spacing-sm, 12px);
+    border: 1px solid var(--color-outline, rgba(255,255,255,0.3));
+    border-radius: var(--radius-sm, 4px);
     background: transparent;
-    color: #fff;
+    color: var(--color-on-surface, #fff);
     cursor: pointer;
     font-size: 0.8rem;
-    transition: background 0.15s;
+    transition: background var(--transition-fast, 0.15s);
   }
   .sync-btn:hover:not(:disabled) {
-    background: rgba(255,255,255,0.1);
+    background: var(--color-surface-container-high, rgba(255,255,255,0.1));
   }
   .sync-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
   .sync-error {
-    color: #f88;
+    color: var(--color-error, #f88);
     font-size: 0.8rem;
-  }
-  .content {
-    min-height: calc(100vh - 48px);
   }
 </style>

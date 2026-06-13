@@ -1,13 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import FilterBar from '../FilterBar.svelte';
-import { filterStore, DEFAULT_FILTERS } from '$lib/stores/filter';
-import { get } from 'svelte/store';
-import type { FilterState } from '$lib/stores/filter';
+import { filterState, DEFAULT_FILTERS } from '$lib/stores/filter.svelte';
 
 describe('FilterBar', () => {
   beforeEach(() => {
-    filterStore.set({ ...DEFAULT_FILTERS });
+    Object.assign(filterState, { ...DEFAULT_FILTERS });
   });
 
   it('renders toggle button collapsed by default', () => {
@@ -45,169 +43,126 @@ describe('FilterBar', () => {
     expect(screen.queryByTestId('filter-category')).not.toBeInTheDocument();
   });
 
-  it('updates store when category is changed', async () => {
+  it('updates state when category is changed', async () => {
     render(FilterBar);
     await fireEvent.click(screen.getByTestId('filter-toggle'));
 
     const categorySelect = screen.getByTestId('filter-category') as HTMLSelectElement;
     await fireEvent.change(categorySelect, { target: { value: 'Guitar' } });
 
-    const state = get(filterStore);
-    expect(state.category).toBe('Guitar');
+    expect(filterState.category).toBe('Guitar');
   });
 
-  it('updates store when price min is changed', async () => {
+  it('updates state when price min is changed', async () => {
     render(FilterBar);
     await fireEvent.click(screen.getByTestId('filter-toggle'));
 
     const priceMin = screen.getByTestId('filter-price-min') as HTMLInputElement;
     await fireEvent.input(priceMin, { target: { value: '100' } });
 
-    const state = get(filterStore);
-    expect(state.price_min).toBe(100);
+    expect(filterState.price_min).toBe(100);
   });
 
-  it('updates store when price max is changed', async () => {
+  it('updates state when price max is changed', async () => {
     render(FilterBar);
     await fireEvent.click(screen.getByTestId('filter-toggle'));
 
     const priceMax = screen.getByTestId('filter-price-max') as HTMLInputElement;
     await fireEvent.input(priceMax, { target: { value: '2000' } });
 
-    const state = get(filterStore);
-    expect(state.price_max).toBe(2000);
+    expect(filterState.price_max).toBe(2000);
   });
 
-  it('updates store when condition is changed', async () => {
+  it('updates state when condition is changed', async () => {
     render(FilterBar);
     await fireEvent.click(screen.getByTestId('filter-toggle'));
 
     const conditionSelect = screen.getByTestId('filter-condition') as HTMLSelectElement;
     await fireEvent.change(conditionSelect, { target: { value: 'new' } });
 
-    const state = get(filterStore);
-    expect(state.condition).toBe('new');
+    expect(filterState.condition).toBe('new');
   });
 
-  it('updates store when currency is changed', async () => {
+  it('updates state when currency is changed', async () => {
     render(FilterBar);
     await fireEvent.click(screen.getByTestId('filter-toggle'));
 
     const currencySelect = screen.getByTestId('filter-currency') as HTMLSelectElement;
     await fireEvent.change(currencySelect, { target: { value: 'USD' } });
 
-    const state = get(filterStore);
-    expect(state.listing_currency).toBe('USD');
+    expect(filterState.listing_currency).toBe('USD');
   });
 
-  it('updates store when sort is changed', async () => {
+  it('updates state when sort is changed', async () => {
     render(FilterBar);
     await fireEvent.click(screen.getByTestId('filter-toggle'));
 
     const sortSelect = screen.getByTestId('filter-sort') as HTMLSelectElement;
     await fireEvent.change(sortSelect, { target: { value: 'price_asc' } });
 
-    const state = get(filterStore);
-    expect(state.sort).toBe('price_asc');
+    expect(filterState.sort).toBe('price_asc');
   });
 
   it('clears all filters when "Clear All" is clicked', async () => {
     // Set some filters first
-    filterStore.set({
-      category: 'Guitar',
-      price_min: 100,
-      price_max: 2000,
-      source: null,
-      condition: 'new',
-      listing_currency: 'USD',
-      sort: 'price_asc',
-    });
+    filterState.category = 'Guitar';
+    filterState.price_min = 100;
+    filterState.price_max = 2000;
+    filterState.source = null;
+    filterState.condition = 'new';
+    filterState.listing_currency = 'USD';
+    filterState.sort = 'price_asc';
 
     render(FilterBar);
     await fireEvent.click(screen.getByTestId('filter-toggle'));
     await fireEvent.click(screen.getByTestId('filter-clear-all'));
 
-    const state = get(filterStore);
-    expect(state).toEqual(DEFAULT_FILTERS);
+    expect(filterState).toEqual(DEFAULT_FILTERS);
   });
 
   it('individual clear button resets category to null', async () => {
-    filterStore.set({
-      category: 'Guitar',
-      price_min: null,
-      price_max: null,
-      source: null,
-      condition: 'new',
-      listing_currency: null,
-      sort: 'relevance',
-    });
+    filterState.category = 'Guitar';
+    filterState.condition = 'new';
 
     render(FilterBar);
     await fireEvent.click(screen.getByTestId('filter-toggle'));
     await fireEvent.click(screen.getByTestId('clear-category'));
 
-    const state = get(filterStore);
-    expect(state.category).toBeNull();
-    expect(state.condition).toBe('new'); // other fields untouched
+    expect(filterState.category).toBeNull();
+    expect(filterState.condition).toBe('new'); // other fields untouched
   });
 
   it('individual clear button resets price_min to null', async () => {
-    filterStore.set({
-      category: null,
-      price_min: 100,
-      price_max: 2000,
-      source: null,
-      condition: null,
-      listing_currency: null,
-      sort: 'relevance',
-    });
+    filterState.price_min = 100;
+    filterState.price_max = 2000;
 
     render(FilterBar);
     await fireEvent.click(screen.getByTestId('filter-toggle'));
     await fireEvent.click(screen.getByTestId('clear-price-min'));
 
-    const state = get(filterStore);
-    expect(state.price_min).toBeNull();
-    expect(state.price_max).toBe(2000); // other fields untouched
+    expect(filterState.price_min).toBeNull();
+    expect(filterState.price_max).toBe(2000); // other fields untouched
   });
 
   it('individual clear button resets condition to null', async () => {
-    filterStore.set({
-      category: null,
-      price_min: null,
-      price_max: null,
-      source: null,
-      condition: 'used',
-      listing_currency: null,
-      sort: 'relevance',
-    });
+    filterState.condition = 'used';
 
     render(FilterBar);
     await fireEvent.click(screen.getByTestId('filter-toggle'));
     await fireEvent.click(screen.getByTestId('clear-condition'));
 
-    const state = get(filterStore);
-    expect(state.condition).toBeNull();
+    expect(filterState.condition).toBeNull();
   });
 
   it('individual clear button resets sort to relevance', async () => {
-    filterStore.set({
-      category: null,
-      price_min: null,
-      price_max: null,
-      source: null,
-      condition: null,
-      listing_currency: null,
-      sort: 'price_desc',
-    });
+    filterState.sort = 'price_desc';
 
     render(FilterBar);
     await fireEvent.click(screen.getByTestId('filter-toggle'));
     await fireEvent.click(screen.getByTestId('clear-sort'));
 
-    const state = get(filterStore);
     // sort defaults back to 'relevance', not null
-    expect(state.sort).toBe('relevance');
+    expect(filterState.sort).toBe('relevance');
   });
 
   it('all individual clear buttons are rendered when expanded', async () => {

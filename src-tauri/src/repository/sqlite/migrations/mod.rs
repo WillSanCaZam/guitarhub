@@ -1776,4 +1776,196 @@ END;",
     async fn make_memory_pool() -> sqlx::SqlitePool {
         SqlitePool::connect("sqlite::memory:").await.unwrap()
     }
+
+    // ── Migration 010: Community Schema ─────────────────────────────────
+
+    /// Apply the full migration chain 001→010 on an in-memory pool.
+    async fn apply_full_chain_001_to_010(pool: &sqlx::SqlitePool) -> PathBuf {
+        let dir = temp_dir_with_files(&[
+            "001_init.sql",
+            "002_add_url_validation.sql",
+            "003_add_image_cache.sql",
+            "004_add_price_source.sql",
+            "005_add_settings.sql",
+            "006_wishlist_schema.sql",
+            "007_price_drop_notifications.sql",
+            "008_collection_items.down.sql",
+            "008_collection_items.sql",
+            "009_add_recent_searches.sql",
+            "010_community_schema.sql",
+        ]);
+        std::fs::write(dir.join("001_init.sql"), include_str!("../migrations/001_init.sql")).unwrap();
+        std::fs::write(dir.join("002_add_url_validation.sql"), include_str!("../migrations/002_add_url_validation.sql")).unwrap();
+        std::fs::write(dir.join("003_add_image_cache.sql"), include_str!("../migrations/003_add_image_cache.sql")).unwrap();
+        std::fs::write(dir.join("004_add_price_source.sql"), include_str!("../migrations/004_add_price_source.sql")).unwrap();
+        std::fs::write(dir.join("005_add_settings.sql"), include_str!("../migrations/005_add_settings.sql")).unwrap();
+        std::fs::write(dir.join("006_wishlist_schema.sql"), include_str!("../migrations/006_wishlist_schema.sql")).unwrap();
+        std::fs::write(dir.join("007_price_drop_notifications.sql"), include_str!("../migrations/007_price_drop_notifications.sql")).unwrap();
+        std::fs::write(dir.join("008_collection_items.sql"), include_str!("../migrations/008_collection_items.sql")).unwrap();
+        std::fs::write(dir.join("008_collection_items.down.sql"), include_str!("../migrations/008_collection_items.down.sql")).unwrap();
+        std::fs::write(dir.join("009_add_recent_searches.sql"), include_str!("../migrations/009_add_recent_searches.sql")).unwrap();
+        std::fs::write(dir.join("010_community_schema.sql"), include_str!("../migrations/010_community_schema.sql")).unwrap();
+
+        let runner = MigrationRunner::new(pool.clone(), dir.clone());
+        runner.run().await.unwrap();
+        dir
+    }
+
+    #[tokio::test]
+    async fn migration_010_creates_community_tables() {
+        let pool = make_memory_pool().await;
+        apply_full_chain_001_to_010(&pool).await;
+
+        // Verify each community table exists by querying it
+        let r: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM community_users").fetch_one(&pool).await.unwrap();
+        assert!(r >= 0, "community_users should exist");
+        let r: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM community_profiles").fetch_one(&pool).await.unwrap();
+        assert!(r >= 0, "community_profiles should exist");
+        let r: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM community_lessons").fetch_one(&pool).await.unwrap();
+        assert!(r >= 0, "community_lessons should exist");
+        let r: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM community_riffs").fetch_one(&pool).await.unwrap();
+        assert!(r >= 0, "community_riffs should exist");
+        let r: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM community_comments").fetch_one(&pool).await.unwrap();
+        assert!(r >= 0, "community_comments should exist");
+        let r: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM community_streaks").fetch_one(&pool).await.unwrap();
+        assert!(r >= 0, "community_streaks should exist");
+        let r: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM community_follows").fetch_one(&pool).await.unwrap();
+        assert!(r >= 0, "community_follows should exist");
+        let r: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM community_cache").fetch_one(&pool).await.unwrap();
+        assert!(r >= 0, "community_cache should exist");
+    }
+
+    #[tokio::test]
+    async fn migration_010_community_users_has_expected_columns() {
+        let pool = make_memory_pool().await;
+        apply_full_chain_001_to_010(&pool).await;
+
+        let columns: Vec<(i64, String, String)> = sqlx::query_as("PRAGMA table_info(community_users)")
+            .fetch_all(&pool)
+            .await
+            .unwrap();
+
+        let col_names: Vec<&str> = columns.iter().map(|(_, name, _)| name.as_str()).collect();
+        assert!(col_names.contains(&"id"), "missing id column");
+        assert!(col_names.contains(&"username"), "missing username column");
+        assert!(col_names.contains(&"email"), "missing email column");
+        assert!(col_names.contains(&"password_hash"), "missing password_hash column");
+        assert!(col_names.contains(&"created_at"), "missing created_at column");
+    }
+
+    #[tokio::test]
+    async fn migration_010_community_lessons_has_expected_columns() {
+        let pool = make_memory_pool().await;
+        apply_full_chain_001_to_010(&pool).await;
+
+        let columns: Vec<(i64, String, String)> = sqlx::query_as("PRAGMA table_info(community_lessons)")
+            .fetch_all(&pool)
+            .await
+            .unwrap();
+
+        let col_names: Vec<&str> = columns.iter().map(|(_, name, _)| name.as_str()).collect();
+        assert!(col_names.contains(&"id"), "missing id column");
+        assert!(col_names.contains(&"author_id"), "missing author_id column");
+        assert!(col_names.contains(&"title"), "missing title column");
+        assert!(col_names.contains(&"difficulty"), "missing difficulty column");
+        assert!(col_names.contains(&"likes"), "missing likes column");
+    }
+
+    #[tokio::test]
+    async fn migration_010_community_users_accepts_insert() {
+        let pool = make_memory_pool().await;
+        apply_full_chain_001_to_010(&pool).await;
+
+        sqlx::query(
+            "INSERT INTO community_users (id, username, email, password_hash, created_at)
+             VALUES ('u1', 'testuser', 'test@example.com', 'hash123', 1700000000)",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        let username: String = sqlx::query_scalar("SELECT username FROM community_users WHERE id = 'u1'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(username, "testuser");
+    }
+
+    #[tokio::test]
+    async fn migration_010_community_lessons_accepts_insert() {
+        let pool = make_memory_pool().await;
+        apply_full_chain_001_to_010(&pool).await;
+
+        sqlx::query(
+            "INSERT INTO community_users (id, username, email, password_hash, created_at)
+             VALUES ('u1', 'teacher', 't@example.com', 'hash', 1700000000)",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        sqlx::query(
+            "INSERT INTO community_lessons (id, author_id, title, description, content_url, difficulty, tags, likes, created_at)
+             VALUES ('l1', 'u1', 'Basic Chords', 'Learn G, C, D', 'https://youtube.com/abc', 'beginner', '[]', 0, 1700000000)",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        let title: String = sqlx::query_scalar("SELECT title FROM community_lessons WHERE id = 'l1'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(title, "Basic Chords");
+    }
+
+    #[tokio::test]
+    async fn migration_010_db_version_reaches_10() {
+        let pool = make_memory_pool().await;
+        apply_full_chain_001_to_010(&pool).await;
+
+        let version: String = sqlx::query_scalar(
+            "SELECT value FROM schema_meta WHERE key = 'db_version'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(version, "10", "db_version should be 10 after full chain including 010");
+    }
+
+    #[tokio::test]
+    async fn migration_010_is_idempotent() {
+        let pool = make_memory_pool().await;
+        apply_full_chain_001_to_010(&pool).await;
+
+        // Re-run should not fail
+        let dir = temp_dir_with_files(&[
+            "001_init.sql", "002_add_url_validation.sql", "003_add_image_cache.sql",
+            "004_add_price_source.sql", "005_add_settings.sql", "006_wishlist_schema.sql",
+            "007_price_drop_notifications.sql", "008_collection_items.down.sql",
+            "008_collection_items.sql", "009_add_recent_searches.sql", "010_community_schema.sql",
+        ]);
+        std::fs::write(dir.join("001_init.sql"), include_str!("../migrations/001_init.sql")).unwrap();
+        std::fs::write(dir.join("002_add_url_validation.sql"), include_str!("../migrations/002_add_url_validation.sql")).unwrap();
+        std::fs::write(dir.join("003_add_image_cache.sql"), include_str!("../migrations/003_add_image_cache.sql")).unwrap();
+        std::fs::write(dir.join("004_add_price_source.sql"), include_str!("../migrations/004_add_price_source.sql")).unwrap();
+        std::fs::write(dir.join("005_add_settings.sql"), include_str!("../migrations/005_add_settings.sql")).unwrap();
+        std::fs::write(dir.join("006_wishlist_schema.sql"), include_str!("../migrations/006_wishlist_schema.sql")).unwrap();
+        std::fs::write(dir.join("007_price_drop_notifications.sql"), include_str!("../migrations/007_price_drop_notifications.sql")).unwrap();
+        std::fs::write(dir.join("008_collection_items.sql"), include_str!("../migrations/008_collection_items.sql")).unwrap();
+        std::fs::write(dir.join("008_collection_items.down.sql"), include_str!("../migrations/008_collection_items.down.sql")).unwrap();
+        std::fs::write(dir.join("009_add_recent_searches.sql"), include_str!("../migrations/009_add_recent_searches.sql")).unwrap();
+        std::fs::write(dir.join("010_community_schema.sql"), include_str!("../migrations/010_community_schema.sql")).unwrap();
+
+        let runner = MigrationRunner::new(pool.clone(), dir);
+        runner.run().await.unwrap();
+
+        let version: String = sqlx::query_scalar(
+            "SELECT value FROM schema_meta WHERE key = 'db_version'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(version, "10");
+    }
 }

@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GuitarHub | Desktop Feed</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@100..900&family=JetBrains+Mono:wght@100..900&display=swap" rel="stylesheet"/>
+<style>
+        body {
+            background-color: #12131a; /* surface-dim */
+            color: #e2e1eb; /* on-surface */
+            overflow-x: hidden;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-nav {
+            background: rgba(18, 19, 26, 0.8);
+            backdrop-filter: blur(12px);
+        }
+        .inner-stroke {
+            box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+        }
+        .amber-glow {
+            text-shadow: 0 0 15px rgba(255, 184, 0, 0.4);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1b22;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #33343c;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ffb800;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-container": "#ccb09f",
+                        "on-surface-variant": "#d5c4ab",
+                        "surface": "#12131a",
+                        "tertiary-container": "#c7c4c4",
+                        "on-primary": "#412d00",
+                        "surface-variant": "#33343c",
+                        "surface-tint": "#ffba20",
+                        "on-tertiary-fixed": "#1c1b1b",
+                        "surface-bright": "#383940",
+                        "on-secondary-fixed-variant": "#574335",
+                        "surface-dim": "#12131a",
+                        "on-tertiary-fixed-variant": "#474646",
+                        "on-tertiary-container": "#525151",
+                        "primary-fixed-dim": "#ffba20",
+                        "on-tertiary": "#313030",
+                        "surface-container-lowest": "#0c0e14",
+                        "surface-container-highest": "#33343c",
+                        "outline": "#9e8f78",
+                        "on-primary-container": "#6b4c00",
+                        "tertiary-fixed": "#e5e2e1",
+                        "tertiary-fixed-dim": "#c9c6c5",
+                        "inverse-primary": "#7c5800",
+                        "secondary": "#dec1af",
+                        "on-surface": "#e2e1eb",
+                        "background": "#12131a",
+                        "secondary-container": "#574335",
+                        "on-error-container": "#ffdad6",
+                        "primary-container": "#ffb800",
+                        "error": "#ffb4ab",
+                        "primary-fixed": "#ffdea8",
+                        "outline-variant": "#514532",
+                        "on-primary-fixed": "#271900",
+                        "on-error": "#690005",
+                        "on-background": "#e2e1eb",
+                        "primary": "#ffdca1",
+                        "surface-container-high": "#282a31",
+                        "on-primary-fixed-variant": "#5e4200",
+                        "surface-container": "#1e1f26",
+                        "surface-container-low": "#1a1b22",
+                        "on-secondary-fixed": "#28180d",
+                        "error-container": "#93000a",
+                        "inverse-surface": "#e2e1eb",
+                        "tertiary": "#e3e0df",
+                        "secondary-fixed-dim": "#dec1af",
+                        "secondary-fixed": "#fbddca",
+                        "inverse-on-surface": "#2f3037",
+                        "on-secondary": "#3f2c20"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-margin-mobile": "16px",
+                        "gutter": "16px",
+                        "md": "16px",
+                        "xl": "40px",
+                        "lg": "24px",
+                        "base": "4px",
+                        "container-margin-desktop": "32px",
+                        "xs": "4px",
+                        "sm": "8px"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["JetBrains Mono"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "label-md": ["JetBrains Mono"],
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "display-lg": ["Hanken Grotesk"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface">
+<!-- Side Navigation Shell -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-surface-container-low flex flex-col py-lg px-md z-50">
+<div class="mb-xl px-sm">
+<h1 class="font-headline-md text-headline-md font-bold text-primary-container">GuitarHub</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Community Platform</p>
+</div>
+<nav class="flex-1 space-y-xs">
+<!-- Active Tab: Home -->
+<a class="flex items-center gap-md p-md rounded-lg text-primary-container font-bold border-r-2 border-primary-container bg-surface-container-high transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-body-md text-body-md">Home</span>
+</a>
+<a class="flex items-center gap-md p-md rounded-lg text-on-surface-variant font-medium hover:bg-surface-container-high hover:text-primary transition-colors transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">explore</span>
+<span class="font-body-md text-body-md">Explore</span>
+</a>
+<a class="flex items-center gap-md p-md rounded-lg text-on-surface-variant font-medium hover:bg-surface-container-high hover:text-primary transition-colors transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">upload</span>
+<span class="font-body-md text-body-md">Upload</span>
+</a>
+<a class="flex items-center gap-md p-md rounded-lg text-on-surface-variant font-medium hover:bg-surface-container-high hover:text-primary transition-colors transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">school</span>
+<span class="font-body-md text-body-md">Lessons</span>
+</a>
+<a class="flex items-center gap-md p-md rounded-lg text-on-surface-variant font-medium hover:bg-surface-container-high hover:text-primary transition-colors transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">handyman</span>
+<span class="font-body-md text-body-md">My Gear</span>
+</a>
+<a class="flex items-center gap-md p-md rounded-lg text-on-surface-variant font-medium hover:bg-surface-container-high hover:text-primary transition-colors transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">favorite</span>
+<span class="font-body-md text-body-md">Saved Riffs</span>
+</a>
+<a class="flex items-center gap-md p-md rounded-lg text-on-surface-variant font-medium hover:bg-surface-container-high hover:text-primary transition-colors transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+</nav>
+<div class="mt-auto p-md rounded-xl bg-secondary-container/20 border border-secondary-container/30">
+<p class="font-label-sm text-label-sm text-on-secondary-container mb-sm">Unlock full access</p>
+<button class="w-full py-sm bg-primary-container text-on-primary font-bold rounded-lg hover:brightness-110 transition-all">Go Premium</button>
+</div>
+</aside>
+<!-- Top App Bar Shell -->
+<header class="fixed top-0 right-0 w-[calc(100%-16rem)] flex justify-between items-center h-16 px-xl z-40 bg-surface/80 backdrop-blur-md">
+<div class="relative w-96">
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full bg-surface-container pl-xl pr-md py-xs rounded-full border-none focus:ring-1 focus:ring-primary-container text-body-md" placeholder="Search lessons, riffs, or artists..." type="text"/>
+</div>
+<div class="flex items-center gap-lg">
+<button class="relative scale-95 active:scale-100 transition-transform text-on-surface-variant hover:text-primary-container">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-primary-container rounded-full border-2 border-surface"></span>
+</button>
+<button class="scale-95 active:scale-100 transition-transform text-on-surface-variant hover:text-primary-container">
+<span class="material-symbols-outlined">forum</span>
+</button>
+<div class="flex items-center gap-sm cursor-pointer group">
+<img alt="User Profile" class="w-8 h-8 rounded-full border-2 border-outline group-hover:border-primary-container transition-colors" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBwtSszyuelyHJ_YhpE5xcGRwkFGTM7R207vMo8txqgkNyVU-OaxQIZ9_fxBy0lXu_WMxd7jFsSaMtlAfsAe88y3Dpi-IgVbIQoBW6KjlGhDS39ZhFOeO_AsifK9D9N1c1Ut1L5wFGRPLEr8uJJZMnnUV28hAjYbdTLZ1r1101xcEknDLL67xmyUs_pcEVVsgpL9aFPzWybrcBLlSWaHUpr2ylj-l4rfhj7RWOVUGWZiFCHxEedjmF7Mvvu7G33GW6rbOkHHsQPn9et"/>
+<span class="font-label-md text-label-md text-on-surface group-hover:text-primary-container">Alex Rivers</span>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-16 grid grid-cols-12 gap-lg p-lg min-h-screen">
+<!-- Center Column -->
+<div class="col-span-12 lg:col-span-8 space-y-xl">
+<!-- Daily Challenge Hero -->
+<section class="relative h-80 rounded-xl overflow-hidden inner-stroke group cursor-pointer">
+<div class="absolute inset-0 z-10 bg-gradient-to-r from-surface via-surface/40 to-transparent"></div>
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="A moody, close-up shot of a vintage electric guitar leaning against a tweed amplifier in a dimly lit boutique recording studio. Soft amber stage lighting highlights the wood grain and chrome hardware, creating a warm, premium atmosphere. The background is softly blurred with hints of music stands and acoustic foam panels, emphasizing a professional creative space." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsxx-bhGSGUkFi3RsDuUAbeTwbNyu5GXTeSdyjBdKE7LXDcxRWQg2gQ6rbmk8feohe2N705eckTiF9Rca6YxwgstntgZdLO108spPgD0iJ6ncWB5Jpiji6zog13fxxbaXh5jpvhN2DImGzjfEVlGWUbIB2Jr_nF9WH0BbqstaOQhxGlvO1H4J7Ax_rS1xMeVYJqa2bJ-6qdHfDbUXe4ieA6KTgr29Rm29BTrkKsIwX5tpmkAhxVM8xFkyZvD95_o9jDneAVtwn0Jwe"/>
+<div class="relative z-20 h-full flex flex-col justify-center p-xl max-w-lg">
+<span class="inline-block px-sm py-xs bg-primary-container text-on-primary font-label-sm text-label-sm rounded mb-md w-fit">DAILY CHALLENGE</span>
+<h2 class="font-display-lg text-display-lg amber-glow mb-sm">The Phrygian Burn</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-lg">Master the dark, exotic sounds of the Phrygian mode with this 30-second sweep picking sequence.</p>
+<div class="flex gap-md">
+<button class="px-lg py-md bg-primary-container text-on-primary font-bold rounded-lg flex items-center gap-sm hover:brightness-110 transition-all">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                            Start Session
+                        </button>
+<button class="px-lg py-md border border-outline text-on-surface font-bold rounded-lg hover:bg-surface-container-high transition-all">
+                            View Leaderboard
+                        </button>
+</div>
+</div>
+</section>
+<!-- Featured Riffs (Bento Grid Style) -->
+<section>
+<div class="flex justify-between items-center mb-lg">
+<h3 class="font-headline-md text-headline-md font-bold">Featured Riffs</h3>
+<a class="text-primary-container font-label-md text-label-md flex items-center gap-xs hover:underline" href="#">
+                        View All <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</a>
+</div>
+<div class="grid grid-cols-2 gap-md">
+<!-- Large Feature -->
+<div class="row-span-2 bg-surface-container rounded-xl overflow-hidden inner-stroke flex flex-col">
+<div class="aspect-square relative">
+<img class="w-full h-full object-cover" data-alt="A high-angle artistic shot of an acoustic guitar lying on a dark velvet couch, with sharp sunlight streaming through a window creating dramatic shadows across the strings. The aesthetic is organic and moody, using deep espresso tones and golden highlights. The image captures the essence of a peaceful afternoon songwriting session in a modern apartment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCneJTPO4HY7uBUI0iB0ZzEm3HU2h4TqY1ih4D3p6VWk6wymOajyd6Ltlfz9KJp-LEnE7khED244p_gV2j1QWXBVuIk-KMp7Dc5AAT-7oYpJ2dJoLohs3JOJg9Qcu_dfA1l5JUVL3BpJRvWjMWAW7YvR5fWCNwWZDCVnHUUk_0WMbjN76X1EJ1fsGfzTOs2G5jo1bLTB5z4kXlLkwtULnGAv946hWC_8tkh83_Iqtb4PvmndLyKQ4_GXz3jjY-H_ZKyZ855PjTXKHf1"/>
+<div class="absolute inset-0 bg-black/20 hover:bg-black/0 transition-all"></div>
+<button class="absolute bottom-md right-md w-12 h-12 bg-primary-container text-on-primary rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+<div class="p-md flex-1 flex flex-col justify-between">
+<div>
+<h4 class="font-headline-md text-headline-md mb-xs">Midnight Groove</h4>
+<p class="text-on-surface-variant font-body-md text-body-md line-clamp-2">A bluesy acoustic fingerstyle piece inspired by the sounds of the Mississippi Delta.</p>
+</div>
+<div class="flex items-center justify-between mt-lg">
+<div class="flex items-center gap-sm">
+<img alt="Author" class="w-6 h-6 rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-2hbDa9gooorMiZLOp_DnThNGpPR3BwqdIhNNpxLYdhGbGNTgMUEuvrImG5DeCePGy2ZOqLCilxh-HL-2dLTdHvsiGnrM0uD7Nmv5GkR7J39E_Z1cid_J8LuXkYBe-uI5_yZStQsaByt0augwPOCsBZlMxZiYS4tXEouAWYc1D1Y0sPZjqzj0jixDHYYtMGVuxfTdpEqYQuWlyHvPdGXSXrM8LD1sh_idLb5Hy3DBUtckOqT19nxfibD7-ltkx7RnYr8pP-5EmD23"/>
+<span class="text-label-sm font-label-sm">Julian Keys</span>
+</div>
+<div class="flex gap-sm">
+<span class="text-on-surface-variant font-label-sm flex items-center gap-xs"><span class="material-symbols-outlined text-[16px]">favorite</span> 1.2k</span>
+<span class="text-on-surface-variant font-label-sm flex items-center gap-xs"><span class="material-symbols-outlined text-[16px]">visibility</span> 4k</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Smaller Items -->
+<div class="space-y-md">
+<div class="bg-surface-container rounded-xl overflow-hidden inner-stroke flex items-center p-sm gap-md group hover:bg-surface-container-high transition-colors cursor-pointer">
+<img class="w-24 h-24 rounded-lg object-cover" data-alt="Macro photography of a guitarist's hand pressing down on the strings of a fretboard, with the focus sharp on the contact point. The lighting is low and atmospheric, emphasizing the texture of the nickel strings and the dark rosewood neck. The color palette consists of deep charcoals and warm skin tones, conveying the physical intimacy of playing an instrument." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSYI_tGhtQPHmSKTiTyFp_9OlJ_cLWMya83tBUbIWX2vbvpYuKfZ8OSxX3kPdBmg-ToECAJ6HJcFwI1EHPaR-3409yWBDjiZN7YaLQ1rjJbXCSFu9HuwjFvYr7Uq8Rsm0_Pp5zA1LspsqzLZkrQGnqJZ-KZsNW2fUhtpKtnSq96dmEJZuHBRZzHiJUfQWtt2dyaPlb1C-7eFQx_EdbuK8t5xDrtFBfkPn1XlaWsWtGNovDIBi7U6Z6VxMxEozQarOySLSFWiMbBg9P"/>
+<div class="flex-1">
+<span class="text-primary-container font-label-sm text-label-sm">METAL</span>
+<h4 class="font-headline-md text-headline-md text-body-lg">Neon Shredder</h4>
+<p class="text-on-surface-variant text-label-sm">Difficulty: Expert</p>
+</div>
+<span class="material-symbols-outlined mr-sm text-on-surface-variant group-hover:text-primary-container transition-colors">play_circle</span>
+</div>
+<div class="bg-surface-container rounded-xl overflow-hidden inner-stroke flex items-center p-sm gap-md group hover:bg-surface-container-high transition-colors cursor-pointer">
+<img class="w-24 h-24 rounded-lg object-cover" data-alt="A sun-drenched outdoor music festival scene at dusk, with the silhouette of a performer holding a guitar against a vibrant orange and purple sky. The atmosphere is energetic and celebratory, with soft bokeh lights in the background representing a crowd. The style is warm and expressive, evoking the feeling of live performance and community." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhvbzIpaF6D0GiUDU7CzqXpWC9ewQ93kPeF6G6Lq59Lsz25MjaKvEHku4PaJRV8h9_jjDbSCT758tlpEbcQpMr7QfHWEln2xqixvBtNmufCLO4FwYxjnUifEC_7ztxcXfZuGapaY_mPswbzT8-gSFDCHrmwFPM6iTfxh0C553klOAAnDPjjzwYpYkJ3F-fI87yfiU0Om9cw-xSTh0tqPJpWP_GHaw6-N5kJmv2qnLHxxCwmwC7U2scR9g_b7YQ_qrJakhBBCBOijb8"/>
+<div class="flex-1">
+<span class="text-primary-container font-label-sm text-label-sm">JAZZ</span>
+<h4 class="font-headline-md text-headline-md text-body-lg">Blue Horizon</h4>
+<p class="text-on-surface-variant text-label-sm">Difficulty: Intermediate</p>
+</div>
+<span class="material-symbols-outlined mr-sm text-on-surface-variant group-hover:text-primary-container transition-colors">play_circle</span>
+</div>
+<div class="bg-surface-container rounded-xl overflow-hidden inner-stroke flex items-center p-sm gap-md group hover:bg-surface-container-high transition-colors cursor-pointer">
+<img class="w-24 h-24 rounded-lg object-cover" data-alt="A sleek modern music workstation with a large monitor displaying complex digital audio workstation software, surrounded by studio monitors and a professional audio interface. The room is dark with subtle RGB lighting in amber and deep red. The style is technical and clean, perfect for a modern guitar production environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBs4_YCnOguDn__pyttMmGasxAM1GhBEFtTAfD1vnMYPs8aeKFRGXmLoUBRFrQKCbSyqMEKQtlxLgxWjAq6n7f22reURxBYYdL5djvdZoTTZEsy-dGn1TLwtFpVzkKKd6jBd_4AQv7eXsx-MjH-afZj0fkmVaa26lCyueWqyx-vzb4mOBrVsSdVAe4Mi2I-yZa4tKoO4mT73MOB3am2pC5dRTyLNqRF1rxXkjOvD7Ax9a-snQNFMEbXmruhIQpagrBDIVItZoL8XNW0"/>
+<div class="flex-1">
+<span class="text-primary-container font-label-sm text-label-sm">ROCK</span>
+<h4 class="font-headline-md text-headline-md text-body-lg">Stadium Anthems</h4>
+<p class="text-on-surface-variant text-label-sm">Difficulty: Beginner</p>
+</div>
+<span class="material-symbols-outlined mr-sm text-on-surface-variant group-hover:text-primary-container transition-colors">play_circle</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Latest Lessons -->
+<section>
+<div class="flex justify-between items-center mb-lg">
+<h3 class="font-headline-md text-headline-md font-bold">Latest Lessons</h3>
+<div class="flex gap-sm">
+<span class="px-md py-xs bg-surface-container-high rounded-full text-label-sm font-label-sm cursor-pointer hover:bg-primary-container hover:text-on-primary transition-all">All</span>
+<span class="px-md py-xs bg-surface-container rounded-full text-on-surface-variant text-label-sm font-label-sm cursor-pointer hover:bg-surface-container-high transition-all">Technique</span>
+<span class="px-md py-xs bg-surface-container rounded-full text-on-surface-variant text-label-sm font-label-sm cursor-pointer hover:bg-surface-container-high transition-all">Theory</span>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-md">
+<!-- Lesson Card -->
+<div class="bg-surface-container rounded-xl overflow-hidden inner-stroke group">
+<div class="aspect-video relative overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="A professional studio setup for guitar lessons featuring a close-up of a high-end classical guitar fretboard. The strings are perfectly in focus, and the lighting is soft and diffuse, highlighting the intricate wood grain of the headstock. The mood is academic and focused, using a rich palette of deep browns and warm ambers." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7iKNRxu_N_3d6r8rlP2I5--Oo3nyRsO4tEYQkl9guc7_ZzOcPP-maSzp3mIT2OC8Z9fq8LmPv78Ghuwxa5-01qXGw-wkxvlW8WFhP_IVU0jYFCCZ2r5dP15jFqbTi9Y-CwG4vQfEit5ZbtohO0SiXlgax5XxjwNUsLpnDc90FP7iz1cwrioviWa1l6bET2RXFZMzCrsHdJWdhsv8fPBaHeM9e3yU-Vwn-jGOVmnAmuONvGFZYikV7IaaI1UHCj1lpQZNp5eQ4rXen"/>
+<div class="absolute bottom-xs right-xs bg-black/80 px-sm py-xs rounded text-[10px] font-bold">12:45</div>
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+<span class="material-symbols-outlined text-[48px] text-white">play_circle</span>
+</div>
+</div>
+<div class="p-md">
+<h5 class="font-body-md text-body-md font-bold mb-xs">Advanced Vibrato Control</h5>
+<div class="w-full h-1 bg-surface-container-highest rounded-full mb-md">
+<div class="h-full bg-primary-container w-[65%] rounded-full shadow-[0_0_8px_rgba(255,184,0,0.5)]"></div>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-label-sm text-on-surface-variant">65% Complete</span>
+<span class="material-symbols-outlined text-primary-container">bookmark</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container rounded-xl overflow-hidden inner-stroke group">
+<div class="aspect-video relative overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="An artistic low-angle shot of multiple guitars on a stand in a dimly lit backstage area of a concert venue. The silhouettes are outlined by colorful stage lights in the background, creating a vibrant, energetic atmosphere. The visual style is modern and evocative of professional musicianship." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtSiQhBVxHq5nO9DS4_MbSKXn6UT0Jza7ZwTu2UhHZUjcoqI4CJxVKm7VDpHzdELSNji-K8dULNem5cQK5et2sgca7cuz0DsIb2zXJgGjmvaTD-ye1fhteH_3drsTC5bhkFqPbM_8e6w5Wp2-8XzFSZOHeKZNW3C9trOEEh121kdChWeqixIeoH0EaL5JwaF_3t31ydpgpum7P2xKHd1srt4AvoV05yOTEAekEGBYi3DZrJGaLtEaSQMmUcbSPe1nhS3p_nRni5LHD"/>
+<div class="absolute bottom-xs right-xs bg-black/80 px-sm py-xs rounded text-[10px] font-bold">08:20</div>
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+<span class="material-symbols-outlined text-[48px] text-white">play_circle</span>
+</div>
+</div>
+<div class="p-md">
+<h5 class="font-body-md text-body-md font-bold mb-xs">Improvising Over Jazz 2-5-1</h5>
+<div class="w-full h-1 bg-surface-container-highest rounded-full mb-md">
+<div class="h-full bg-primary-container w-[10%] rounded-full"></div>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-label-sm text-on-surface-variant">Resume</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary-container cursor-pointer">bookmark</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container rounded-xl overflow-hidden inner-stroke group">
+<div class="aspect-video relative overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="A minimalist composition of a metronome and a notebook with handwritten musical notation on a dark mahogany desk. The scene is lit by a single warm desk lamp, creating long shadows and a focused, scholarly mood. The aesthetic is clean and organic, emphasizing the discipline of practice." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQDtf2W-bh2-YVHJZFw0NfwBtENFaVdLLGTI7Yu5boAerSEWowtN7ptGtb2YslY-oOQrsNAvOyOiMsxC3g4GN-SFa6p-rXrF2ZsrWgwVJ_47zLe_F9DAwwpBlMCaiGydWeczF5V2RXiVJEwIOQKkSFn6RtjsKYHQosWQh9JX_gJG5nGzij3GY6e0NNcTG5_YzIOQme_tdqe4UspCRilk-FbL8FEZ-bDXcLOlFWKQ229eFK19Zaq5qbS8s_W-9gSsnC3cv7HAlG03DC"/>
+<div class="absolute bottom-xs right-xs bg-black/80 px-sm py-xs rounded text-[10px] font-bold">15:10</div>
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+<span class="material-symbols-outlined text-[48px] text-white">play_circle</span>
+</div>
+</div>
+<div class="p-md">
+<h5 class="font-body-md text-body-md font-bold mb-xs">Rhythmic Precision Drills</h5>
+<div class="w-full h-1 bg-surface-container-highest rounded-full mb-md">
+<div class="h-full bg-primary-container w-0 rounded-full"></div>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-label-sm text-on-surface-variant">New Lesson</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary-container cursor-pointer">bookmark</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Sidebar -->
+<aside class="hidden lg:flex lg:col-span-4 flex-col gap-lg sticky top-xl h-fit">
+<!-- Practice Streak Widget -->
+<div class="bg-surface-container-high rounded-xl p-lg inner-stroke">
+<div class="flex justify-between items-center mb-lg">
+<h4 class="font-headline-md text-headline-md text-body-lg font-bold">Practice Streak</h4>
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+<div class="flex justify-between mb-xl">
+<div class="flex flex-col items-center gap-xs">
+<span class="text-label-sm font-label-sm text-on-surface-variant">M</span>
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-label-sm">✓</div>
+</div>
+<div class="flex flex-col items-center gap-xs">
+<span class="text-label-sm font-label-sm text-on-surface-variant">T</span>
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-label-sm">✓</div>
+</div>
+<div class="flex flex-col items-center gap-xs">
+<span class="text-label-sm font-label-sm text-on-surface-variant">W</span>
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-label-sm">✓</div>
+</div>
+<div class="flex flex-col items-center gap-xs">
+<span class="text-label-sm font-label-sm text-on-surface-variant">T</span>
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center border border-outline/30 text-label-sm"></div>
+</div>
+<div class="flex flex-col items-center gap-xs">
+<span class="text-label-sm font-label-sm text-on-surface-variant">F</span>
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center border border-outline/30 text-label-sm"></div>
+</div>
+<div class="flex flex-col items-center gap-xs">
+<span class="text-label-sm font-label-sm text-on-surface-variant">S</span>
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center border border-outline/30 text-label-sm"></div>
+</div>
+<div class="flex flex-col items-center gap-xs">
+<span class="text-label-sm font-label-sm text-on-surface-variant">S</span>
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center border border-outline/30 text-label-sm"></div>
+</div>
+</div>
+<div class="text-center">
+<p class="font-display-lg text-headline-lg text-primary-container">12 Days</p>
+<p class="text-label-sm text-on-surface-variant">Current streak record! Keep it going.</p>
+</div>
+</div>
+<!-- Go Pro Promotion -->
+<div class="relative rounded-xl overflow-hidden inner-stroke group p-lg min-h-[300px] flex flex-col justify-end">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" data-alt="A dark and moody music studio with a professional mixing console and high-end microphones. The only light comes from the meters on the console and a single spotlight on a Gibson Les Paul guitar. The atmosphere is quiet, intense, and exclusive, targeting the professional musician who values high-quality gear and environments." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOurpLzzUyY5XwZx3-X5htfj50yHqv33AfEA8TOi4qSV8W5XzOV3BtmoUgwScIlq_esLjw3GvyRZZfQFiX0ajBvuNXr7OcAEEp-fquTKpRnQ9Vashhf6ZK7OsuvCibz-u0banPQQymLRawfMV0PtyufV_wHy4WeChWNJDYnCk5Pyu3108QsSSveCOCIAPyMl0mW8R8R_G0BCMcO-RP8U1B4RxNF1Opc25_7ivV605GjjzRrg9Zplu2TtrkFe5jz_FOEfEKFdBSaWLY"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface via-surface/60 to-transparent"></div>
+<div class="relative z-10 text-center">
+<h4 class="font-headline-md text-headline-md font-bold mb-sm">Master Your Craft</h4>
+<p class="text-on-surface-variant text-body-md mb-lg">Unlock exclusive artist courses, masterclasses, and tab downloads.</p>
+<button class="w-full py-md bg-secondary text-on-secondary font-bold rounded-lg hover:brightness-110 transition-all flex items-center justify-center gap-sm">
+<span class="material-symbols-outlined">stars</span>
+                        Upgrade to Pro
+                    </button>
+<p class="mt-md text-[10px] text-on-surface-variant uppercase tracking-widest font-label-sm">Starting at $9.99/mo</p>
+</div>
+</div>
+<!-- Community Activity -->
+<div class="bg-surface-container rounded-xl p-lg inner-stroke">
+<h4 class="font-label-md text-label-md font-bold text-on-surface-variant mb-lg uppercase tracking-wider">Top Contributors</h4>
+<div class="space-y-md">
+<div class="flex items-center gap-md">
+<img alt="User" class="w-10 h-10 rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyK7POlY07eCATqTFBBoG2lEeMGEkzfd3GrmF_8cctxLLN0lVZnnH-XqDEyf3v-M1yWI5w_7EMdtStcLyCefI6b9-h_c5NgH0LVObwKkrh4etanpvbhXCWarIIxQB8t6aAB0fLrj5StzrXotBaERcDCBBd2_GAnh-Kl6Hc9utMzDui1kzN4Fl4yKMGQErDgds1ANlxIZVOw-ZDXYTN964ilKbconWm23Yj5JJClWp9frOaTVbVOd5as4SVQZ_eJaskRCW4dGcSybld"/>
+<div class="flex-1">
+<p class="text-body-md font-bold">Marcus Vane</p>
+<p class="text-label-sm text-on-surface-variant">Level 42 Guitarist</p>
+</div>
+<div class="flex items-center gap-xs text-primary-container">
+<span class="material-symbols-outlined text-[16px]">military_tech</span>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<img alt="User" class="w-10 h-10 rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxaT7aRvCLreHrcTa7Fhu7NUpeeMM0UKayodogBFCLMetY9SfXoLXiaQvDIFhMPPHNz1kdf6LpetdwaFOHEcrXKj_nPYfdVObl0oXpRLjr55vqiLSwgEvm_HtA6s6eMhu7g-yzXFRS-iJMySZlj_dMBkeMNNbeIVWuh1QoVitRT8v8rB-ytG7clcBbhHfnSTgJsBT86tqSTnHig_x4E1QhXai792-d_vyh8aq4bwubnFEjYdi6O4Sp5MWp7BNgb4kpMPswuIKyZGh5"/>
+<div class="flex-1">
+<p class="text-body-md font-bold">Sarah Stringer</p>
+<p class="text-label-sm text-on-surface-variant">Level 38 Shredder</p>
+</div>
+<div class="flex items-center gap-xs text-primary-container">
+<span class="material-symbols-outlined text-[16px]">workspace_premium</span>
+</div>
+</div>
+</div>
+</div>
+</aside>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-lg right-lg w-14 h-14 bg-primary-container text-on-primary rounded-full shadow-[0_8px_24px_rgba(255,184,0,0.3)] flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 group">
+<span class="material-symbols-outlined group-hover:rotate-90 transition-transform">add</span>
+</button>
+<script>
+        // Simple micro-interaction for cards
+        document.querySelectorAll('.inner-stroke').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.borderColor = 'rgba(255, 184, 0, 0.3)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.borderColor = 'transparent';
+            });
+        });
+
+        // Search bar focus effect
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('ring-2', 'ring-primary-container/20');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('ring-2', 'ring-primary-container/20');
+        });
+    </script>
+</body></html>

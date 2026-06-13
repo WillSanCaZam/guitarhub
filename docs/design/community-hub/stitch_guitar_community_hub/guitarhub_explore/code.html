@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Explore - GuitarHub</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            background-color: #0D0D0D;
+            color: #e2e1eb;
+            font-family: 'Hanken Grotesk', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .glass-panel {
+            background: rgba(26, 26, 26, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .inner-glow {
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #574335;
+            border-radius: 10px;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed": "#fbddca",
+                    "secondary-container": "#574335",
+                    "on-primary": "#412d00",
+                    "on-error": "#690005",
+                    "primary-fixed-dim": "#ffba20",
+                    "tertiary-fixed": "#e5e2e1",
+                    "inverse-on-surface": "#2f3037",
+                    "on-primary-container": "#6b4c00",
+                    "surface-container-highest": "#33343c",
+                    "surface-container-lowest": "#0c0e14",
+                    "error": "#ffb4ab",
+                    "on-tertiary-fixed": "#1c1b1b",
+                    "on-secondary-fixed-variant": "#574335",
+                    "surface": "#12131a",
+                    "surface-tint": "#ffba20",
+                    "surface-bright": "#383940",
+                    "surface-variant": "#33343c",
+                    "surface-container-low": "#1a1b22",
+                    "on-error-container": "#ffdad6",
+                    "outline": "#9e8f78",
+                    "tertiary-container": "#c7c4c4",
+                    "on-tertiary": "#313030",
+                    "surface-container-high": "#282a31",
+                    "inverse-primary": "#7c5800",
+                    "secondary-fixed-dim": "#dec1af",
+                    "on-tertiary-fixed-variant": "#474646",
+                    "on-surface": "#e2e1eb",
+                    "surface-dim": "#12131a",
+                    "outline-variant": "#514532",
+                    "primary": "#ffdca1",
+                    "on-background": "#e2e1eb",
+                    "on-secondary-container": "#ccb09f",
+                    "on-secondary": "#3f2c20",
+                    "on-primary-fixed": "#271900",
+                    "on-secondary-fixed": "#28180d",
+                    "on-primary-fixed-variant": "#5e4200",
+                    "error-container": "#93000a",
+                    "secondary": "#dec1af",
+                    "inverse-surface": "#e2e1eb",
+                    "on-tertiary-container": "#525151",
+                    "tertiary-fixed-dim": "#c9c6c5",
+                    "on-surface-variant": "#d5c4ab",
+                    "tertiary": "#e3e0df",
+                    "primary-fixed": "#ffdea8",
+                    "primary-container": "#ffb800",
+                    "background": "#12131a",
+                    "surface-container": "#1e1f26"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "16px",
+                    "xl": "40px",
+                    "container-margin-desktop": "32px",
+                    "sm": "8px",
+                    "base": "4px",
+                    "container-margin-mobile": "16px",
+                    "lg": "24px",
+                    "xs": "4px",
+                    "md": "16px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Hanken Grotesk"],
+                    "display-lg": ["Hanken Grotesk"],
+                    "body-md": ["Hanken Grotesk"],
+                    "body-lg": ["Hanken Grotesk"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "label-md": ["JetBrains Mono"],
+                    "label-sm": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface overflow-x-hidden">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-white/5 shadow-sm flex justify-between items-center px-container-margin-mobile h-16 w-full md:px-container-margin-desktop">
+<div class="flex items-center gap-4">
+<button class="active:scale-95 duration-150 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<h1 class="font-headline-md text-headline-md-mobile text-primary tracking-tight md:text-headline-md">GuitarHub</h1>
+</div>
+<!-- Desktop Nav -->
+<nav class="hidden md:flex gap-8 items-center h-full">
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#">Home</a>
+<a class="font-label-md text-label-md text-primary transition-colors border-b-2 border-primary py-4 mt-1" href="#">Explore</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#">Lessons</a>
+</nav>
+<div class="flex items-center gap-4">
+<div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden border border-outline-variant/20">
+<img alt="Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzUCaWZYqc7YkHJCOzak6XbZib4mRnXhdMVR_7ybDdAChob85HoTro5x0t0mFGi_TjrjLadCgHsl2k4Q2Okv_anjPzWmEZ8_igQPOI6Hn_sN2frDcEzkAuz-BRcOYG9cexnAivkdLaO_lLcc2XXwjke7w9Y6nn6SuLEJboMFQaHID2BQYnyECchYHoch1Q_CeE-ByWnlqXuPGzsnj9TXxkhdOQtjZlEQGmA1D4ogbfmVkXNVF-95nCVf9PkoA8jSFNGmX0bOuxusGa"/>
+</div>
+</div>
+</header>
+<main class="pt-20 pb-28 min-h-screen px-container-margin-mobile md:px-container-margin-desktop max-w-[1280px] mx-auto">
+<!-- Search Section -->
+<section class="mt-4 mb-8">
+<div class="relative group">
+<div class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-outline">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</div>
+<input class="w-full bg-surface-container-low border-none rounded-xl py-4 pl-12 pr-4 text-on-surface focus:ring-2 focus:ring-primary/50 placeholder:text-outline/60 inner-glow transition-all" placeholder="Search riffs, gear, or masterclasses..." type="text"/>
+</div>
+</section>
+<!-- Trending Tags -->
+<section class="mb-10">
+<div class="flex items-center justify-between mb-4">
+<h2 class="font-headline-md text-headline-md text-on-surface">Trending Sounds</h2>
+<button class="font-label-sm text-label-sm text-primary hover:underline">View All</button>
+</div>
+<div class="flex gap-3 overflow-x-auto pb-2 custom-scrollbar snap-x">
+<button class="snap-start flex-none px-6 py-2 rounded-full bg-secondary-container/30 border border-secondary-container text-primary font-label-md text-label-md hover:bg-secondary-container transition-all">#Blues</button>
+<button class="snap-start flex-none px-6 py-2 rounded-full bg-surface-container-high border border-outline-variant/20 text-on-surface-variant font-label-md text-label-md hover:bg-surface-variant transition-all">#Shred</button>
+<button class="snap-start flex-none px-6 py-2 rounded-full bg-surface-container-high border border-outline-variant/20 text-on-surface-variant font-label-md text-label-md hover:bg-surface-variant transition-all">#Beginner</button>
+<button class="snap-start flex-none px-6 py-2 rounded-full bg-surface-container-high border border-outline-variant/20 text-on-surface-variant font-label-md text-label-md hover:bg-surface-variant transition-all">#FenderStyle</button>
+<button class="snap-start flex-none px-6 py-2 rounded-full bg-surface-container-high border border-outline-variant/20 text-on-surface-variant font-label-md text-label-md hover:bg-surface-variant transition-all">#Djent</button>
+<button class="snap-start flex-none px-6 py-2 rounded-full bg-surface-container-high border border-outline-variant/20 text-on-surface-variant font-label-md text-label-md hover:bg-surface-variant transition-all">#VintageTone</button>
+</div>
+</section>
+<!-- Discovery Grid (Bento Style) -->
+<section class="mb-12">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-6">New Content Creators</h2>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Large Featured Creator Card -->
+<div class="md:col-span-8 group relative rounded-2xl overflow-hidden bg-surface-container h-[400px] shadow-xl hover:shadow-primary/5 transition-all">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="A cinematic close-up shot of a professional guitarist with long hair, playing a vintage cream-colored electric guitar in a moody, dimly lit recording studio. The lighting is focused, highlighting the golden hardware of the guitar and the musician's concentrated expression. Soft amber and deep espresso tones dominate the scene, creating a sophisticated and professional atmosphere of creative focus and craftsmanship." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDChqt6uCcFBtq5HLDU9a_PWnWeZjf2tmwasEK1OMbr7WNrAs__7F5qedhGFHDBgrc_h2yUiVO5WJ3kHCL2ZrG2AA5FL9huTBHFFl6A6F_NADcFpbUHae7BEcl4wVjVKYGMKBqAyGi1dGr6yTCO8Wbff52q6y_Z0xG_coxUdSZVqub2sx5XCCz7yo2D7GMhxGFq3MjBsnb90xqDEqBu1GsYgpR5PmAzyh7YMR63Vxyt7fGBJRhp5KWu3eXyvLpDCrglmQfKFa0zoWYU"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-8 w-full">
+<div class="flex items-center gap-2 mb-2">
+<span class="bg-primary text-on-primary font-label-sm text-label-sm px-2 py-0.5 rounded uppercase tracking-widest">Featured</span>
+<span class="text-on-surface-variant font-label-sm text-label-sm">• 42k Monthly Listeners</span>
+</div>
+<h3 class="font-headline-lg text-headline-lg text-white mb-2">Elena Rivers</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 max-w-lg">Mastering the art of atmospheric neo-soul guitar. Weekly lessons on jazz fusion and chord voicings.</p>
+<button class="bg-primary text-on-primary px-8 py-3 rounded-xl font-headline-md text-headline-md active:scale-95 transition-transform">Follow Artist</button>
+</div>
+</div>
+<!-- Secondary Small Card -->
+<div class="md:col-span-4 flex flex-col gap-6">
+<div class="flex-1 group relative rounded-2xl overflow-hidden bg-surface-container p-6 border border-outline-variant/20 hover:border-primary/50 transition-colors">
+<div class="flex items-center gap-4 mb-4">
+<div class="w-12 h-12 rounded-full overflow-hidden">
+<img alt="Artist" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKX8fFBOu8uPZ2kW7vcBo2ixlgOgt_IJSnAENMQ1uzDTWSNZpRYsmwJOiHwiqoCc77EhOn2HEYFPetsBAbnhkBRS5HDZeX54XJQCZsl6Lp6hhaqejLOFgKKYwqfMcgx945p1A0Nrhb0h9JSzoMsTfjFPaP8TxQt3OK63c72xXg7BN4udr4b1su-2qXvJnV1S_LMiEovjzNolN__OrtwOFINAwdYNH9KNWmETdJWZ6_CN7w6ntOkj7Rtw2HLzZJrm7Ci0-2wj0IFWsp"/>
+</div>
+<div>
+<h4 class="font-headline-md text-headline-md text-on-surface">Marcus Shred</h4>
+<p class="font-label-sm text-label-sm text-primary">Technical Metal</p>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-3">Deep dive into 8-string techniques and percussive tapping for modern progressive metal enthusiasts.</p>
+<div class="mt-4 flex gap-2">
+<span class="px-2 py-1 bg-surface-container-highest rounded text-[10px] font-label-md text-on-surface">#TAPPING</span>
+<span class="px-2 py-1 bg-surface-container-highest rounded text-[10px] font-label-md text-on-surface">#POLYRHYTHMS</span>
+</div>
+</div>
+<div class="flex-1 group relative rounded-2xl overflow-hidden bg-surface-container p-6 border border-outline-variant/20 hover:border-primary/50 transition-colors">
+<div class="flex items-center gap-4 mb-4">
+<div class="w-12 h-12 rounded-full overflow-hidden">
+<img alt="Artist" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCL1cTqJuF3_DB0i0Ml3zFSI4-DIgUhQ5ql-pP5LqmkuJC6xzkumUsjzFPWj6TgWIgwPDYu-ICcSJE2IsVs169maBva38BJd15FuizyJ3yzH_KHg_YRIs5iiTnAVMKaWYNzT--NnUQxOJNS6BtRqALahmN2F1i2VzkDyPXRRBStBYeAJGjV_TZmltIbd2G-jfnkXJR3MvPzV5J_RwUEtnPjNbuR0sB5Hqe1Zhd4qfXnxt2tcs6tAuUI3pC4gRLR_O9qRwvaPM3foMMP"/>
+</div>
+<div>
+<h4 class="font-headline-md text-headline-md text-on-surface">Acoustic Soul</h4>
+<p class="font-label-sm text-label-sm text-primary">Fingerstyle</p>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-3">Unlocking the secrets of Travis picking and folk-inspired compositions with simple, melodic approach.</p>
+<div class="mt-4 flex gap-2">
+<span class="px-2 py-1 bg-surface-container-highest rounded text-[10px] font-label-md text-on-surface">#FINGERSTYLE</span>
+<span class="px-2 py-1 bg-surface-container-highest rounded text-[10px] font-label-md text-on-surface">#FOLK</span>
+</div>
+</div>
+</div>
+<!-- Three smaller cards for horizontal scroll on mobile, grid on desktop -->
+<div class="md:col-span-4 group rounded-2xl overflow-hidden bg-surface-container border border-outline-variant/10">
+<div class="aspect-video w-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A high-end macro photograph of professional guitar pedals and effect units arranged on a dark, textured studio floor. The lighting is moody with warm amber glints catching the metallic knobs and LED indicators. The color palette centers on deep charcoals, industrial greys, and sparks of amber, reflecting a professional technical aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkv6E0d-SexNfMMHX3etek2NrtxIfwtheRAnOSH3MJgAHzwTyjE3CLfyXzuDcXlJPH3NnO-cnAlR44pjHk8baPj9ev6PD6mvHCW0KwOraj1A14MYnUv6rqzOoYxv8BJTP3QTkRVcWaYeMO5GHQpgqQcePfUzef7TgBTgPjQsFm8zAPMSYL_iNMeXDvBISudpSCwQj7e0HmVvP1_sy73n-ZJ4nYVKdxblM3VL7fCa0HJCwdfsW6XyhSqMEgi81cnwrDlAIuEJ0HfD4L"/>
+</div>
+<div class="p-4">
+<h4 class="font-headline-md text-headline-md text-on-surface">Tone Architect</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-4">Mastering Pedal Chains</p>
+<button class="w-full py-2 border border-outline-variant/30 rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container-high transition-colors">Explore Gallery</button>
+</div>
+</div>
+<div class="md:col-span-4 group rounded-2xl overflow-hidden bg-surface-container border border-outline-variant/10">
+<div class="aspect-video w-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="An artistic shot of a luthier's workbench featuring various guitar necks, tools, and fine wood shavings. The lighting is warm and natural, coming from a side window, casting soft shadows across the grains of the wood. The scene exudes a sense of organic craftsmanship, high-quality material, and artistic passion for musical instruments within a dark-mode studio environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDIfnKNuh-37GrkQt9uf78dLZpRLvMJH_DOlhNshiEtOQyXSYn-C3CJEwQZ9AolpARZzO28vIoqRt5UKiIUZl8LBtm77_uvqU4WBezgm45DJUCHarJ2zhneabtuYyRgvhdpZ0In-Ko28wswWyald0xQnpmPNpgXLykjXC3aV0XEl92ivbRQ-CRRLasDuX9iBUm0HpBVOJHGNuxnWOwcfZ33q6vd28NVt_TabzwFhSsG6q0qsj4aXDASVbXKgFD_aTFv-MVUqgU2O1TW"/>
+</div>
+<div class="p-4">
+<h4 class="font-headline-md text-headline-md text-on-surface">Luthier's Lab</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-4">Building Tomorrow</p>
+<button class="w-full py-2 border border-outline-variant/30 rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container-high transition-colors">Explore Gallery</button>
+</div>
+</div>
+<div class="md:col-span-4 group rounded-2xl overflow-hidden bg-surface-container border border-outline-variant/10">
+<div class="aspect-video w-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A minimalist overhead shot of an open vintage guitar case with deep velvet lining, holding a classic sunburst electric guitar. The lighting is soft and luxurious, emphasizing the high-gloss finish of the instrument. The overall aesthetic is one of heritage and premium quality, using a palette of deep mahogany, amber, and espresso for a professional, sleek look." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCai5vmqMAwy05X_AFEpx-kp5UcZJASdXAYkKrwQku3LxswrdOCSqug32rZzNSniKuA9RG7jvhzmREYN3nCiYHFhCqo8sUxF4PbcX4lTNvBhN2Jy9P4DqNVaAqq00DaIVn-QbpJ3ZL8POq-dNnkC9VjkAVPA1A_f6u1nzrA2f1LrT1bVD16OcW_-xE-a6WknFLtYwyQF3Q0rcA-WDMqwcYAi-5hSoAoBUeN75-Bi550bCB71-ZVdjvb8dxC4UhFKa9J_mHYCxE_YXwF"/>
+</div>
+<div class="p-4">
+<h4 class="font-headline-md text-headline-md text-on-surface">Vintage Collector</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-4">Rare Guitar Finds</p>
+<button class="w-full py-2 border border-outline-variant/30 rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container-high transition-colors">Explore Gallery</button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Navigation Shell (BottomNavBar for Mobile) -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container/90 backdrop-blur-lg border-t border-white/5 shadow-[0_-4px_12px_rgba(0,0,0,0.5)] flex justify-around items-center h-20 pb-safe px-2 md:hidden">
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-4 py-1 active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="font-label-sm text-label-sm">Explore</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+<span class="font-label-sm text-label-sm">Upload</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="library_music">library_music</span>
+<span class="font-label-sm text-label-sm">Lessons</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-sm text-label-sm">Profile</span>
+</button>
+</nav>
+<script>
+        // Simple logic for interactive states if needed
+        const searchInput = document.querySelector('input');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('scale-[1.01]');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('scale-[1.01]');
+        });
+
+        // Hover effect for discovery cards
+        const cards = document.querySelectorAll('.group');
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transition = 'all 0.3s ease';
+            });
+        });
+    </script>
+</body></html>

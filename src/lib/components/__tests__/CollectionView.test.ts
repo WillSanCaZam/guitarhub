@@ -1,25 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 import CollectionView from '../CollectionView.svelte';
-import { collectionStore } from '$lib/stores/collection';
-
-const defaultStoreState = {
-  items: [] as any[],
-  loading: false,
-  error: null,
-  stats: null,
-  collectedSkus: new Set<string>(),
-};
+import { collectionState } from '$lib/stores/collection.svelte';
 
 describe('CollectionView', () => {
   it('shows empty state when no items', () => {
-    collectionStore.set({ ...defaultStoreState, items: [] });
+    collectionState.items = [];
+    collectionState.loading = false;
+    collectionState.error = null;
+    collectionState.stats = null;
+    collectionState.collectedSkus = new Set();
     render(CollectionView);
     expect(screen.getByText(/collection is empty/i)).toBeInTheDocument();
   });
 
   it('renders item list', () => {
-    const items = [
+    collectionState.items = [
       {
         id: 1,
         name: 'Fender Strat',
@@ -36,7 +32,10 @@ describe('CollectionView', () => {
         added_at: 0,
       },
     ];
-    collectionStore.set({ ...defaultStoreState, items });
+    collectionState.loading = false;
+    collectionState.error = null;
+    collectionState.stats = null;
+    collectionState.collectedSkus = new Set();
     render(CollectionView);
     expect(screen.getByText('Fender Strat')).toBeInTheDocument();
   });

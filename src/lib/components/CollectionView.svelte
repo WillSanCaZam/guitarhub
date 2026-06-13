@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { collectionStore, removeFromCollection } from '$lib/stores/collection';
+  import { collectionState, removeFromCollection } from '$lib/stores/collection.svelte';
   import type { CollectionItem } from '$lib/types/collection';
 
   function gain(item: CollectionItem): number {
@@ -21,19 +21,19 @@
   }
 </script>
 
-{#if $collectionStore.loading}
+{#if collectionState.loading}
   <div class="loading-state" aria-busy="true">
     <span class="spinner"></span>
     <span>Loading collection...</span>
   </div>
-{:else if $collectionStore.items.length === 0}
+{:else if collectionState.items.length === 0}
   <div class="empty-state">
     <p>Your collection is empty.</p>
     <p class="empty-hint">Search for gear to add!</p>
   </div>
 {:else}
   <div class="collection-grid">
-    {#each $collectionStore.items as item (item.id)}
+    {#each collectionState.items as item (item.id)}
       <div class="collection-card">
         <div class="card-header">
           <h4 class="item-name">{item.name}</h4>

@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
-// Filter state store with URL serialisation helpers.
-// `filterStore` is the single source of truth for search filter UI state.
-// URL sync is a side-effect of store changes (debounced 300ms).
-// On mount, URL params are restored into the store.
+// Filter state store — Svelte 5 runes implementation.
+// Replaces the writable()-based filter.ts.
+// `filterState` is the single source of truth for search filter UI state.
+// URL sync is a side-effect of filter changes (debounced 300ms).
+// On mount, URL params are restored into the state.
 
-import { writable } from 'svelte/store';
-import type { Writable } from 'svelte/store';
 import type { SortOrder } from '$lib/types/search';
 
 export interface FilterState {
@@ -28,6 +27,34 @@ export const DEFAULT_FILTERS: FilterState = {
   listing_currency: null,
   sort: 'relevance',
 };
+
+/** Reactive filter state — access directly in components. */
+export const filterState: FilterState = $state({
+  ...DEFAULT_FILTERS,
+});
+
+/** Update a single filter field and sync to URL. */
+export function updateFilter<K extends keyof FilterState>(field: K, value: FilterState[K]): void {
+  (filterState as FilterState)[field] = value;
+  syncFiltersToUrl(filterState);
+}
+
+/** Reset a single filter field to its default and sync to URL. */
+export function clearFilter(field: keyof FilterState): void {
+  if (field === 'sort') {
+    filterState.sort = 'relevance';
+  } else {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (filterState as any)[field] = null;
+  }
+  syncFiltersToUrl(filterState);
+}
+
+/** Reset all filters to defaults and sync to URL. */
+export function clearAllFilters(): void {
+  Object.assign(filterState, { ...DEFAULT_FILTERS });
+  syncFiltersToUrl(filterState);
+}
 
 /** Serialise non-null filter fields into URLSearchParams. */
 export function filtersToParams(filters: FilterState): URLSearchParams {
@@ -85,6 +112,3 @@ export function restoreFiltersFromUrl(): FilterState {
   const params = new URLSearchParams(window.location.search);
   return paramsToFilters(params);
 }
-
-/** The writable store that UI components subscribe to. */
-export const filterStore: Writable<FilterState> = writable<FilterState>({ ...DEFAULT_FILTERS });

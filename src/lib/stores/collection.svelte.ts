@@ -1,4 +1,9 @@
-import { writable } from 'svelte/store';
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Collection state — Svelte 5 runes implementation.
+// Replaces the writable()-based collection.ts.
+// Exports reactive state + async action functions.
+
 import { invoke } from '@tauri-apps/api/core';
 import type { CollectionStats, CollectionItem } from '$lib/types/collection';
 
@@ -10,37 +15,43 @@ export interface CollectionStore {
   error: string | null;
 }
 
-const defaultStore: CollectionStore = {
+/** Reactive collection state — access directly in components. */
+export const collectionState: CollectionStore = $state({
   stats: null,
   items: [],
   collectedSkus: new Set(),
   loading: false,
   error: null,
-};
-
-export const collectionStore = writable<CollectionStore>({ ...defaultStore });
+});
 
 export async function loadCollectionStats() {
-  collectionStore.update(s => ({ ...s, loading: true, error: null }));
+  collectionState.loading = true;
+  collectionState.error = null;
   try {
     const stats = await invoke<CollectionStats>('get_collection_stats');
-    collectionStore.update(s => ({ ...s, stats, loading: false }));
+    collectionState.stats = stats;
+    collectionState.loading = false;
   } catch (e) {
-    collectionStore.update(s => ({ ...s, loading: false, error: String(e) }));
+    collectionState.loading = false;
+    collectionState.error = String(e);
   }
 }
 
 export async function loadCollection() {
-  collectionStore.update(s => ({ ...s, loading: true, error: null }));
+  collectionState.loading = true;
+  collectionState.error = null;
   try {
     const items = await invoke<CollectionItem[]>('get_collection');
     const collectedSkus = new Set<string>();
     for (const item of items) {
       if (item.sku) collectedSkus.add(item.sku);
     }
-    collectionStore.update(s => ({ ...s, items, collectedSkus, loading: false }));
+    collectionState.items = items;
+    collectionState.collectedSkus = collectedSkus;
+    collectionState.loading = false;
   } catch (e) {
-    collectionStore.update(s => ({ ...s, loading: false, error: String(e) }));
+    collectionState.loading = false;
+    collectionState.error = String(e);
   }
 }
 

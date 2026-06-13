@@ -1,0 +1,141 @@
+/* Page layout styles — extracted from +page.svelte */
+/* Migrated to Acoustic Dark Modern design tokens */
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--spacing-md);
+}
+
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.cell {
+  min-width: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.cell:focus-within {
+  outline: 2px solid var(--color-secondary);
+  outline-offset: var(--spacing-2xs);
+}
+
+.cell-hero {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+.cell-wide {
+  grid-column: span 2;
+}
+
+.cell-standard {
+  grid-column: span 1;
+  grid-row: span 1;
+}
+
+@media (max-width: 768px) {
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cell-hero,
+  .cell-wide,
+  .cell-standard {
+    grid-column: span 1;
+    grid-row: span 1;
+  }
+}
+
+/* Recent searches */
+.recent-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.recent-item {
+  font-size: 0.9rem;
+  color: var(--color-on-surface-variant);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-surface-container-low);
+  border-radius: var(--radius-sm);
+}
+
+/* Settings shortcut */
+.settings-shortcut {
+  padding: 10px var(--spacing-md);
+  background: var(--color-surface-container);
+  color: var(--color-on-surface);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  cursor: pointer;
+  margin-top: auto;
+}
+
+.settings-shortcut:hover {
+  background: var(--color-surface-container-high);
+}
+
+.shortcut-icon {
+  margin-right: var(--spacing-xs);
+}
+
+/* App info */
+.app-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.app-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--color-on-surface);
+  margin: 0;
+}
+
+.app-version {
+  font-size: 0.85rem;
+  color: var(--color-on-surface-muted);
+  margin: 0;
+}
+
+.app-link {
+  font-size: 0.85rem;
+  color: var(--color-secondary);
+  text-decoration: none;
+  margin: 0;
+}
+
+.app-link:hover {
+  text-decoration: underline;
+}
+
+.app-stack {
+  font-size: 0.8rem;
+  color: var(--color-on-surface-muted);
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .settings-shortcut {
+    min-height: 44px;
+  }
+
+  .recent-item {
+    padding: 10px var(--spacing-sm);
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+}

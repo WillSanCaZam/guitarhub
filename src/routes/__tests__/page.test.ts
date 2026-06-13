@@ -4,16 +4,26 @@ import Page from '../+page.svelte';
 import { invoke } from '@tauri-apps/api/core';
 import { dashboardStats } from '$lib/stores/dashboard';
 import { syncResult } from '$lib/stores/sync';
-import { collectionStore } from '$lib/stores/collection';
-import { filterStore } from '$lib/stores/filter';
+import { collectionState } from '$lib/stores/collection.svelte';
+import { filterState } from '$lib/stores/filter.svelte';
 
 describe('Dashboard Page', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     dashboardStats.set({ totalProducts: 0, wishlistCount: 0, recentSearches: [], loading: false, error: null });
     syncResult.set({ drops: [], drops_sent: 0, state: 'idle' });
-    collectionStore.set({ items: [], stats: null, collectedSkus: new Set(), loading: false, error: null });
-    filterStore.set({ category: null, price_min: null, price_max: null, source: null, condition: null, listing_currency: null, sort: 'relevance' });
+    collectionState.items = [];
+    collectionState.stats = null;
+    collectionState.collectedSkus = new Set();
+    collectionState.loading = false;
+    collectionState.error = null;
+    filterState.category = null;
+    filterState.price_min = null;
+    filterState.price_max = null;
+    filterState.source = null;
+    filterState.condition = null;
+    filterState.listing_currency = null;
+    filterState.sort = 'relevance';
 
     // Default mock for dashboard load calls
     vi.mocked(invoke).mockImplementation((cmd) => {
@@ -86,9 +96,10 @@ describe('Dashboard Page', () => {
     });
   });
 
-  it('search sends filters from filterStore', async () => {
+  it('search sends filters from filterState', async () => {
     // Set a filter before searching
-    filterStore.update((s) => ({ ...s, category: 'Guitar', condition: 'new' }));
+    filterState.category = 'Guitar';
+    filterState.condition = 'new';
 
     vi.mocked(invoke).mockImplementation((cmd, args) => {
       if (cmd === 'search_products') {
@@ -132,7 +143,13 @@ describe('Dashboard Page', () => {
 
   it('search sends all-null filters when no filters are set', async () => {
     // Reset filters to defaults
-    filterStore.set({ category: null, price_min: null, price_max: null, source: null, condition: null, listing_currency: null, sort: 'relevance' });
+    filterState.category = null;
+    filterState.price_min = null;
+    filterState.price_max = null;
+    filterState.source = null;
+    filterState.condition = null;
+    filterState.listing_currency = null;
+    filterState.sort = 'relevance';
 
     vi.mocked(invoke).mockImplementation((cmd, args) => {
       if (cmd === 'search_products') {

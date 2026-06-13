@@ -2,10 +2,10 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import ProductCard from '../ProductCard.svelte';
 import { invoke } from '@tauri-apps/api/core';
-import { addToCollection } from '$lib/stores/collection';
+import { addToCollection } from '$lib/stores/collection.svelte';
 
-vi.mock('$lib/stores/collection', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('$lib/stores/collection')>();
+vi.mock('$lib/stores/collection.svelte', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('$lib/stores/collection.svelte')>();
   return {
     ...actual,
     addToCollection: vi.fn(),

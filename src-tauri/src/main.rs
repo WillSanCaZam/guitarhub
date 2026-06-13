@@ -4,8 +4,6 @@ use anyhow::Context;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt::init();
-
     let db_path = std::env::var("GUITARHUB_DB_PATH")
         .unwrap_or_else(|_| "guitarhub.db".to_string());
 
@@ -44,6 +42,25 @@ async fn main() -> anyhow::Result<()> {
             guitarhub_lib::commands::wishlist_command::add_to_wishlist,
             guitarhub_lib::commands::wishlist_command::remove_from_wishlist,
             guitarhub_lib::commands::wishlist_command::get_wishlist,
+            // ── Auth commands ──────────────────────────────────────────
+            guitarhub_lib::commands::auth_command::register,
+            guitarhub_lib::commands::auth_command::login,
+            guitarhub_lib::commands::auth_command::get_current_user,
+            guitarhub_lib::commands::auth_command::logout,
+            guitarhub_lib::commands::auth_command::refresh_token,
+            // ── Community commands ─────────────────────────────────────
+            guitarhub_lib::commands::community_command::get_feed,
+            guitarhub_lib::commands::community_command::create_lesson,
+            guitarhub_lib::commands::community_command::get_lesson,
+            guitarhub_lib::commands::community_command::like_content,
+            guitarhub_lib::commands::community_command::add_comment,
+            guitarhub_lib::commands::community_command::get_comments,
+            guitarhub_lib::commands::community_command::health_check,
+            // ── Profile commands ───────────────────────────────────────
+            guitarhub_lib::commands::profile_command::get_profile,
+            guitarhub_lib::commands::profile_command::update_profile,
+            guitarhub_lib::commands::profile_command::get_streak,
+            guitarhub_lib::commands::profile_command::add_gear_to_list,
         ])
         .run(tauri::generate_context!())
         .context("error while running tauri application")?;

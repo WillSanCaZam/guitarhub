@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lesson Detail - GuitarHub</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@100..900&family=JetBrains+Mono:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed": "#fbddca",
+                    "secondary-container": "#574335",
+                    "on-primary": "#412d00",
+                    "on-error": "#690005",
+                    "primary-fixed-dim": "#ffba20",
+                    "tertiary-fixed": "#e5e2e1",
+                    "inverse-on-surface": "#2f3037",
+                    "on-primary-container": "#6b4c00",
+                    "surface-container-highest": "#33343c",
+                    "surface-container-lowest": "#0c0e14",
+                    "error": "#ffb4ab",
+                    "on-tertiary-fixed": "#1c1b1b",
+                    "on-secondary-fixed-variant": "#574335",
+                    "surface": "#12131a",
+                    "surface-tint": "#ffba20",
+                    "surface-bright": "#383940",
+                    "surface-variant": "#33343c",
+                    "surface-container-low": "#1a1b22",
+                    "on-error-container": "#ffdad6",
+                    "outline": "#9e8f78",
+                    "tertiary-container": "#c7c4c4",
+                    "on-tertiary": "#313030",
+                    "surface-container-high": "#282a31",
+                    "inverse-primary": "#7c5800",
+                    "secondary-fixed-dim": "#dec1af",
+                    "on-tertiary-fixed-variant": "#474646",
+                    "on-surface": "#e2e1eb",
+                    "surface-dim": "#12131a",
+                    "outline-variant": "#514532",
+                    "primary": "#ffdca1",
+                    "on-background": "#e2e1eb",
+                    "on-secondary-container": "#ccb09f",
+                    "on-secondary": "#3f2c20",
+                    "on-primary-fixed": "#271900",
+                    "on-secondary-fixed": "#28180d",
+                    "on-primary-fixed-variant": "#5e4200",
+                    "error-container": "#93000a",
+                    "secondary": "#dec1af",
+                    "inverse-surface": "#e2e1eb",
+                    "on-tertiary-container": "#525151",
+                    "tertiary-fixed-dim": "#c9c6c5",
+                    "on-surface-variant": "#d5c4ab",
+                    "tertiary": "#e3e0df",
+                    "primary-fixed": "#ffdea8",
+                    "primary-container": "#ffb800",
+                    "background": "#12131a",
+                    "surface-container": "#1e1f26"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "16px",
+                    "xl": "40px",
+                    "container-margin-desktop": "32px",
+                    "sm": "8px",
+                    "base": "4px",
+                    "container-margin-mobile": "16px",
+                    "lg": "24px",
+                    "xs": "4px",
+                    "md": "16px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Hanken Grotesk"],
+                    "display-lg": ["Hanken Grotesk"],
+                    "body-md": ["Hanken Grotesk"],
+                    "body-lg": ["Hanken Grotesk"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "label-md": ["JetBrains Mono"],
+                    "label-sm": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #0D0D0D; /* Level 0 Floor from Style Guidance */
+            color: #e2e1eb;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-nav {
+            background: rgba(30, 31, 38, 0.8);
+            backdrop-filter: blur(12px);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #12131a;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #ffba20;
+            border-radius: 10px;
+        }
+        .inner-stroke {
+            box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-body-md overflow-x-hidden pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-white/5 shadow-sm h-16 flex justify-between items-center px-container-margin-mobile md:px-container-margin-desktop">
+<div class="flex items-center gap-4">
+<button class="text-primary active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md-mobile text-primary tracking-tight">GuitarHub</h1>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="share">share</span>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-primary/20">
+<img alt="User profile avatar" data-alt="A close-up portrait of a professional guitarist in a dark studio setting. He has a focused expression, softly lit by amber side-lighting that catches the contours of his face and dark clothing. The aesthetic is sophisticated and high-end, with a shallow depth of field and a rich, dark color palette consisting of charcoal and warm golden tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCI_R4FE3wZ2DRJjDlzsDAs9MQpFHSv2IRTu1Mqifk0iD3zSRRJw3EmZoQ2RoiLmhYQuMGhrU50UevmQMZqrgxnK909vN6HuDH4gtgTwXSAZ7KYhO8Xz5gF8OD9dwOtO6yNgmLkHwNAiKMKO49pc7xcdlxpIKZl2mDBeHXHJfaJ4n_lEp3Q4sz_yJgsyVqTy9kI3x-23u__uQgEaxCWVUz368bqODu__x9SKYWcKWoOyCX7rHEuHlN5jr-YZ-7R8f1-l-NyFntM5s1M"/>
+</div>
+</div>
+</header>
+<main class="pt-16 max-w-[1280px] mx-auto min-h-screen">
+<!-- Hero Video Section -->
+<section class="relative aspect-video w-full bg-surface-container-lowest overflow-hidden">
+<div class="absolute inset-0 flex items-center justify-center group cursor-pointer">
+<img class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700" data-alt="A cinematic, high-angle shot of a classic electric guitar resting on a vintage amplifier in a dimly lit, moody recording studio. Soft amber light spills across the polished wood grain and chrome hardware, creating a warm, organic glow. The background is filled with blurred soundproofing panels and studio equipment, establishing a professional and creative atmosphere with deep shadows and golden highlights." src="https://lh3.googleusercontent.com/aida-public/AB6AXuACzSF9iEZWXfQC-M7jq9Ii_9h8t9RzuvxfumGyJtiDr6eCz7eIHALCbZJ6TjUNgHKAjMJ-lIBTYACfv1xTQofkBidN61tuqf_yx5w4uHj5wpOKXAtLJGr9KfD7aiG_BOwO8TgotnjYVsTeIeUpVXA7pu5-FbIpAuowGZajF7BspgYcVL1IdpMhxH53s_wO-WIbFS4v0r5WrGyoP-D8DmV7mgL0ZRQggAv8qOqXIPhXROBzU4R_WUadKznOHAYGO1WGUSZHc-0fGV07"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background to-transparent opacity-60"></div>
+<!-- Play Button Interaction -->
+<div class="relative z-10 w-20 h-20 bg-primary/90 text-on-primary rounded-full flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform duration-300">
+<span class="material-symbols-outlined text-[40px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+<!-- Video Controls Overlay (Visual Only) -->
+<div class="absolute bottom-0 left-0 w-full p-4 flex flex-col gap-2">
+<div class="h-1 w-full bg-white/20 rounded-full overflow-hidden">
+<div class="h-full w-1/3 bg-primary"></div>
+</div>
+<div class="flex justify-between text-label-sm font-label-sm text-primary">
+<span>04:12 / 12:45</span>
+<span class="material-symbols-outlined" data-icon="fullscreen">fullscreen</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Content Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-lg p-container-margin-mobile md:p-container-margin-desktop">
+<!-- Left Column: Details & Comments -->
+<div class="lg:col-span-8 space-y-xl">
+<!-- Title & Meta -->
+<div class="space-y-md">
+<div class="flex flex-wrap gap-sm">
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full font-label-sm text-label-sm border border-outline-variant/30">INTERMEDIATE</span>
+<span class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full font-label-sm text-label-sm">BLUES FUSION</span>
+<span class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full font-label-sm text-label-sm">12 MIN</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg-mobile text-on-surface leading-tight">Mastering Hybrid Picking: The Nashville Secret</h2>
+<p class="text-on-surface-variant font-body-md leading-relaxed">
+                        In this comprehensive breakdown, we explore the intersection of traditional flatpicking and fingerstyle. Learn how to maintain pick attack while adding the expressive warmth of middle and ring finger plucking. Perfect for players looking to increase their speed and melodic range.
+                    </p>
+</div>
+<!-- Materials Section (Bento Style) -->
+<section class="space-y-md">
+<h3 class="font-headline-md text-primary flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="library_books">library_books</span>
+                        Lesson Materials
+                    </h3>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-md">
+<!-- Material Card 1 -->
+<div class="bg-surface-container border border-outline-variant/20 rounded-xl p-md flex items-center justify-between group hover:border-primary/40 transition-colors inner-stroke">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 bg-secondary-container rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="picture_as_pdf">picture_as_pdf</span>
+</div>
+<div>
+<p class="font-body-md font-bold">Technique_Tab.pdf</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">2.4 MB • TABS</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors" data-icon="download">download</span>
+</div>
+<!-- Material Card 2 -->
+<div class="bg-surface-container border border-outline-variant/20 rounded-xl p-md flex items-center justify-between group hover:border-primary/40 transition-colors inner-stroke">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 bg-secondary-container rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="audio_file">audio_file</span>
+</div>
+<div>
+<p class="font-body-md font-bold">Backing_Track_100bpm.mp3</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase">8.1 MB • AUDIO</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors" data-icon="download">download</span>
+</div>
+</div>
+</section>
+<!-- Comments Section -->
+<section class="space-y-md">
+<div class="flex justify-between items-center">
+<h3 class="font-headline-md text-on-surface">Community Notes</h3>
+<span class="font-label-sm text-label-sm text-primary">24 COMMENTS</span>
+</div>
+<!-- Comment Input -->
+<div class="flex gap-md items-start">
+<div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant/20 flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="person">person</span>
+</div>
+<div class="flex-1 space-y-sm">
+<textarea class="w-full bg-surface-container-low border-b-2 border-outline-variant focus:border-primary focus:ring-0 text-on-surface placeholder-on-surface-variant/50 rounded-t-lg font-body-md" placeholder="Add a question or tip..." rows="2"></textarea>
+<div class="flex justify-end">
+<button class="bg-primary text-on-primary px-6 py-2 rounded-full font-label-md text-label-md active:scale-95 duration-150 transition-transform">POST NOTE</button>
+</div>
+</div>
+</div>
+<!-- Comment List -->
+<div class="space-y-md">
+<div class="bg-surface-container/30 p-md rounded-xl space-y-sm border border-outline-variant/10">
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-sm">
+<span class="font-body-md font-bold text-primary">Julian_Riff</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">2h ago</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="more_vert">more_vert</span>
+</div>
+<p class="text-on-surface-variant italic">"That hybrid pattern at 05:22 is a game changer. Took me about 20 minutes to get the coordination down, but the speed increase is real!"</p>
+<div class="flex gap-md">
+<button class="flex items-center gap-1 text-label-sm text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-sm" data-icon="thumb_up">thumb_up</span> 12</button>
+<button class="flex items-center gap-1 text-label-sm text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-sm" data-icon="reply">reply</span> Reply</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Sidebar / Recommended -->
+<div class="lg:col-span-4 space-y-lg">
+<!-- Instructor Card -->
+<div class="bg-surface-container rounded-2xl p-md border border-outline-variant/20 inner-stroke text-center">
+<img alt="Instructor" class="w-20 h-20 rounded-full mx-auto mb-md border-2 border-primary/40 object-cover" data-alt="A portrait of a legendary blues guitarist with a rugged look, wearing a vintage denim jacket and holding a sunburst Stratocaster guitar. The background is a warm, softly blurred wood-paneled room reminiscent of a classic recording studio. The lighting is low and atmospheric, emphasizing the rich textures of the guitar and the wisdom in the instructor's expression." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxdV3BpwCYDVSmey42XAjG0TLQT_iABINjidYH779L8O_KuUAkuj6jmVTS1imnbb0DMsnhCQMLTB6ApGLDSOBKtuvU-P84l6P7_7Kj8CfcyIbX5LkoV7EFMIj-s5fb8IK2ximM7wZfJoNriJ0z-sXLlRkaNP6XHztgwtOCxhAoqGyHiO2c6zDXHhDa5bh0VYp-B4k7_uwmKZarPdigKoYnkrdeKrfRgAkkzxu7KLcmPVr5FsilWiMj9RvSL8ODrtJtkd2R_nERujSJ"/>
+<h4 class="font-headline-md text-on-surface">Alex Shredder</h4>
+<p class="font-label-sm text-label-sm text-primary uppercase tracking-widest mb-md">Master Instructor</p>
+<button class="w-full py-3 rounded-xl border border-secondary text-secondary font-label-md text-label-md hover:bg-secondary/10 transition-colors uppercase">Follow Instructor</button>
+</div>
+<!-- Progress Tracker -->
+<div class="bg-secondary-container/20 rounded-2xl p-md border border-secondary-container/40">
+<div class="flex justify-between items-center mb-sm">
+<span class="font-label-md text-label-md text-secondary-fixed">Course Progress</span>
+<span class="font-label-md text-label-md text-primary">65%</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full w-[65%] bg-primary shadow-[0_0_8px_rgba(255,186,32,0.5)]"></div>
+</div>
+</div>
+<!-- Related Lessons -->
+<div class="space-y-md">
+<h3 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-[0.2em]">Up Next</h3>
+<div class="space-y-sm">
+<!-- Related Item 1 -->
+<div class="flex gap-md group cursor-pointer">
+<div class="w-24 h-16 rounded-lg bg-surface-container-highest flex-shrink-0 overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="A macro shot of a guitarist's hand performing a complex chord on the neck of a polished acoustic guitar. The steel strings catch the bright, high-key light of a modern studio, highlighting the precision and technical skill involved. The background is a clean, dark grey, creating a focused and educational aesthetic consistent with professional music tutorials." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBiA-HxcpuZQS6F7bVS6wJbR63p5ZQegSCmkwLOkKFM2pUTO_D7bT6nyGvkTq7mu8yMXB5A57j_QAtJn_G_dIew_H3Vii7e_Xm7RfFEFZaiTYzwyvYW01qsNZdvcbA5BwmMqvtgmp-DG2BFelMjd_Cyk11AWk0Ovivv-Hp0Cz0NzLtdAISfkWvG5SV3HeI_b_OrckxsA53NfgKCEuHdTTtqIRVh3M5GHGWMg_dlLe1Y1tqnZl0pQr7vh-BLiAses0ossKg2rzqtfm8B"/>
+</div>
+<div class="flex-1">
+<p class="font-body-md font-bold leading-tight group-hover:text-primary transition-colors">Sweeping Through Pentatonics</p>
+<p class="text-label-sm text-on-surface-variant">08:45 • Intermediate</p>
+</div>
+</div>
+<!-- Related Item 2 -->
+<div class="flex gap-md group cursor-pointer">
+<div class="w-24 h-16 rounded-lg bg-surface-container-highest flex-shrink-0 overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="A dramatic close-up of a pair of vintage electric guitar pickups and bridge hardware. The metal surfaces reflect a soft, golden amber light, creating a high-end, technical look. The composition is angled and dynamic, suggesting a focus on gear and tonal precision, set against a dark, charcoal-colored guitar body." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZgBPFUvm6P9yQVoKg-iCpfMCsGEKH1c59REzk8eiMHqsH7BQtCcc_7J2QcXXMeNii_nm2YwdlI9aLPmHwdE1fBKJ3ct9bsGrPQ8EpR-Yy42K_r6IMMlNIZVVREePowTHmNZiktOgyQUtZY6f9TbNnN-i9ED45g_BSaU6hvAxvrJJI3SfH0AqQDr2uPY1byJNB_yTBdFot7LGTZnrpAZBxS2HDYCLa70PVuD29WNkubEkxqV7jR-yxdC-Ym60Tw5hu6Pni2XNP-cc9"/>
+</div>
+<div class="flex-1">
+<p class="font-body-md font-bold leading-tight group-hover:text-primary transition-colors">The Perfect Blues Tone</p>
+<p class="text-label-sm text-on-surface-variant">15:20 • All Levels</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Navigation Components -->
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container/90 backdrop-blur-lg border-t border-white/5 shadow-[0_-4px_12px_rgba(0,0,0,0.5)] flex justify-around items-center h-20 pb-safe px-2">
+<div class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="font-label-sm text-label-sm">Explore</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+<span class="font-label-sm text-label-sm">Upload</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-4 py-1 active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="library_music">library_music</span>
+<span class="font-label-sm text-label-sm">Lessons</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-sm text-label-sm">Profile</span>
+</div>
+</nav>
+<!-- SideNav (Desktop Only - Logic would handle expansion, here simplified) -->
+<aside class="hidden md:flex fixed left-0 top-16 h-[calc(100vh-64px)] w-20 flex-col items-center py-lg bg-surface-container-low border-r border-outline-variant/20 z-40">
+<div class="space-y-xl">
+<div class="p-2 text-on-surface-variant hover:text-primary transition-all flex flex-col items-center gap-1 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-sm text-[10px]">Home</span>
+</div>
+<div class="p-2 text-on-surface-variant hover:text-primary transition-all flex flex-col items-center gap-1 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="font-label-sm text-[10px]">Explore</span>
+</div>
+<div class="p-3 bg-primary-container text-on-primary-container font-bold rounded-lg flex flex-col items-center gap-1 cursor-pointer shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined" data-icon="library_music">library_music</span>
+<span class="font-label-sm text-[10px]">Lessons</span>
+</div>
+<div class="p-2 text-on-surface-variant hover:text-primary transition-all flex flex-col items-center gap-1 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="electric_guitar">electric_car</span>
+<span class="font-label-sm text-[10px]">Gear</span>
+</div>
+<div class="p-2 text-on-surface-variant hover:text-primary transition-all flex flex-col items-center gap-1 cursor-pointer">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-sm text-[10px]">Settings</span>
+</div>
+</div>
+</aside>
+<script>
+        // Micro-interaction for play button scale
+        const playBtn = document.querySelector('.relative.z-10.w-20');
+        if(playBtn) {
+            playBtn.addEventListener('mousedown', () => {
+                playBtn.style.transform = 'scale(0.9)';
+            });
+            playBtn.addEventListener('mouseup', () => {
+                playBtn.style.transform = 'scale(1.1)';
+            });
+        }
+    </script>
+</body></html>
