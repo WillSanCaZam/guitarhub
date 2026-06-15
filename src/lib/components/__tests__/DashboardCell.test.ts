@@ -19,9 +19,9 @@ describe('DashboardCell', () => {
     expect(screen.getByText('Nothing here')).toBeInTheDocument();
   });
 
-  it('has glassmorphism class on root element', () => {
+  it('has dashboard-cell class on root element', () => {
     render(DashboardCell, { props: { title: 'Test' } });
     const cell = screen.getByRole('region');
-    expect(cell.classList.contains('glassmorphism')).toBe(true);
+    expect(cell.classList.contains('dashboard-cell')).toBe(true);
   });
 });

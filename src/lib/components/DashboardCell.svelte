@@ -22,11 +22,12 @@
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div
-  class="dashboard-cell glassmorphism"
+  class="dashboard-cell"
   role="region"
   aria-label={title}
   tabindex="0"
 >
+  <!-- TODO: migrate emoji icons to inline SVG for consistency — tracked in design backlog -->
   <div class="cell-header">
     {#if icon}
       <span class="cell-icon" aria-hidden="true">{icon}</span>
@@ -60,18 +61,17 @@
     display: flex;
     flex-direction: column;
     min-height: 120px;
-    transition: transform var(--transition-base), box-shadow var(--transition-base);
+    transition: box-shadow var(--transition-base);
     outline: none;
     cursor: default;
   }
 
   .dashboard-cell:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-2);
+    box-shadow: var(--shadow-2), var(--shadow-amber-glow);
   }
 
   .dashboard-cell:active {
-    transform: translateY(0);
+    box-shadow: var(--shadow-1);
   }
 
   .dashboard-cell:focus-visible,

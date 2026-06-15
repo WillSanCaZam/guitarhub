@@ -42,7 +42,7 @@ describe('Dashboard Page', () => {
     render(Page);
     await waitFor(() => {
       const cells = document.querySelectorAll('.dashboard-cell');
-      expect(cells).toHaveLength(9);
+      expect(cells).toHaveLength(5);
     });
   });
 
@@ -87,14 +87,14 @@ describe('Dashboard Page', () => {
     });
     render(Page);
     await waitFor(() => {
-      expect(screen.getByText('No products in catalog yet')).toBeInTheDocument();
+      expect(screen.getByText('No products yet')).toBeInTheDocument();
     });
   });
 
   it('renders FilterBar component', async () => {
     render(Page);
     await waitFor(() => {
-      expect(screen.getByTestId('filter-toggle')).toBeInTheDocument();
+      expect(screen.getByTestId('filter-category')).toBeInTheDocument();
     });
   });
 

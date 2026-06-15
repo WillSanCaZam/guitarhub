@@ -2,8 +2,6 @@
   import { filterState, updateFilter, clearFilter, clearAllFilters } from '$lib/stores/filter.svelte';
   import type { FilterState } from '$lib/stores/filter.svelte';
 
-  let expanded = $state(false);
-
   const CONDITION_OPTIONS = ['new', 'used', 'refurbished', 'unknown'];
   const CURRENCY_OPTIONS = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY'];
   const SORT_OPTIONS = ['relevance', 'price_asc', 'price_desc', 'name_asc', 'name_desc'] as const;
@@ -51,17 +49,8 @@
       {/each}
     </div>
   {/if}
-  <button
-    class="filter-toggle"
-    onclick={() => (expanded = !expanded)}
-    data-testid="filter-toggle"
-    aria-expanded={expanded}
-  >
-    Filters {expanded ? '▲' : '▼'}
-  </button>
 
-  {#if expanded}
-    <div class="filter-controls">
+  <div class="filter-controls">
       <!-- Category -->
       <div class="filter-group">
         <div class="filter-label-row">
@@ -226,9 +215,8 @@
         >
           Clear All Filters
         </button>
-      </div>
     </div>
-  {/if}
+  </div>
 </div>
 
 <style>
@@ -296,23 +284,6 @@
 
   .pill-remove:hover {
     color: var(--color-error);
-  }
-
-  .filter-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    background: var(--color-secondary);
-    color: var(--color-on-surface);
-    border: none;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    cursor: pointer;
-  }
-
-  .filter-toggle:hover {
-    background: var(--color-secondary);
   }
 
   .filter-controls {
@@ -468,10 +439,6 @@
 
     .filter-group {
       min-width: 100%;
-    }
-
-    .filter-toggle {
-      min-height: 44px;
     }
 
     .clear-all-btn {
