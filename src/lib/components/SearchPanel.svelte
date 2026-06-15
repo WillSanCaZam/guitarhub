@@ -387,16 +387,6 @@
     font-size: 0.9rem;
   }
 
-  .loading-state {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 48px 0;
-    color: var(--color-on-surface-muted);
-    font-size: 1rem;
-  }
-
   .empty-state {
     text-align: center;
     padding: 48px 0;
