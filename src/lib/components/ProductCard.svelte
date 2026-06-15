@@ -282,7 +282,7 @@
   .shimmer {
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, var(--void-raised) 25%, var(--void-hover) 50%, var(--void-raised) 75%);
+    background: linear-gradient(90deg, var(--void-raised) 25%, var(--glow-soft) 50%, var(--void-raised) 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
   }

@@ -30,6 +30,7 @@ export interface RawProduct {
   specs_json: string;
   seller: string;
   location: string;
+  rating?: number;
 }
 
 export interface SearchResult {

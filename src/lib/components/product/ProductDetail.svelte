@@ -76,6 +76,18 @@
           <div class="shimmer-placeholder"></div>
         {/if}
       </div>
+      <div class="thumbnails">
+        {#each Array(5) as _, i}
+          <button
+            class="thumbnail"
+            class:active={activeImage === i}
+            onclick={() => activeImage = i}
+            aria-label="View image {i + 1}"
+          >
+            <div class="thumb-placeholder"></div>
+          </button>
+        {/each}
+      </div>
     </div>
 
     <!-- Product Info -->
@@ -88,7 +100,7 @@
         {/if}
       </div>
 
-      <StarRating rating={4.5} reviewCount={342} size="md" />
+      <StarRating rating={product.rating ?? 4.5} reviewCount={342} size="md" />
 
       <div class="price-section">
         <PriceDisplay
@@ -154,6 +166,84 @@
       </div>
     </section>
   {/if}
+
+  <!-- Reviews -->
+  <section class="section">
+    <h2 class="section-title">Reviews</h2>
+    <div class="reviews-list">
+      <div class="review-card">
+        <div class="review-header">
+          <span class="review-author">Marcus T.</span>
+          <div class="review-stars">
+            {#each Array(5) as _, i}
+              <svg class="star-icon" class:filled={i < 5} viewBox="0 0 20 20" width="16" height="16">
+                <path d="M10 1l2.39 4.84 5.34.78-3.87 3.77.91 5.32L10 13.28l-4.77 2.43.91-5.32L2.27 6.62l5.34-.78z"/>
+              </svg>
+            {/each}
+          </div>
+        </div>
+        <p class="review-text">Absolutely incredible tone. The neck pickup is warm and glassy, perfect for blues and jazz. The build quality is top-notch — worth every penny.</p>
+        <div class="review-actions">
+          <button class="vote-btn" aria-label="Upvote review">
+            <svg viewBox="0 0 20 20" width="14" height="14"><path d="M10 3l-7 7h4v7h6v-7h4z"/></svg>
+            <span>12</span>
+          </button>
+          <button class="vote-btn" aria-label="Downvote review">
+            <svg viewBox="0 0 20 20" width="14" height="14"><path d="M10 17l7-7h-4V3H7v7H3z"/></svg>
+            <span>1</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-header">
+          <span class="review-author">Sarah K.</span>
+          <div class="review-stars">
+            {#each Array(5) as _, i}
+              <svg class="star-icon" class:filled={i < 4} viewBox="0 0 20 20" width="16" height="16">
+                <path d="M10 1l2.39 4.84 5.34.78-3.87 3.77.91 5.32L10 13.28l-4.77 2.43.91-5.32L2.27 6.62l5.34-.78z"/>
+              </svg>
+            {/each}
+          </div>
+        </div>
+        <p class="review-text">Great guitar for the price range. The tremolo system stays in tune well. Only complaint is the finish could be a bit more refined on the back of the neck.</p>
+        <div class="review-actions">
+          <button class="vote-btn" aria-label="Upvote review">
+            <svg viewBox="0 0 20 20" width="14" height="14"><path d="M10 3l-7 7h4v7h6v-7h4z"/></svg>
+            <span>8</span>
+          </button>
+          <button class="vote-btn" aria-label="Downvote review">
+            <svg viewBox="0 0 20 20" width="14" height="14"><path d="M10 17l7-7h-4V3H7v7H3z"/></svg>
+            <span>0</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-header">
+          <span class="review-author">Jake R.</span>
+          <div class="review-stars">
+            {#each Array(5) as _, i}
+              <svg class="star-icon" class:filled={i < 5} viewBox="0 0 20 20" width="16" height="16">
+                <path d="M10 1l2.39 4.84 5.34.78-3.87 3.77.91 5.32L10 13.28l-4.77 2.43.91-5.32L2.27 6.62l5.34-.78z"/>
+              </svg>
+            {/each}
+          </div>
+        </div>
+        <p class="review-text">This is my daily driver now. The pickups are hot enough for rock but clean up beautifully. The roasted maple neck feels incredible. Best purchase I've made this year.</p>
+        <div class="review-actions">
+          <button class="vote-btn" aria-label="Upvote review">
+            <svg viewBox="0 0 20 20" width="14" height="14"><path d="M10 3l-7 7h4v7h6v-7h4z"/></svg>
+            <span>15</span>
+          </button>
+          <button class="vote-btn" aria-label="Downvote review">
+            <svg viewBox="0 0 20 20" width="14" height="14"><path d="M10 17l7-7h-4V3H7v7H3z"/></svg>
+            <span>2</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
 </div>
 
 <style>
@@ -187,6 +277,40 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+
+  .thumbnails {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+  }
+
+  .thumbnail {
+    width: 80px;
+    height: 60px;
+    border-radius: var(--radius-sm);
+    border: 2px solid transparent;
+    background: var(--void-raised);
+    cursor: pointer;
+    padding: 0;
+    overflow: hidden;
+    transition: border-color 150ms var(--ease-snap);
+  }
+
+  .thumbnail:hover {
+    border-color: var(--glow-soft);
+  }
+
+  .thumbnail.active {
+    border-color: var(--glow-primary);
+  }
+
+  .thumb-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--void-raised) 25%, var(--glow-soft) 50%, var(--void-raised) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
   }
 
   .shimmer-placeholder {
@@ -350,6 +474,82 @@
     font-size: 0.9rem;
     font-weight: 500;
     color: var(--text-bright);
+  }
+
+  /* Reviews */
+  .reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .review-card {
+    padding: var(--space-4);
+    background: var(--void-raised);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 122, 61, 0.06);
+  }
+
+  .review-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-2);
+  }
+
+  .review-author {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-bright);
+  }
+
+  .review-stars {
+    display: flex;
+    gap: 2px;
+  }
+
+  .star-icon {
+    fill: var(--void-active);
+  }
+
+  .star-icon.filled {
+    fill: var(--glow-primary);
+  }
+
+  .review-text {
+    margin: 0 0 var(--space-3);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--text-warm);
+  }
+
+  .review-actions {
+    display: flex;
+    gap: var(--space-3);
+  }
+
+  .vote-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    background: none;
+    border: 1px solid var(--text-muted);
+    border-radius: var(--radius-sm);
+    padding: var(--space-1) var(--space-2);
+    color: var(--text-dim);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: border-color 150ms var(--ease-snap), color 150ms var(--ease-snap);
+  }
+
+  .vote-btn:hover {
+    border-color: var(--glow-primary);
+    color: var(--glow-primary);
+  }
+
+  .vote-btn svg {
+    fill: currentColor;
   }
 
   @keyframes shimmer {
