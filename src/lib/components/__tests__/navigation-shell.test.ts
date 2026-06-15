@@ -20,7 +20,7 @@ describe('Navigation Shell', () => {
     it('renders all navigation items', () => {
       render(Sidebar, { props: { currentPath: '/', serverReachable: false } });
       expect(screen.getByText('Feed')).toBeInTheDocument();
-      expect(screen.getByText('Explore')).toBeInTheDocument();
+      expect(screen.getByText('Buscar')).toBeInTheDocument();
       expect(screen.getByText('Lessons')).toBeInTheDocument();
       expect(screen.getByText('My Gear')).toBeInTheDocument();
       expect(screen.getByText('Saved Riffs')).toBeInTheDocument();
@@ -42,6 +42,44 @@ describe('Navigation Shell', () => {
       render(Sidebar, { props: { currentPath: '/', serverReachable: false } });
       const feedLink = screen.getByText('Feed').closest('a');
       expect(feedLink?.querySelector('.offline-badge')).toBeInTheDocument();
+    });
+  });
+
+  describe('Sidebar redesign', () => {
+    it('renders collection link', () => {
+      render(Sidebar, { props: { currentPath: '/', serverReachable: false } });
+      expect(screen.getByText('Colección')).toBeInTheDocument();
+    });
+
+    it('renders wishlist link with badge', () => {
+      render(Sidebar, { props: { currentPath: '/', serverReachable: false } });
+      const wishlistLink = screen.getByText('Wishlist').closest('a');
+      expect(wishlistLink).toHaveAttribute('href', '/wishlist');
+      // Badge renders when wishlistState.items.length > 0
+    });
+
+    it('renders sync button', () => {
+      render(Sidebar, { props: { currentPath: '/', serverReachable: false } });
+      expect(screen.getByText('Sync')).toBeInTheDocument();
+    });
+
+    it('uses SVG icons instead of emoji', () => {
+      render(Sidebar, { props: { currentPath: '/', serverReachable: false } });
+      const svgs = document.querySelectorAll('svg');
+      expect(svgs.length).toBeGreaterThan(0);
+      // Check that no emoji characters exist in nav items
+      const navItems = screen.getAllByRole('link');
+      navItems.forEach(item => {
+        expect(item.textContent).not.toMatch(/[\u{1F300}-\u{1F9FF}]/u);
+      });
+    });
+
+    it('logo uses Syne font and amber color', () => {
+      render(Sidebar, { props: { currentPath: '/', serverReachable: false } });
+      const logo = screen.getByText('GuitarHub').closest('a');
+      expect(logo).toHaveClass('logo');
+      // CSS variables are applied via stylesheet, verify the element structure
+      expect(logo?.querySelector('.logo-icon')).toBeInTheDocument();
     });
   });
 

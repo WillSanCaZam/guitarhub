@@ -6,16 +6,18 @@
   interface Props {
     currentPath: string;
     serverReachable: boolean;
+    syncing?: boolean;
+    onSync?: () => void;
     children: Snippet;
   }
 
-  let { currentPath, serverReachable, children }: Props = $props();
+  let { currentPath, serverReachable, syncing = false, onSync, children }: Props = $props();
 </script>
 
 <div class="app-shell">
   <!-- Desktop: Sidebar (hidden on mobile via CSS) -->
   <div class="sidebar-container">
-    <Sidebar {currentPath} {serverReachable} />
+    <Sidebar {currentPath} {serverReachable} {syncing} {onSync} />
   </div>
 
   <!-- Content area -->
