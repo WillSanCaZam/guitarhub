@@ -1,6 +1,6 @@
 # GuitarHub
 
-[![v0.5.0](https://img.shields.io/badge/release-v0.5.0-blue)](https://github.com/WillSanCaZam/guitarhub/releases)
+[![v0.6.0](https://img.shields.io/badge/release-v0.6.0-blue)](https://github.com/WillSanCaZam/guitarhub/releases)
 
 A native cross-platform desktop app that aggregates guitar, amp, pedal, and accessory listings from multiple online stores into a single unified catalog.
 

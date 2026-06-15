@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-06-15
+
+### Added
+
+- **"Amp Glow" Design System** — Complete redesign with void palette (#07070C → #252538), glow accents (#FF7A3D, #FFB84D, #FF4D4D), Space Grotesk display font, and 9 animations (amp-glow pulse, string-vibe, power-on, shimmer warm-toned).
+- **ProductCard "The Stage" v2** — Full rewrite with store logo badge, category pill, deal badge (-30%), star rating, social proof ("X people viewing now"), price with strikethrough original, hover glow effects (scale 1.03, glow border), and quick actions (wishlist, alert).
+- **Discovery Feed** — Replaced static bento grid with immersive discovery experience: HeroSection (70vh gradient mesh with animated search bar), TrendingPill (horizontal scrollable trending searches), FeaturedRig (full-width artist rig banner), FeedSection wrappers with "See All" links.
+- **Product Detail "The Deep Dive"** — New route at `/product/[sku]` with image gallery (thumbnails), reviews section with upvote/downvote, price history sparkline, store comparison table, specs grid, and action buttons (wishlist, alert, compare).
+- **FilterBar v2** — Category pills with icons, dual-thumb price range slider, condition filter checkboxes, styled sort dropdown, active filter pills with × to remove.
+- **New Components** — StarRating (SVG stars with partial fill), PriceDisplay (Intl currency + discount badge), PriceRangeSlider (dual-thumb), StoreComparison, PriceHistory.
+
+### Changed
+
+- All design tokens replaced with "Amp Glow" palette (obsidian/graphite/amber from v0.5.0 superseded).
+- Space Grotesk replaces Syne as display font.
+- ProductCard skeleton shimmer now uses warm glow gradient (--glow-soft) instead of grey.
+- FilterBar sort uses custom styled dropdown instead of native <select>.
+- Version bumped to 0.6.0 across Cargo.toml, tauri.conf.json, and package.json.
+
+### Fixed
+
+- Reviews section added to ProductDetail (was missing, CRITICAL spec violation).
+- Image thumbnails added to ProductDetail (5 placeholder thumbnails).
+- PriceRangeSlider track color corrected to --void-raised.
+- Product rating now uses dynamic product.rating instead of hardcoded 4.5.
+- 25 stale tests updated for new components (192/192 passing).
+
 ## [0.5.0] - 2026-06-15
 
 ### Added
@@ -116,7 +143,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - URL validation for images and webhooks with SSRF prevention (IP literal rejection, HTTPS enforcement, domain allowlist).
 
-[Unreleased]: https://github.com/WillSanCaZam/guitarhub/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/WillSanCaZam/guitarhub/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/WillSanCaZam/guitarhub/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/WillSanCaZam/guitarhub/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/WillSanCaZam/guitarhub/releases/tag/v0.4.0
 [0.3.0]: https://github.com/WillSanCaZam/guitarhub/releases/tag/v0.3.0
