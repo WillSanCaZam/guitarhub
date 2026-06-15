@@ -8,6 +8,7 @@
   import { pageFromOffset } from '$lib/types/search';
   import type { SearchResult, RawProduct } from '$lib/types/search';
   import type { FilterState } from '$lib/stores/filter.svelte';
+  import { dashboardState } from '$lib/stores/dashboard.svelte';
   import type { CollectionStore } from '$lib/stores/collection.svelte';
 
   interface Props {
@@ -175,6 +176,20 @@
     </button>
   </div>
 
+  {#if dashboardState.recentSearches.length > 0}
+    <div class="recent-searches">
+      <span class="recent-label">Recent:</span>
+      {#each dashboardState.recentSearches as recent}
+        <button
+          class="recent-chip"
+          onclick={() => { query = recent; search(true); }}
+        >
+          {recent}
+        </button>
+      {/each}
+    </div>
+  {/if}
+
   <FilterBar />
 
   <DashboardCell title="Search" icon="🔍" loading={false} empty={false}>
@@ -185,9 +200,14 @@
     {/if}
 
     {#if loading && results.length === 0}
-      <div class="loading-state" aria-busy="true">
-        <span class="spinner"></span>
-        Searching...
+      <div class="skeleton-grid" aria-busy="true">
+        {#each Array(6) as _, i}
+          <div class="skeleton-card" style="animation-delay: {i * 50}ms">
+            <div class="skeleton-image"></div>
+            <div class="skeleton-text"></div>
+            <div class="skeleton-text short"></div>
+          </div>
+        {/each}
       </div>
     {:else if searched && results.length === 0 && !loading}
       <div class="empty-state" role="status">
@@ -245,6 +265,75 @@
   .search-panel {
     display: flex;
     flex-direction: column;
+  }
+
+  .recent-searches {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    flex-wrap: wrap;
+  }
+
+  .recent-label {
+    font-size: 0.85rem;
+    color: var(--color-on-surface-muted);
+  }
+
+  .recent-chip {
+    padding: var(--spacing-2xs) var(--spacing-sm);
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--color-outline);
+    background: transparent;
+    color: var(--color-on-surface-variant);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+  }
+
+  .recent-chip:hover {
+    background: var(--color-surface-container);
+    color: var(--color-on-surface);
+  }
+
+  .skeleton-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    padding: 16px 0;
+  }
+
+  .skeleton-card {
+    border: 1px solid var(--color-outline);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--color-surface);
+    animation: fadeIn 0.3s ease both;
+  }
+
+  .skeleton-image {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    background: linear-gradient(90deg, var(--color-surface-container) 25%, var(--color-surface-container-high) 50%, var(--color-surface-container) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  .skeleton-text {
+    height: 14px;
+    margin: 12px 16px 0;
+    background: var(--color-surface-container);
+    border-radius: 4px;
+  }
+
+  .skeleton-text.short {
+    width: 60%;
+    margin-bottom: 16px;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .search-bar {
@@ -427,5 +516,10 @@
     .load-more-btn {
       min-height: 44px;
     }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
   }
 </style>
