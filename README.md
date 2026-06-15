@@ -1,6 +1,6 @@
 # GuitarHub
 
-[![v0.4.0](https://img.shields.io/badge/release-v0.4.0-blue)](https://github.com/WillSanCaZam/guitarhub/releases)
+[![v0.5.0](https://img.shields.io/badge/release-v0.5.0-blue)](https://github.com/WillSanCaZam/guitarhub/releases)
 
 A native cross-platform desktop app that aggregates guitar, amp, pedal, and accessory listings from multiple online stores into a single unified catalog.
 
@@ -41,12 +41,14 @@ The app follows a clean architecture:
 
 ## Key Features
 
-- **Search** — Full-text search across the local catalog (FTS5).
+- **Search** — Full-text search across the local catalog (FTS5) with skeleton loading and stagger animations.
 - **Price History** — Track price changes over time per SKU.
 - **Alerts** — App, Ntfy, and Webhook alert channels for price drops.
-- **Collection** — Manage your personal gear collection with estimated values.
+- **Collection** — Manage your personal gear collection with estimated values, grid/list toggle, and CSV export.
+- **Wishlist** — Save products to your wishlist with one click, view estimated total value.
 - **Export** — Export wishlist and price history to a ZIP of CSV files.
 - **Community Hub** — Auth, user profiles, practice streaks, lessons, riffs, feed, comments, follows, and challenges.
+- **Design System** — Obsidian/graphite/amber palette, Syne/Inter/JetBrains Mono fonts, consistent tokens across all components.
 
 ## Contributing
 

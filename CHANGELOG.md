@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-15
+
+### Added
+
+- **Design System** — New design tokens (obsidian/graphite/amber palette), Google Fonts (Syne, Inter, JetBrains Mono), global CSS with skeleton shimmer and card animations.
+- **Navbar Redesign** — SVG icons, /collection link, wishlist badge with count, sync button with amber hover.
+- **ProductCard Rewrite** — Store link button (opens external URL), wishlist toggle, shimmer skeleton during image load, condition badge, JetBrains Mono price font.
+- **FilterBar Always Visible** — Removed collapse toggle, category chips, active filter pills with × to remove.
+- **SearchPanel Improvements** — Recent searches as chips below search bar, skeleton cards during loading (not spinner), stagger animation for card entrance.
+- **Wishlist Page Rewrite** — ProductCard grid layout, header with count and estimated value, empty state SVG with CTA.
+- **Dashboard Bento Redesign** — 5-cell layout with clear hierarchy (Search, Sync Status, Stats KPIs, Featured Deal, Collection).
+- **Collection Page Improvements** — Stats header with count and value, grid/list toggle, prominent CSV export button.
+- **Tauri Opener Plugin** — Replaced deprecated tauri-plugin-shell with tauri-plugin-opener for opening URLs in browser.
+
+### Changed
+
+- All hardcoded colors replaced with CSS custom properties from design tokens.
+- DashboardCell uses design tokens with amber glow hover effect.
+- Svelte 5 runes migration completed — all stores use `$state` (zero `writable()` imports).
+- Version bumped to 0.5.0 across Cargo.toml, tauri.conf.json, and package.json.
+
+### Fixed
+
+- `$wishlistState` Svelte 4 store syntax removed from +layout.svelte (now uses direct rune access).
+- FilterBar toggle removed — filters are now always visible as per design spec.
+
 ## [0.4.0] - 2026-06-13
 
 ### Added
@@ -90,7 +116,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - URL validation for images and webhooks with SSRF prevention (IP literal rejection, HTTPS enforcement, domain allowlist).
 
-[Unreleased]: https://github.com/WillSanCaZam/guitarhub/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/WillSanCaZam/guitarhub/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/WillSanCaZam/guitarhub/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/WillSanCaZam/guitarhub/releases/tag/v0.4.0
 [0.3.0]: https://github.com/WillSanCaZam/guitarhub/releases/tag/v0.3.0
 [0.2.0]: https://github.com/WillSanCaZam/guitarhub/releases/tag/v0.2.0
