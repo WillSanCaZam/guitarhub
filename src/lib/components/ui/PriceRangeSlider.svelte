@@ -133,7 +133,7 @@
   .slider-track {
     position: relative;
     height: 6px;
-    background: var(--void-mid);
+    background: var(--void-raised);
     border-radius: var(--radius-pill);
     cursor: pointer;
   }

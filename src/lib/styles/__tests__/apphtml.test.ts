@@ -10,8 +10,8 @@ describe('app.html font loading', () => {
     expect(appHtmlContent).toMatch(/<link[^>]*rel="preconnect"[^>]*href="https:\/\/fonts\.gstatic\.com"/);
   });
 
-  it('should load Syne font', () => {
-    expect(appHtmlContent).toMatch(/family=Syne/);
+  it('should load Space Grotesk font', () => {
+    expect(appHtmlContent).toMatch(/family=Space\+Grotesk/);
   });
 
   it('should load Inter font', () => {
@@ -20,6 +20,10 @@ describe('app.html font loading', () => {
 
   it('should load JetBrains Mono font', () => {
     expect(appHtmlContent).toMatch(/family=JetBrains\+Mono/);
+  });
+
+  it('should load Caveat font', () => {
+    expect(appHtmlContent).toMatch(/family=Caveat/);
   });
 
   it('should have font-display=swap', () => {

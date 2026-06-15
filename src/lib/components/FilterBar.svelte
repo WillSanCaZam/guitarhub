@@ -300,17 +300,32 @@
     padding: var(--space-2) var(--space-3);
     border: 1px solid var(--text-muted);
     border-radius: var(--radius-sm);
-    background: var(--void-mid);
+    background: var(--void-raised);
     color: var(--text-bright);
     font-size: 0.85rem;
+    font-family: var(--font-body);
     cursor: pointer;
-    transition: border-color 150ms var(--ease-snap);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237A6E5E' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--space-2) center;
+    padding-right: var(--space-8);
+    transition: border-color 150ms var(--ease-snap), box-shadow 150ms var(--ease-snap);
+  }
+
+  .filter-select:hover {
+    border-color: rgba(255, 122, 61, 0.2);
   }
 
   .filter-select:focus {
     outline: none;
     border-color: var(--glow-primary);
     box-shadow: 0 0 0 2px var(--glow-soft);
+  }
+
+  .filter-select option {
+    background: var(--void-raised);
+    color: var(--text-bright);
   }
 
   .filter-actions {
