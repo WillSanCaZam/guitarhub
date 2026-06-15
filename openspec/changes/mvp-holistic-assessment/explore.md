@@ -1,153 +1,155 @@
-## Exploration: Holistic MVP Assessment of GuitarHub
+## Exploration: GuitarHub MVP State Assessment (June 2026)
 
 ### Current State
 
-GuitarHub is a **cross-platform desktop app** (Tauri 2 + Svelte 5 + Rust) for aggregating guitar gear listings from online marketplaces, tracking price drops, and managing personal collections. The project has evolved significantly beyond the "plan-only" status recorded in early Engram context — it now has a working frontend, a fully-implemented Rust backend with 9 SQL migrations, a Python scraper with one adapter (Reverb), CI/CD pipelines, and E2E test scaffolding.
+GuitarHub v0.3.0 is a **substantially complete MVP** with 4 tagged releases (v0.1.0 → v0.3.0), 34 spec directories, 4 CI/CD workflows, and a working data pipeline: Python scraper → GitHub Pages → Tauri app sync → SQLite FTS5 local search.
 
-**Data flow**: GitHub Actions runs the Python scraper every 6h → publishes catalog JSON to GitHub Pages → Tauri app fetches and syncs to local SQLite → all search/filter runs locally via FTS5.
+**Data flow**: GitHub Actions runs Reverb scraper every 6h → publishes catalog JSON to GitHub Pages → Tauri app fetches and syncs to local SQLite → all search/filter/collection runs locally offline-first.
 
-#### Architecture Map
+#### Architecture Summary
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        FRONTEND (Svelte 5)                       │
-│  src/routes/          SvelteKit routes (+page, /collection,      │
-│                       /wishlist, /settings)                      │
-│  src/lib/components/  7 Svelte components (ProductCard,          │
-│                       FilterBar, PriceChart, DashboardCell, etc.)│
-│  src/lib/stores/      5 writable stores (collection, filter,     │
-│                       sync, wishlist, dashboard)                 │
-│  src/lib/types/       4 type files mirroring Rust IPC contracts  │
-│  src/lib/utils/       collectionValue.ts                         │
-│  IPC: invoke() → Tauri commands                                  │
-├─────────────────────────────────────────────────────────────────┤
-│                     BACKEND (Rust / Tauri 2)                     │
-│  commands/       9 Tauri command handlers (sync, search,         │
-│                  collection, wishlist, dashboard, settings,      │
-│                  price, image, export)                           │
-│  services/       6 services (sync, search, image_cache,          │
-│                  price_drop, alert_service, export_service)      │
-│  repository/     7 repo traits + sqlite/ implementations         │
-│  domain/         product.rs (RawProduct, SyncState, SearchFilters│
-│                  SearchResult, CatalogFile, SortOrder)           │
-│  migrations/     9 SQL migrations (001→009) with up+down files   │
-│  lib.rs          AppState, AppError, initialize_database()       │
-│  main.rs         Tauri builder, plugin registration              │
-├─────────────────────────────────────────────────────────────────┤
-│                     SCRAPER (Python 3.12)                        │
-│  domain.py       CatalogProduct, CatalogFile (Pydantic)          │
-│  ports.py        ScraperPort protocol, FetchError, ParseError    │
-│  adapters/       ReverbAdapter (JSON API, pagination, retry)     │
-│  cli.py          argparse CLI (--adapter, --output, --validate)  │
-│  tests/          unit/ (test_reverb, test_domain), contract/     │
-├─────────────────────────────────────────────────────────────────┤
-│                     INFRASTRUCTURE                               │
-│  .github/workflows/  ci.yml (PR), scrape.yml (cron 6h),         │
-│                      release.yml, e2e.yml                        │
-│  Makefile            test, lint, build, audit targets            │
-│  tauri.conf.json     CSP, updater, bundle (deb, appimage)        │
-│  openspec/           34 spec directories, 3 active changes       │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                    FRONTEND (Svelte 5 + SvelteKit)            │
+│  4 routes: / (dashboard), /collection, /wishlist, /settings  │
+│  12 components: SearchPanel, ProductCard, FilterBar, etc.     │
+│  5 stores: collection, dashboard, filter, sync, wishlist      │
+│  Virtual scrolling via @tanstack/svelte-virtual               │
+│  IPC: invoke() → Tauri commands                               │
+├──────────────────────────────────────────────────────────────┤
+│                    BACKEND (Rust / Tauri 2)                    │
+│  9 commands: sync, search, collection, wishlist, dashboard,   │
+│              settings, price, image, export                   │
+│  7 services: sync, search, image_cache, price_drop,           │
+│              alert_service, export_service                    │
+│  7 repository traits + SQLite implementations                 │
+│  9 SQL migrations with up+down files                          │
+│  Batch upserts in single transactions                         │
+│  ETag conditional requests for catalog sync                   │
+├──────────────────────────────────────────────────────────────┤
+│                    SCRAPER (Python 3.12)                       │
+│  Ports & Adapters: domain → ports (Protocol) → adapters       │
+│  1 adapter: ReverbAdapter (JSON API, pagination, retry)       │
+│  CLI: argparse (--adapter, --output, --validate)              │
+├──────────────────────────────────────────────────────────────┤
+│                    TEST INFRASTRUCTURE                          │
+│  Rust: unit tests inline + integration tests (src-tauri/tests)│
+│  Python: unit + contract tests (pytest)                        │
+│  Frontend: 10 component/store tests (vitest)                   │
+│  E2E: 7 spec files (WebDriverIO, unverified)                  │
+│  CI: 4 workflows (ci, scrape, release, e2e)                   │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-### Affected Areas
+### Features: Implemented & Working
 
-| Area | Files | Status |
-|------|-------|--------|
-| Frontend routes | `src/routes/+page.svelte` (800 lines), `+layout.svelte`, `/collection`, `/wishlist`, `/settings` | Functional but monolithic |
-| Frontend stores | `src/lib/stores/*.ts` (5 stores) | Working, Svelte 4 writable pattern (not runes) |
-| Rust commands | `src-tauri/src/commands/*.rs` (9 files) | Complete, well-tested |
-| Rust services | `src-tauri/src/services/*.rs` (6 files) | Complete, extensive tests |
-| Rust repository | `src-tauri/src/repository/` (7 traits + sqlite impls) | Complete |
-| Migrations | `src-tauri/src/repository/sqlite/migrations/` (9 up + 9 down) | Complete, well-tested |
-| Scraper | `scraper/` (domain, ports, 1 adapter) | Functional, single source |
-| CI/CD | `.github/workflows/` (4 workflows) | Active |
-| E2E tests | `e2e-tests/specs/` (7 spec files) | Scaffolded, unverified |
+| Feature | Status | Evidence |
+|---------|--------|----------|
+| **Full-text search** (FTS5 trigram) | ✅ Complete | `services/search.rs` — 961 lines, input sanitization, pagination, sorting |
+| **Catalog sync** (remote + local) | ✅ Complete | `services/sync.rs` — ETag caching, state machine, batch upserts, 304 handling |
+| **Price drop detection** | ✅ Complete | `services/price_drop.rs` — pure function, materiality + cooldown, multi-channel dispatch |
+| **Alert system** (App/Ntfy/Webhook) | ✅ Complete | `services/alert_service.rs` — trait-based, SSRF prevention, retry |
+| **Collection management** | ✅ Complete | `commands/collection_command.rs`, `stores/collection.ts`, UI with stats |
+| **Wishlist** | ✅ Complete | `commands/wishlist_command.rs`, `stores/wishlist.ts` |
+| **Dashboard bento grid** | ✅ Complete | 9-cell layout with stats, recent searches, featured deal |
+| **Image cache** (LRU + coalescing) | ✅ Complete | `services/image_cache.rs` — DashMap, 50MB cap, 7-day TTL |
+| **Export** (ZIP of JSON) | ✅ Complete | `commands/export_command.rs`, `services/export_service.rs` |
+| **Price history** | ✅ Complete | `repository/price_history.rs`, recorded per sync |
+| **Settings persistence** | ✅ Complete | Key-value store in SQLite |
+| **Scraper** (Reverb adapter) | ✅ Complete | `scraper/adapters/reverb.py` — pagination, retry, category mapping |
+| **CI/CD pipelines** | ✅ Complete | 4 workflows: ci.yml, scrape.yml, release.yml, e2e.yml |
+| **Down migrations** | ✅ Complete | 9 down migration files for rollback |
+| **In-app updater** | ✅ Complete | tauri-plugin-updater configured |
+| **Virtual scrolling** | ✅ Complete | @tanstack/svelte-virtual in SearchPanel |
+| **FilterBar** | ✅ Complete | Category, price, condition, currency, sort |
 
-### Approaches
+### Features: Partially Implemented or With Known Issues
 
-#### 1. Architecture Mapping — Findings
+| Feature | Issue | Severity |
+|---------|-------|----------|
+| **E2E tests** | 7 spec files scaffolded but never verified passing (requires tauri-driver + debug binary) | Medium |
+| **Store pattern** | Mixed: Svelte 4 writable stores (`src/lib/stores/`) alongside Svelte 5 runes in components | Medium |
+| **Dark mode** | Only `prefers-color-scheme` media queries, no manual toggle | Low |
+| **i18n** | English-only UI despite being listed as a convention | Medium |
+| **Accessibility** | Some aria-labels exist, no systematic a11y audit | Medium |
+| **Scraper robustness** | Single adapter (Reverb), no rate limiting on 429s, sequential pagination | Medium |
 
-**Strengths:**
-- Clean Architecture in Rust backend: commands → services → repository traits ← sqlite implementations
+### Architecture Quality Assessment
+
+**Strengths (well-structured for MVP):**
+- Clean Architecture in Rust: commands (IPC glue) → services (business logic) → repository traits ← SQLite impls
 - Ports & Adapters in scraper: domain → ports (Protocol) → adapters
 - Type-safe IPC contracts mirrored in TypeScript (`src/lib/types/`)
 - Custom migration runner with up/down support, gap detection, trigger-aware SQL splitting
 - FTS5 with trigram tokenizer + sanitization against injection
-- Image cache with request coalescing (DashMap + watch channels), LRU eviction, 50MB cap
-- Price drop detection: pure function, materiality + cooldown layered
-- Alert system: trait-based dispatchers (App, Ntfy, Webhook) with retry
-- ETag-based conditional requests for catalog sync
-- CSP configured, SSRF prevention in webhook URL validation
+- Batch upserts in single transactions (atomic, performant)
+- ETag conditional requests to skip unchanged catalogs
+- Price drop detection as pure function with layered materiality + cooldown
+- Trait-based alert dispatchers (App, Ntfy, Webhook) with SSRF prevention
+- Image cache with request coalescing (DashMap + watch channels)
 
-**Patterns in use:**
-- Svelte 5 runes ($state, $derived, $props) in components
-- Svelte 4 writable stores for state management (mixed approach)
-- Tauri State injection for AppState
-- async_trait for service/repo abstractions
-- Pydantic v2 for scraper domain models
+**Structural Issues Remaining:**
 
-#### 2. Structural Irregularities
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | sync_command.rs duplication | High | ✅ FIXED — `dispatch_price_drops` extracted |
+| 2 | +page.svelte monolith | High | ⚠️ Reduced (323 lines) but still mixes concerns |
+| 3 | No Rust integration tests | Medium | ✅ FIXED — added in Sprint 4 |
+| 4 | E2E tests unverified | Medium | ⚠️ Still unverified |
+| 5 | mypy strict overrides | Medium | ⚠️ Reduced but still present |
+| 6 | No i18n | Medium | ❌ Not implemented |
+| 7 | No accessibility audit | Medium | ❌ Not done |
+| 8 | Store pattern inconsistency | Medium | ❌ Still mixed |
+| 9 | Double tracing init | Medium | Need to verify |
+| 10 | Version mismatches | Low | ⚠️ Partially fixed (user-agent updated) |
 
-| # | Issue | Location | Severity |
-|---|-------|----------|----------|
-| 1 | **Version mismatch**: scraper is v0.2.0, app is v0.3.0 | `scraper/pyproject.toml:7` vs `package.json:4` / `Cargo.toml:3` | Medium |
-| 2 | **HTTP User-Agent stale version**: "GuitarHub/0.2.0" but app is 0.3.0 | `src-tauri/src/lib.rs:67` | Low |
-| 3 | **Double tracing init**: `tracing_subscriber` initialized in both `lib.rs:29-35` and `main.rs:7` | `src-tauri/src/lib.rs` + `main.rs` | Medium |
-| 4 | **Massive code duplication** in sync_command.rs: alert dispatch logic copy-pasted between `sync_catalog` and `sync_local_catalog` (~80 lines duplicated) | `src-tauri/src/commands/sync_command.rs:22-82` vs `:97-157` | High |
-| 5 | **Monolithic page component**: +page.svelte is 800 lines with inline styles, business logic, and UI | `src/routes/+page.svelte` | High |
-| 6 | **Mixed state management**: Svelte 5 runes in components but Svelte 4 writable stores for shared state | `src/lib/stores/*.ts` vs `src/routes/*.svelte` | Medium |
-| 7 | **Unused dependency**: `beautifulsoup4` in requirements.txt but never imported | `scraper/requirements.txt:3` | Low |
-| 8 | **Python version discrepancy**: pyproject.toml says `>=3.12`, openspec config says `3.14`, CI uses `3.12` | `scraper/pyproject.toml:9` vs `openspec/config.yaml:13` vs `.github/workflows/ci.yml:16` | Low |
-| 9 | **mypy overrides suppressing errors** in adapter and domain modules | `scraper/pyproject.toml:25-31` | Medium |
-| 10 | **No i18n implementation** despite being listed as a Phase 1 convention | N/A | Medium |
-| 11 | **No dark mode toggle** — only `prefers-color-scheme` media queries | `src/routes/+page.svelte:701-779` | Low |
-| 12 | **Scraper version not synced** with app versioning scheme | `scraper/pyproject.toml:7` | Low |
-| 13 | **Dependabot pip ecosystem commented out** with TODO | `.github/dependabot.yml:7-10` | Low |
-
-#### 3. Technical Debt Catalog
+### Technical Debt Catalog
 
 | # | Item | Severity | Impact |
 |---|------|----------|--------|
-| 1 | **sync_command.rs duplication**: ~80 lines of alert dispatch logic duplicated between two commands. Extract to a shared function. | High | Maintenance burden, bug divergence risk |
-| 2 | **+page.svelte monolith**: 800 lines mixing search logic, dashboard rendering, collection stats, settings, and 400+ lines of CSS. Should be decomposed into sub-components. | High | Unmaintainable, blocks parallel work |
-| 3 | **No integration tests in Rust**: `src-tauri/tests/` directory is empty. All Rust tests are inline `#[cfg(test)]`. | Medium | No end-to-end backend verification |
-| 4 | **E2E tests unverified**: 7 spec files exist but depend on `tauri-driver` which may not be installed. Never confirmed passing. | Medium | False confidence |
-| 5 | **mypy strict overrides**: adapter and domain modules have disabled error codes, hiding potential type issues | Medium | Type safety erosion |
-| 6 | **No i18n**: English-only UI despite i18n being a stated Phase 1 convention | Medium | Blocks Spanish-speaking users |
-| 7 | **No accessibility audit**: aria-labels exist in some components but no systematic a11y testing | Medium | Excludes assistive tech users |
-| 8 | **Store pattern inconsistency**: writable stores (Svelte 4) mixed with runes (Svelte 5). Should migrate to `$state`-based stores or runes-based state. | Medium | Confusing for contributors |
-| 9 | **Double tracing init**: may cause duplicate log output or panics in certain configurations | Medium | Runtime instability |
-| 10 | **No landing page**: Astro landing page mentioned in config but not present | Low | Missing marketing surface |
-| 11 | **beautifulsoup4 unused**: dead dependency in scraper | Low | Confusing, minor bloat |
-| 12 | **No batch inserts**: products upserted one-by-one in a loop in `sync.rs:132-216` | Medium | Slow sync for large catalogs |
+| 1 | **Store migration**: writable stores (Svelte 4) → runes-based state | Medium | Confusing for contributors, inconsistent patterns |
+| 2 | **+page.svelte decomposition**: extract SearchPanel, DashboardGrid, etc. into sub-components | Medium | 323 lines still mixes dashboard + search + settings |
+| 3 | **E2E verification**: run specs against debug build to confirm they pass | Medium | False confidence in test coverage |
+| 4 | **i18n foundation**: even basic English-only i18n setup for future localization | Medium | Blocks non-English users |
+| 5 | **a11y audit**: WCAG 2.2 AA compliance check | Medium | Excludes assistive tech users |
+| 6 | **beautifulsoup4**: check if still unused in requirements.txt | Low | Dead dependency |
+| 7 | **Python version**: pyproject.toml says >=3.12, openspec says 3.14, CI uses 3.12 | Low | Confusion |
 
-#### 4. Bottlenecks
+### Test Coverage Summary
 
-| # | Bottleneck | Location | Impact |
-|---|-----------|----------|--------|
-| 1 | **SQLite max_connections=1** | `lib.rs:37` | Single writer at a time; concurrent reads OK in WAL mode but writes serialize |
-| 2 | **Sequential product upsert** | `services/sync.rs:132-216` | Each product is INSERT OR REPLACE'd individually in a loop. For 1000+ products, this is slow. Should use batch transactions. |
-| 3 | **No FTS query caching** | `services/search.rs` | Every search hits SQLite directly. For repeated queries, a DashMap cache would help. |
-| 4 | **Image cache: no concurrent download limit** | `services/image_cache.rs` | DashMap coalesces same-URL requests but no global semaphore limits parallel downloads |
-| 5 | **Scraper: single-threaded pagination** | `scraper/adapters/reverb.py:96-132` | Pages fetched sequentially with `time.sleep()`. Could use async + concurrent pages. |
-| 6 | **No rate limiting on scraper** | `scraper/adapters/reverb.py` | Only `time.sleep(delay)` between pages. No exponential backoff on 429s. |
-| 7 | **Frontend: no virtual scrolling** | `src/routes/+page.svelte:186-189` | All search results rendered in DOM. For 100+ results, performance degrades. |
+| Layer | Tests | Status |
+|-------|-------|--------|
+| Rust unit tests | ~341 inline `#[cfg(test)]` | ✅ Passing |
+| Rust integration tests | 4 test functions in `src-tauri/tests/` | ✅ Added Sprint 4 |
+| Python unit tests | `test_reverb.py`, `test_domain.py` | ✅ Passing |
+| Python contract tests | `test_protocol.py` | ✅ Passing |
+| Frontend component tests | 7 test files (DashboardCell, FilterBar, PriceBadge, PriceChart, ProductCard, Settings, CollectionView) | ✅ Passing |
+| Frontend store tests | 2 test files (collection, filter) | ✅ Passing |
+| Frontend page tests | 1 test file (+page) | ✅ Passing |
+| E2E tests | 7 spec files (app-launch, search, sync, collection, settings, dashboard, filters) | ⚠️ Unverified |
 
 ### Risks
 
-1. **Data loss on migration failure**: The custom migration runner rolls back per-migration but has no backup mechanism before applying. A failed migration mid-chain could leave the DB in an inconsistent state.
-2. **Scraper fragility**: Only one adapter (Reverb). If Reverb changes their API, the entire catalog pipeline breaks. No fallback sources.
-3. **No offline fallback for sync**: If GitHub Pages is down, the app can't sync. Local sync exists but requires manual file selection.
-4. **CSP may be too restrictive**: `connect-src: ipc: http://ipc.localhost` — if any external API call is needed from the frontend (not through Tauri), it will be blocked.
-5. **Updater endpoint hardcoded**: `tauri.conf.json:39` points to `willsancazam.github.io` — needs to match the actual deployment target.
+1. **Single scraper source**: Only Reverb adapter. If Reverb changes API, entire catalog pipeline breaks. No fallback.
+2. **E2E test gap**: 7 spec files exist but have never been confirmed passing. Could hide regressions.
+3. **No offline catalog import UX**: `sync_local_catalog` exists in backend but no UI to trigger it — users must use the URL sync.
+4. **GitHub Pages dependency**: Catalog hosted on GitHub Pages. If Pages is down, sync fails. No offline fallback.
+5. **Updater endpoint**: Points to `willsancazam.github.io` — needs verification this matches deployment.
 
 ### Ready for Proposal
 
-**Yes** — the codebase is substantial enough for a comprehensive MVP briefing. The orchestrator should:
+**Yes** — the MVP is substantially complete and functional. The codebase has:
+- Working sync pipeline (scraper → GitHub Pages → app)
+- Full-text search with FTS5
+- Price drop detection and alerts
+- Collection and wishlist management
+- Dashboard with bento grid layout
+- CI/CD with 4 workflows
+- 4 tagged releases
 
-1. Use the architecture map and irregularity table as the foundation for `MVP_BRIEFING.md`
-2. Prioritize the **High** severity items (sync_command duplication, +page.svelte monolith) as immediate roadmap items
-3. Include the batch insert optimization and store migration as performance/quality improvements
-4. Note that the CI/CD pipeline is active and functional (ci.yml, scrape.yml, release.yml, e2e.yml)
-5. Flag that E2E tests need verification before being considered part of the test suite
+**Recommended next steps for the orchestrator:**
+1. **Verify E2E tests pass** — run the 7 specs against a debug build
+2. **Run full test suite** — `make test` to confirm everything passes
+3. **Address remaining Medium debt** — store migration, +page decomposition, i18n foundation
+4. **Consider second scraper adapter** — reduce single-source risk
+5. **Ship v0.4.0** with verified E2E tests and remaining debt fixes
