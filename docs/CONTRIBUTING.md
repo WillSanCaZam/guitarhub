@@ -29,10 +29,32 @@ make dev    # Start Tauri with hot reload
 ### Running tests
 
 ```bash
-make test          # Rust + Python tests
+make test          # Rust + Python + frontend + E2E (full suite)
 make test-app      # Rust tests only
 make test-scraper  # Python tests only
+make test-frontend # Frontend tests only (vitest)
+make test-e2e      # E2E tests (requires tauri-driver + debug binary)
 ```
+
+#### E2E prerequisites
+
+E2E tests require additional setup beyond the standard dev environment:
+
+1. **Install `tauri-driver`**:
+   ```bash
+   cargo install tauri-driver
+   ```
+2. **Build the debug binary** (without bundling):
+   ```bash
+   cargo tauri build --debug --no-bundle
+   ```
+3. **Run E2E tests**:
+   ```bash
+   make test-e2e
+   ```
+
+If `tauri-driver` or the debug binary is not found, `make test-e2e` skips
+automatically and prints instructions.
 
 ### Linting
 

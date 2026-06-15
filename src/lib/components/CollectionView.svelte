@@ -2,6 +2,12 @@
   import { collectionState, removeFromCollection } from '$lib/stores/collection.svelte';
   import type { CollectionItem } from '$lib/types/collection';
 
+  interface Props {
+    viewMode?: 'grid' | 'list';
+  }
+
+  let { viewMode = 'grid' }: Props = $props();
+
   function gain(item: CollectionItem): number {
     const ev = item.estimated_value ?? 0;
     const pp = item.purchase_price ?? 0;
@@ -32,7 +38,7 @@
     <p class="empty-hint">Search for gear to add!</p>
   </div>
 {:else}
-  <div class="collection-grid">
+  <div class="collection-grid {viewMode}">
     {#each collectionState.items as item (item.id)}
       <div class="collection-card">
         <div class="card-header">
@@ -87,14 +93,14 @@
     justify-content: center;
     gap: 10px;
     padding: 48px 0;
-    color: #666;
+    color: var(--color-on-surface-muted);
   }
 
   .spinner {
     width: 20px;
     height: 20px;
-    border: 2px solid #ddd;
-    border-top-color: #1a1a2e;
+    border: 2px solid var(--color-outline);
+    border-top-color: var(--color-amber);
     border-radius: 50%;
     animation: spin 0.6s linear infinite;
   }
@@ -106,7 +112,7 @@
   .empty-state {
     text-align: center;
     padding: 48px 0;
-    color: #666;
+    color: var(--color-on-surface-muted);
   }
 
   .empty-state p {
@@ -116,31 +122,60 @@
 
   .empty-hint {
     font-size: 0.9rem;
-    color: #999;
+    color: var(--color-on-surface-variant);
   }
 
-  .collection-grid {
+  .collection-grid.grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 16px;
+    gap: var(--spacing-md);
+  }
+
+  .collection-grid.list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .collection-grid.list .collection-card {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .collection-grid.list .card-header {
+    min-width: 200px;
+  }
+
+  .collection-grid.list .card-body {
+    flex: 1;
+    flex-direction: row;
+    gap: var(--spacing-lg);
+  }
+
+  .collection-grid.list .card-footer {
+    margin-top: 0;
+  }
+
+  .collection-grid.list .remove-btn {
+    width: auto;
+    padding: 6px 12px;
   }
 
   .collection-card {
-    background: rgba(255, 255, 255, 0.55);
-    backdrop-filter: blur(12px);
-    border-radius: 12px;
-    padding: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    background: var(--color-surface-container);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    border: 1px solid var(--color-outline-variant);
+    box-shadow: var(--shadow-1);
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    gap: var(--spacing-sm);
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
   }
 
   .collection-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-2);
   }
 
   .card-header {
@@ -151,15 +186,16 @@
 
   .item-name {
     margin: 0;
+    font-family: var(--font-display);
     font-size: 1rem;
     font-weight: 600;
-    color: #1a1a2e;
+    color: var(--color-amber);
   }
 
   .item-brand {
     margin: 0;
     font-size: 0.85rem;
-    color: #666;
+    color: var(--color-on-surface-muted);
   }
 
   .card-body {
@@ -176,12 +212,12 @@
   }
 
   .price-label {
-    color: #666;
+    color: var(--color-on-surface-muted);
   }
 
   .price-value {
     font-weight: 600;
-    color: #1a1a2e;
+    color: var(--color-secondary);
   }
 
   .gain-loss {
@@ -189,11 +225,11 @@
   }
 
   .gain-loss.gain {
-    color: #28a745;
+    color: var(--color-success);
   }
 
   .gain-loss.loss {
-    color: #dc3545;
+    color: var(--color-error);
   }
 
   .card-footer {
@@ -204,67 +240,16 @@
     width: 100%;
     padding: 8px 12px;
     background: transparent;
-    color: #dc3545;
-    border: 1px solid #dc3545;
-    border-radius: 6px;
+    color: var(--color-error);
+    border: 1px solid var(--color-error);
+    border-radius: var(--radius-md);
     font-size: 0.85rem;
     cursor: pointer;
-    transition: background 0.15s, color 0.15s;
+    transition: background var(--transition-fast), color var(--transition-fast);
   }
 
   .remove-btn:hover {
-    background: #dc3545;
-    color: #fff;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .collection-card {
-      background: rgba(20, 20, 30, 0.55);
-      border-color: rgba(255, 255, 255, 0.1);
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.25);
-    }
-
-    .item-name {
-      color: #e8e8f0;
-    }
-
-    .price-value {
-      color: #e8e8f0;
-    }
-
-    .gain-loss.gain {
-      color: #4cd964;
-    }
-
-    .gain-loss.loss {
-      color: #ff6b6b;
-    }
-
-    .remove-btn {
-      color: #ff6b6b;
-      border-color: #ff6b6b;
-    }
-
-    .remove-btn:hover {
-      background: #ff6b6b;
-      color: #1a1a2e;
-    }
-
-    .spinner {
-      border-color: #444;
-      border-top-color: #e8e8f0;
-    }
-
-    .loading-state {
-      color: #aaa;
-    }
-
-    .empty-state {
-      color: #ccc;
-    }
-
-    .empty-hint {
-      color: #888;
-    }
+    background: var(--color-error);
+    color: var(--color-on-surface);
   }
 </style>

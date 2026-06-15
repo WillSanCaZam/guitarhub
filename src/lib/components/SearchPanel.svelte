@@ -8,6 +8,7 @@
   import { pageFromOffset } from '$lib/types/search';
   import type { SearchResult, RawProduct } from '$lib/types/search';
   import type { FilterState } from '$lib/stores/filter.svelte';
+  import { dashboardState } from '$lib/stores/dashboard.svelte';
   import type { CollectionStore } from '$lib/stores/collection.svelte';
 
   interface Props {
@@ -175,6 +176,20 @@
     </button>
   </div>
 
+  {#if dashboardState.recentSearches.length > 0}
+    <div class="recent-searches">
+      <span class="recent-label">Recent:</span>
+      {#each dashboardState.recentSearches as recent}
+        <button
+          class="recent-chip"
+          onclick={() => { query = recent; search(true); }}
+        >
+          {recent}
+        </button>
+      {/each}
+    </div>
+  {/if}
+
   <FilterBar />
 
   <DashboardCell title="Search" icon="🔍" loading={false} empty={false}>
@@ -185,9 +200,14 @@
     {/if}
 
     {#if loading && results.length === 0}
-      <div class="loading-state" aria-busy="true">
-        <span class="spinner"></span>
-        Searching...
+      <div class="skeleton-grid" aria-busy="true">
+        {#each Array(6) as _, i}
+          <div class="skeleton-card" style="animation-delay: {i * 50}ms">
+            <div class="skeleton-image"></div>
+            <div class="skeleton-text"></div>
+            <div class="skeleton-text short"></div>
+          </div>
+        {/each}
       </div>
     {:else if searched && results.length === 0 && !loading}
       <div class="empty-state" role="status">
@@ -247,6 +267,75 @@
     flex-direction: column;
   }
 
+  .recent-searches {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    flex-wrap: wrap;
+  }
+
+  .recent-label {
+    font-size: 0.85rem;
+    color: var(--color-on-surface-muted);
+  }
+
+  .recent-chip {
+    padding: var(--spacing-2xs) var(--spacing-sm);
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--color-outline);
+    background: transparent;
+    color: var(--color-on-surface-variant);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+  }
+
+  .recent-chip:hover {
+    background: var(--color-surface-container);
+    color: var(--color-on-surface);
+  }
+
+  .skeleton-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    padding: 16px 0;
+  }
+
+  .skeleton-card {
+    border: 1px solid var(--color-outline);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--color-surface);
+    animation: fadeIn 0.3s ease both;
+  }
+
+  .skeleton-image {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    background: linear-gradient(90deg, var(--color-surface-container) 25%, var(--color-surface-container-high) 50%, var(--color-surface-container) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  .skeleton-text {
+    height: 14px;
+    margin: 12px 16px 0;
+    background: var(--color-surface-container);
+    border-radius: 4px;
+  }
+
+  .skeleton-text.short {
+    width: 60%;
+    margin-bottom: 16px;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
   .search-bar {
     display: flex;
     gap: 8px;
@@ -256,7 +345,7 @@
   .search-input {
     flex: 1;
     padding: 10px 14px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-on-surface-variant);
     border-radius: 6px;
     font-size: 1rem;
     box-sizing: border-box;
@@ -265,14 +354,14 @@
 
   .search-input:focus {
     outline: none;
-    border-color: #1a1a2e;
+    border-color: var(--color-secondary);
     box-shadow: 0 0 0 2px rgba(26,26,46,0.15);
   }
 
   .search-btn {
     padding: 10px 20px;
-    background: #1a1a2e;
-    color: #fff;
+    background: var(--color-secondary);
+    color: var(--color-on-surface);
     border: none;
     border-radius: 6px;
     font-size: 0.95rem;
@@ -281,7 +370,7 @@
   }
 
   .search-btn:hover:not(:disabled) {
-    background: #2a2a4e;
+    background: var(--color-secondary);
   }
 
   .search-btn:disabled {
@@ -291,27 +380,17 @@
 
   .error-banner {
     padding: 12px 16px;
-    background: #f8d7da;
-    color: #721c24;
+    background: var(--color-error-container);
+    color: var(--color-error);
     border-radius: 6px;
     margin-bottom: 16px;
     font-size: 0.9rem;
   }
 
-  .loading-state {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 48px 0;
-    color: #666;
-    font-size: 1rem;
-  }
-
   .empty-state {
     text-align: center;
     padding: 48px 0;
-    color: #666;
+    color: var(--color-on-surface-muted);
   }
 
   .empty-state p {
@@ -321,7 +400,7 @@
 
   .empty-hint {
     font-size: 0.9rem !important;
-    color: #999;
+    color: var(--color-on-surface-variant);
   }
 
   .search-hint-icon {
@@ -336,7 +415,7 @@
     justify-content: space-between;
     margin-bottom: 12px;
     font-size: 0.85rem;
-    color: #666;
+    color: var(--color-on-surface-muted);
   }
 
   .virtual-scroll-container {
@@ -377,9 +456,9 @@
 
   .load-more-btn {
     padding: 10px 32px;
-    background: #fff;
-    color: #333;
-    border: 1px solid #ccc;
+    background: var(--color-on-surface);
+    color: var(--color-surface-container-high);
+    border: 1px solid var(--color-on-surface-variant);
     border-radius: 6px;
     font-size: 0.9rem;
     cursor: pointer;
@@ -387,7 +466,7 @@
   }
 
   .load-more-btn:hover:not(:disabled) {
-    background: #f0f0f0;
+    background: var(--color-surface);
   }
 
   .load-more-btn:disabled {
@@ -398,23 +477,23 @@
   @media (prefers-color-scheme: dark) {
     .search-input {
       background: rgba(30, 30, 40, 0.6);
-      border-color: #444;
-      color: #e8e8f0;
+      border-color: var(--color-outline-variant);
+      color: var(--color-on-surface);
     }
 
     .search-input::placeholder {
-      color: #888;
+      color: var(--color-on-surface-muted);
     }
 
     .search-input:focus {
-      border-color: #e8e8f0;
+      border-color: var(--color-on-surface);
       box-shadow: 0 0 0 2px rgba(232, 232, 240, 0.15);
     }
 
     .load-more-btn {
       background: rgba(30, 30, 40, 0.6);
-      color: #e8e8f0;
-      border-color: #444;
+      color: var(--color-on-surface);
+      border-color: var(--color-outline-variant);
     }
 
     .load-more-btn:hover:not(:disabled) {
@@ -427,5 +506,10 @@
     .load-more-btn {
       min-height: 44px;
     }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
   }
 </style>

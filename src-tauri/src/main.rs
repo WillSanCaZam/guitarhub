@@ -16,6 +16,7 @@ async fn main() -> anyhow::Result<()> {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(state)
         .invoke_handler(tauri::generate_handler![
@@ -28,6 +29,7 @@ async fn main() -> anyhow::Result<()> {
             guitarhub_lib::commands::settings_command::test_alert_channel,
             guitarhub_lib::commands::export_command::export_data,
             guitarhub_lib::commands::sync_command::sync_catalog,
+            guitarhub_lib::commands::url_command::open_url,
             guitarhub_lib::commands::search_command::search_products,
             guitarhub_lib::commands::dashboard_command::get_total_products,
             guitarhub_lib::commands::dashboard_command::get_wishlist_count,

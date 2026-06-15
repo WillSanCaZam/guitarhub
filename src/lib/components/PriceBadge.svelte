@@ -104,12 +104,12 @@
     vertical-align: middle;
   }
   .badge--green {
-    background: #d4edda;
-    color: #155724;
+    background: var(--color-success-container);
+    color: var(--color-success);
   }
   .badge--amber {
-    background: #fff3cd;
-    color: #856404;
+    background: var(--color-on-surface)3cd;
+    color: var(--color-warning);
   }
   .dots {
     margin-left: 4px;
@@ -118,7 +118,7 @@
   }
   /* Low-tier dots are neutral grey regardless of badge colour. */
   .tier--low .dots {
-    color: #6c757d;
+    color: var(--color-on-surface-variant);
   }
   /* High/medium tier dots inherit the badge colour for cohesion. */
   .tier--high .dots,

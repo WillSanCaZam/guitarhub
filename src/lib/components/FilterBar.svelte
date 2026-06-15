@@ -2,25 +2,55 @@
   import { filterState, updateFilter, clearFilter, clearAllFilters } from '$lib/stores/filter.svelte';
   import type { FilterState } from '$lib/stores/filter.svelte';
 
-  let expanded = $state(false);
-
   const CONDITION_OPTIONS = ['new', 'used', 'refurbished', 'unknown'];
   const CURRENCY_OPTIONS = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY'];
   const SORT_OPTIONS = ['relevance', 'price_asc', 'price_desc', 'name_asc', 'name_desc'] as const;
+
+  const CATEGORY_CHIPS = [
+    { label: 'All', value: '' },
+    { label: 'Guitar', value: 'Guitar' },
+    { label: 'Bass', value: 'Bass' },
+    { label: 'Amp', value: 'Amplifier' },
+    { label: 'Pedal', value: 'Pedal' },
+    { label: 'Keys', value: 'Keyboard' },
+  ];
+
+  const activeFilters = $derived.by(() => {
+    const filters: { key: keyof FilterState; label: string }[] = [];
+    if (filterState.category) filters.push({ key: 'category', label: filterState.category });
+    if (filterState.price_min) filters.push({ key: 'price_min', label: `$${filterState.price_min}+` });
+    if (filterState.price_max) filters.push({ key: 'price_max', label: `$${filterState.price_max}-` });
+    if (filterState.condition) filters.push({ key: 'condition', label: filterState.condition });
+    if (filterState.listing_currency) filters.push({ key: 'listing_currency', label: filterState.listing_currency });
+    if (filterState.sort !== 'relevance') filters.push({ key: 'sort', label: filterState.sort.replace('_', ' ') });
+    return filters;
+  });
 </script>
 
 <div class="filter-bar">
-  <button
-    class="filter-toggle"
-    onclick={() => (expanded = !expanded)}
-    data-testid="filter-toggle"
-    aria-expanded={expanded}
-  >
-    Filters {expanded ? '▲' : '▼'}
-  </button>
+  <div class="category-chips">
+    {#each CATEGORY_CHIPS as chip}
+      <button
+        class="chip"
+        class:active={filterState.category === chip.value}
+        onclick={() => updateFilter('category', chip.value || null)}
+      >
+        {chip.label}
+      </button>
+    {/each}
+  </div>
+  {#if activeFilters.length > 0}
+    <div class="active-filters">
+      {#each activeFilters as filter}
+        <span class="filter-pill">
+          {filter.label}
+          <button class="pill-remove" onclick={() => clearFilter(filter.key)} aria-label={`Remove ${filter.label} filter`}>×</button>
+        </span>
+      {/each}
+    </div>
+  {/if}
 
-  {#if expanded}
-    <div class="filter-controls">
+  <div class="filter-controls">
       <!-- Category -->
       <div class="filter-group">
         <div class="filter-label-row">
@@ -185,9 +215,8 @@
         >
           Clear All Filters
         </button>
-      </div>
     </div>
-  {/if}
+  </div>
 </div>
 
 <style>
@@ -195,21 +224,66 @@
     margin-bottom: 16px;
   }
 
-  .filter-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    background: #1a1a2e;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    cursor: pointer;
+  .category-chips {
+    display: flex;
+    gap: var(--spacing-sm);
+    overflow-x: auto;
+    padding-bottom: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
   }
 
-  .filter-toggle:hover {
-    background: #2a2a4e;
+  .chip {
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--color-outline);
+    background: transparent;
+    color: var(--color-on-surface-variant);
+    font-size: 0.85rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background var(--transition-fast), color var(--transition-fast);
+  }
+
+  .chip:hover {
+    background: var(--color-surface-container);
+  }
+
+  .chip.active {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    border-color: var(--color-primary);
+  }
+
+  .active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-2xs) var(--spacing-sm);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-container-high);
+    color: var(--color-on-surface);
+    font-size: 0.75rem;
+  }
+
+  .pill-remove {
+    background: none;
+    border: none;
+    color: var(--color-on-surface-muted);
+    cursor: pointer;
+    padding: 0;
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .pill-remove:hover {
+    color: var(--color-error);
   }
 
   .filter-controls {
@@ -220,7 +294,7 @@
     padding: 16px;
     background: rgba(0, 0, 0, 0.03);
     border-radius: 8px;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--color-outline);
   }
 
   .filter-group {
@@ -238,7 +312,7 @@
 
   .filter-group label {
     font-size: 0.8rem;
-    color: #666;
+    color: var(--color-on-surface-muted);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -247,7 +321,7 @@
   .clear-field-btn {
     background: none;
     border: none;
-    color: #c0392b;
+    color: var(--color-error);
     font-size: 1rem;
     cursor: pointer;
     padding: 0 2px;
@@ -262,7 +336,7 @@
   .filter-group select,
   .filter-group input {
     padding: 8px 10px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-on-surface-variant);
     border-radius: 6px;
     font-size: 0.9rem;
     background: rgba(255, 255, 255, 0.8);
@@ -272,7 +346,7 @@
   .filter-group select:focus,
   .filter-group input:focus {
     outline: none;
-    border-color: #1a1a2e;
+    border-color: var(--color-secondary);
     box-shadow: 0 0 0 2px rgba(26, 26, 46, 0.15);
   }
 
@@ -285,7 +359,7 @@
   .currency-sign {
     position: absolute;
     left: 10px;
-    color: #888;
+    color: var(--color-on-surface-muted);
     font-size: 0.85rem;
     pointer-events: none;
   }
@@ -303,8 +377,8 @@
   .clear-all-btn {
     padding: 8px 16px;
     background: transparent;
-    color: #c0392b;
-    border: 1px solid #c0392b;
+    color: var(--color-error);
+    border: 1px solid var(--color-error);
     border-radius: 6px;
     font-size: 0.85rem;
     cursor: pointer;
@@ -312,49 +386,49 @@
   }
 
   .clear-all-btn:hover {
-    background: #c0392b;
-    color: #fff;
+    background: var(--color-error);
+    color: var(--color-on-surface);
   }
 
   @media (prefers-color-scheme: dark) {
     .filter-controls {
       background: rgba(255, 255, 255, 0.05);
-      border-color: #444;
+      border-color: var(--color-outline-variant);
     }
 
     .filter-group label {
-      color: #aaa;
+      color: var(--color-on-surface-variant);
     }
 
     .filter-group select,
     .filter-group input {
       background: rgba(30, 30, 40, 0.6);
-      border-color: #444;
-      color: #e8e8f0;
+      border-color: var(--color-outline-variant);
+      color: var(--color-on-surface);
     }
 
     .filter-group select:focus,
     .filter-group input:focus {
-      border-color: #e8e8f0;
+      border-color: var(--color-on-surface);
       box-shadow: 0 0 0 2px rgba(232, 232, 240, 0.15);
     }
 
     .currency-sign {
-      color: #aaa;
+      color: var(--color-on-surface-variant);
     }
 
     .clear-all-btn {
-      color: #e74c3c;
-      border-color: #e74c3c;
+      color: var(--color-error);
+      border-color: var(--color-error);
     }
 
     .clear-all-btn:hover {
-      background: #e74c3c;
-      color: #fff;
+      background: var(--color-error);
+      color: var(--color-on-surface);
     }
 
     .clear-field-btn {
-      color: #e74c3c;
+      color: var(--color-error);
     }
   }
 
@@ -365,10 +439,6 @@
 
     .filter-group {
       min-width: 100%;
-    }
-
-    .filter-toggle {
-      min-height: 44px;
     }
 
     .clear-all-btn {

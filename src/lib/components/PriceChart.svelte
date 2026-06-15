@@ -160,8 +160,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #999;
-    background: #f9f9f9;
+    color: var(--color-on-surface-variant);
+    background: var(--color-surface);
     border-radius: 8px;
   }
   .empty-state {
@@ -169,14 +169,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #999;
-    background: #f9f9f9;
+    color: var(--color-on-surface-variant);
+    background: var(--color-surface);
     border-radius: 8px;
     font-size: 0.9rem;
   }
   .note {
     font-size: 0.8rem;
-    color: #856404;
+    color: var(--color-warning);
     margin: 4px 0 0;
     text-align: center;
   }
