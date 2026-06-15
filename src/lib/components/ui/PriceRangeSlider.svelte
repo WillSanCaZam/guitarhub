@@ -7,7 +7,7 @@
     onchange?: (value: [number, number]) => void;
   }
 
-  let { min, max, step = 1, value = $bindable([min, max]), onchange }: Props = $props();
+  let { min, max, step = 1, value, onchange }: Props = $props();
 
   let trackEl = $state<HTMLElement | null>(null);
   let dragging = $state<'min' | 'max' | null>(null);
@@ -27,18 +27,19 @@
     const raw = min + percent * (max - min);
     const stepped = Math.round(raw / step) * step;
 
+    let newValue: [number, number];
     if (dragging === 'min') {
       const newMin = Math.min(stepped, value[1] - step);
-      value = [Math.max(min, newMin), value[1]];
+      newValue = [Math.max(min, newMin), value[1]];
     } else {
       const newMax = Math.max(stepped, value[0] + step);
-      value = [value[0], Math.min(max, newMax)];
+      newValue = [value[0], Math.min(max, newMax)];
     }
+    onchange?.(newValue);
   }
 
   function handlePointerUp() {
     dragging = null;
-    onchange?.(value);
   }
 </script>
 

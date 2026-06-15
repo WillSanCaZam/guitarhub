@@ -1,5 +1,6 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
+  import { onMount } from 'svelte';
   import PriceDisplay from '$lib/components/ui/PriceDisplay.svelte';
   import StarRating from '$lib/components/ui/StarRating.svelte';
   import StoreComparison from '$lib/components/product/StoreComparison.svelte';
@@ -38,8 +39,6 @@
       loading = false;
     }
   });
-
-  import { onMount } from 'svelte';
 
   async function handleWishlistToggle() {
     if (isInWishlist) {

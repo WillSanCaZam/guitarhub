@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { page } from '$app/state';
+  import { page } from '$app/stores';
   import { onMount } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
   import ProductDetail from '$lib/components/product/ProductDetail.svelte';
@@ -9,10 +9,13 @@
   let loading = $state(true);
   let error = $state<string | null>(null);
 
-  const sku = $derived(page.params.sku);
+  let sku = $state('');
 
   onMount(async () => {
-    if (!sku) return;
+    const unsub = page.subscribe(p => {
+      sku = (p.params as Record<string, string>).sku ?? '';
+    });
+    if (!sku) { unsub(); return; }
     try {
       product = await invoke<RawProduct>('get_product_detail', { sku });
     } catch (e) {
@@ -20,6 +23,7 @@
     } finally {
       loading = false;
     }
+    unsub();
   });
 </script>
 

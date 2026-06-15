@@ -60,20 +60,19 @@
   <div class="filter-controls">
     <!-- Price Range Slider -->
     <div class="filter-group price-range-group">
-      <label class="filter-label">Price Range</label>
-      <PriceRangeSlider
+      <label class="filter-label" for="price-range-slider">Price Range</label>
+      <div id="price-range-slider">
+        <PriceRangeSlider
         min={0}
         max={10000}
         step={50}
-        bind:value={[
-          filterState.price_min ?? 0,
-          filterState.price_max ?? 10000,
-        ]}
+        value={[filterState.price_min ?? 0, filterState.price_max ?? 10000]}
         onchange={(val: [number, number]) => {
           updateFilter('price_min', val[0] > 0 ? val[0] : null);
           updateFilter('price_max', val[1] < 10000 ? val[1] : null);
         }}
       />
+      </div>
     </div>
 
     <!-- Condition -->
