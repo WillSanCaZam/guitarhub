@@ -1,18 +1,21 @@
 <script lang="ts">
   import { filterState, updateFilter, clearFilter, clearAllFilters } from '$lib/stores/filter.svelte';
   import type { FilterState } from '$lib/stores/filter.svelte';
+  import PriceRangeSlider from './ui/PriceRangeSlider.svelte';
 
   const CONDITION_OPTIONS = ['new', 'used', 'refurbished', 'unknown'];
-  const CURRENCY_OPTIONS = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY'];
-  const SORT_OPTIONS = ['relevance', 'price_asc', 'price_desc', 'name_asc', 'name_desc'] as const;
+  const SORT_OPTIONS = ['relevance', 'price_asc', 'price_desc', 'rating', 'newest'] as const;
 
   const CATEGORY_CHIPS = [
-    { label: 'All', value: '' },
-    { label: 'Guitar', value: 'Guitar' },
-    { label: 'Bass', value: 'Bass' },
-    { label: 'Amp', value: 'Amplifier' },
-    { label: 'Pedal', value: 'Pedal' },
-    { label: 'Keys', value: 'Keyboard' },
+    { label: 'All', value: '', icon: '🎵' },
+    { label: 'Guitar', value: 'Guitar', icon: '🎸' },
+    { label: 'Bass', value: 'Bass', icon: '🎸' },
+    { label: 'Amp', value: 'Amplifier', icon: '🔊' },
+    { label: 'Pedal', value: 'Pedal', icon: '🎛️' },
+    { label: 'Keys', value: 'Keyboard', icon: '🎹' },
+    { label: 'Drums', value: 'Drum', icon: '🥁' },
+    { label: 'Studio', value: 'Microphone', icon: '🎤' },
+    { label: 'Accessories', value: 'Accessory', icon: '🔧' },
   ];
 
   const activeFilters = $derived.by(() => {
@@ -21,13 +24,13 @@
     if (filterState.price_min) filters.push({ key: 'price_min', label: `$${filterState.price_min}+` });
     if (filterState.price_max) filters.push({ key: 'price_max', label: `$${filterState.price_max}-` });
     if (filterState.condition) filters.push({ key: 'condition', label: filterState.condition });
-    if (filterState.listing_currency) filters.push({ key: 'listing_currency', label: filterState.listing_currency });
     if (filterState.sort !== 'relevance') filters.push({ key: 'sort', label: filterState.sort.replace('_', ' ') });
     return filters;
   });
 </script>
 
 <div class="filter-bar">
+  <!-- Category Pills with Icons -->
   <div class="category-chips">
     {#each CATEGORY_CHIPS as chip}
       <button
@@ -35,10 +38,13 @@
         class:active={filterState.category === chip.value}
         onclick={() => updateFilter('category', chip.value || null)}
       >
-        {chip.label}
+        <span class="chip-icon">{chip.icon}</span>
+        <span class="chip-label">{chip.label}</span>
       </button>
     {/each}
   </div>
+
+  <!-- Active Filter Pills -->
   {#if activeFilters.length > 0}
     <div class="active-filters">
       {#each activeFilters as filter}
@@ -50,324 +56,262 @@
     </div>
   {/if}
 
+  <!-- Filter Controls -->
   <div class="filter-controls">
-      <!-- Category -->
-      <div class="filter-group">
-        <div class="filter-label-row">
-          <label for="filter-category">Category</label>
-          <button
-            class="clear-field-btn"
-            data-testid="clear-category"
-            onclick={() => clearFilter('category')}
-            aria-label="Clear category filter"
-          >×</button>
-        </div>
-        <select
-          id="filter-category"
-          data-testid="filter-category"
-          onchange={(e) => updateFilter('category', (e.target as HTMLSelectElement).value || null)}
-        >
-          <option value="">All</option>
-          <option value="Guitar">Guitar</option>
-          <option value="Bass">Bass</option>
-          <option value="Amplifier">Amplifier</option>
-          <option value="Pedal">Pedal</option>
-          <option value="Keyboard">Keyboard</option>
-          <option value="Drum">Drum</option>
-          <option value="Microphone">Microphone</option>
-          <option value="Accessory">Accessory</option>
-          <option value="Speaker">Speaker</option>
-          <option value="Instrument">Instrument</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
+    <!-- Price Range Slider -->
+    <div class="filter-group price-range-group">
+      <label class="filter-label">Price Range</label>
+      <PriceRangeSlider
+        min={0}
+        max={10000}
+        step={50}
+        bind:value={[
+          filterState.price_min ?? 0,
+          filterState.price_max ?? 10000,
+        ]}
+        onchange={(val: [number, number]) => {
+          updateFilter('price_min', val[0] > 0 ? val[0] : null);
+          updateFilter('price_max', val[1] < 10000 ? val[1] : null);
+        }}
+      />
+    </div>
 
-      <!-- Price Min -->
-      <div class="filter-group">
-        <div class="filter-label-row">
-          <label for="filter-price-min">Min Price</label>
-          <button
-            class="clear-field-btn"
-            data-testid="clear-price-min"
-            onclick={() => clearFilter('price_min')}
-            aria-label="Clear minimum price filter"
-          >×</button>
-        </div>
-        <div class="price-input-wrap">
-          <span class="currency-sign">$</span>
-          <input
-            id="filter-price-min"
-            type="number"
-            min="0"
-            step="any"
-            placeholder="Min"
-            data-testid="filter-price-min"
-            oninput={(e) => {
-              const val = (e.target as HTMLInputElement).value;
-              updateFilter('price_min', val ? Number(val) : null);
-            }}
-          />
-        </div>
+    <!-- Condition -->
+    <div class="filter-group">
+      <div class="filter-label-row">
+        <label for="filter-condition" class="filter-label">Condition</label>
+        <button
+          class="clear-field-btn"
+          data-testid="clear-condition"
+          onclick={() => clearFilter('condition')}
+          aria-label="Clear condition filter"
+        >×</button>
       </div>
-
-      <!-- Price Max -->
-      <div class="filter-group">
-        <div class="filter-label-row">
-          <label for="filter-price-max">Max Price</label>
-          <button
-            class="clear-field-btn"
-            data-testid="clear-price-max"
-            onclick={() => clearFilter('price_max')}
-            aria-label="Clear maximum price filter"
-          >×</button>
-        </div>
-        <div class="price-input-wrap">
-          <span class="currency-sign">$</span>
-          <input
-            id="filter-price-max"
-            type="number"
-            min="0"
-            step="any"
-            placeholder="Max"
-            data-testid="filter-price-max"
-            oninput={(e) => {
-              const val = (e.target as HTMLInputElement).value;
-              updateFilter('price_max', val ? Number(val) : null);
-            }}
-          />
-        </div>
+      <div class="checkbox-group">
+        {#each CONDITION_OPTIONS as opt}
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              checked={filterState.condition === opt}
+              onchange={() => updateFilter('condition', filterState.condition === opt ? null : opt)}
+            />
+            <span class="checkbox-text">{opt}</span>
+          </label>
+        {/each}
       </div>
+    </div>
 
-      <!-- Condition -->
-      <div class="filter-group">
-        <div class="filter-label-row">
-          <label for="filter-condition">Condition</label>
-          <button
-            class="clear-field-btn"
-            data-testid="clear-condition"
-            onclick={() => clearFilter('condition')}
-            aria-label="Clear condition filter"
-          >×</button>
-        </div>
-        <select
-          id="filter-condition"
-          data-testid="filter-condition"
-          onchange={(e) => updateFilter('condition', (e.target as HTMLSelectElement).value || null)}
-        >
-          <option value="">Any</option>
-          {#each CONDITION_OPTIONS as opt}
-            <option value={opt}>{opt}</option>
-          {/each}
-        </select>
+    <!-- Sort -->
+    <div class="filter-group">
+      <div class="filter-label-row">
+        <label for="filter-sort" class="filter-label">Sort By</label>
+        <button
+          class="clear-field-btn"
+          data-testid="clear-sort"
+          onclick={() => clearFilter('sort')}
+          aria-label="Clear sort order"
+        >×</button>
       </div>
+      <select
+        id="filter-sort"
+        data-testid="filter-sort"
+        class="filter-select"
+        onchange={(e) => updateFilter('sort', (e.target as HTMLSelectElement).value as FilterState['sort'])}
+      >
+        {#each SORT_OPTIONS as opt}
+          <option value={opt}>{opt.replace('_', ' ')}</option>
+        {/each}
+      </select>
+    </div>
 
-      <!-- Currency -->
-      <div class="filter-group">
-        <div class="filter-label-row">
-          <label for="filter-currency">Currency</label>
-          <button
-            class="clear-field-btn"
-            data-testid="clear-currency"
-            onclick={() => clearFilter('listing_currency')}
-            aria-label="Clear currency filter"
-          >×</button>
-        </div>
-        <select
-          id="filter-currency"
-          data-testid="filter-currency"
-          onchange={(e) => updateFilter('listing_currency', (e.target as HTMLSelectElement).value || null)}
-        >
-          <option value="">Any</option>
-          {#each CURRENCY_OPTIONS as opt}
-            <option value={opt}>{opt}</option>
-          {/each}
-        </select>
-      </div>
-
-      <!-- Sort -->
-      <div class="filter-group">
-        <div class="filter-label-row">
-          <label for="filter-sort">Sort By</label>
-          <button
-            class="clear-field-btn"
-            data-testid="clear-sort"
-            onclick={() => clearFilter('sort')}
-            aria-label="Clear sort order"
-          >×</button>
-        </div>
-        <select
-          id="filter-sort"
-          data-testid="filter-sort"
-          onchange={(e) => updateFilter('sort', (e.target as HTMLSelectElement).value as FilterState['sort'])}
-        >
-          {#each SORT_OPTIONS as opt}
-            <option value={opt}>{opt.replace('_', ' ')}</option>
-          {/each}
-        </select>
-      </div>
-
-      <!-- Clear All -->
+    <!-- Clear All -->
+    {#if activeFilters.length > 0}
       <div class="filter-group filter-actions">
         <button
           class="clear-all-btn"
           data-testid="filter-clear-all"
           onclick={clearAllFilters}
         >
-          Clear All Filters
+          Clear All
         </button>
-    </div>
+      </div>
+    {/if}
   </div>
 </div>
 
 <style>
   .filter-bar {
-    margin-bottom: 16px;
+    margin-bottom: var(--space-4);
   }
 
   .category-chips {
     display: flex;
-    gap: var(--spacing-sm);
+    gap: var(--space-2);
     overflow-x: auto;
-    padding-bottom: var(--spacing-sm);
-    margin-bottom: var(--spacing-sm);
+    padding-bottom: var(--space-2);
+    margin-bottom: var(--space-3);
+    scrollbar-width: none;
+  }
+
+  .category-chips::-webkit-scrollbar {
+    display: none;
   }
 
   .chip {
-    padding: var(--spacing-xs) var(--spacing-md);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    height: 44px;
     border-radius: var(--radius-pill);
-    border: 1px solid var(--color-outline);
-    background: transparent;
-    color: var(--color-on-surface-variant);
+    background: var(--void-mid);
+    color: var(--text-warm);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     font-size: 0.85rem;
+    font-weight: 500;
     cursor: pointer;
     white-space: nowrap;
-    transition: background var(--transition-fast), color var(--transition-fast);
+    flex-shrink: 0;
+    transition: background 150ms var(--ease-snap), border-color 150ms var(--ease-snap), color 150ms var(--ease-snap);
   }
 
   .chip:hover {
-    background: var(--color-surface-container);
+    background: var(--void-hover);
+    border-color: rgba(255, 122, 61, 0.15);
   }
 
   .chip.active {
-    background: var(--color-primary);
-    color: var(--color-on-primary);
-    border-color: var(--color-primary);
+    background: var(--glow-primary);
+    color: var(--void-deep);
+    border-color: var(--glow-primary);
   }
 
+  .chip-icon {
+    font-size: 1rem;
+  }
+
+  /* Active Filters */
   .active-filters {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--spacing-xs);
-    margin-bottom: var(--spacing-sm);
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
   }
 
   .filter-pill {
     display: inline-flex;
     align-items: center;
-    gap: var(--spacing-xs);
-    padding: var(--spacing-2xs) var(--spacing-sm);
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
     border-radius: var(--radius-pill);
-    background: var(--color-surface-container-high);
-    color: var(--color-on-surface);
+    background: var(--void-hover);
+    color: var(--text-bright);
     font-size: 0.75rem;
+    font-weight: 500;
   }
 
   .pill-remove {
     background: none;
     border: none;
-    color: var(--color-on-surface-muted);
+    color: var(--text-dim);
     cursor: pointer;
     padding: 0;
     font-size: 1rem;
     line-height: 1;
+    transition: color 150ms var(--ease-snap);
   }
 
   .pill-remove:hover {
-    color: var(--color-error);
+    color: var(--danger);
   }
 
+  /* Filter Controls */
   .filter-controls {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 12px;
-    padding: 16px;
+    gap: var(--space-3);
+    padding: var(--space-4);
     background: var(--void-raised);
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--color-outline);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 122, 61, 0.06);
   }
 
   .filter-group {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    min-width: 140px;
+    gap: var(--space-2);
+    min-width: 160px;
+  }
+
+  .price-range-group {
+    min-width: 240px;
   }
 
   .filter-label-row {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--space-1);
   }
 
-  .filter-group label {
-    font-size: 0.8rem;
-    color: var(--color-on-surface-muted);
+  .filter-label {
+    font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
   }
 
   .clear-field-btn {
     background: none;
     border: none;
-    color: var(--color-error);
+    color: var(--text-muted);
     font-size: 1rem;
     cursor: pointer;
     padding: 0 2px;
     line-height: 1;
-    opacity: 0.6;
+    transition: color 150ms var(--ease-snap);
   }
 
   .clear-field-btn:hover {
-    opacity: 1;
+    color: var(--danger);
   }
 
-  .filter-group select,
-  .filter-group input {
-    padding: 8px 10px;
+  .checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-warm);
+  }
+
+  .checkbox-label input[type="checkbox"] {
+    accent-color: var(--glow-primary);
+    width: 16px;
+    height: 16px;
+  }
+
+  .filter-select {
+    padding: var(--space-2) var(--space-3);
     border: 1px solid var(--text-muted);
     border-radius: var(--radius-sm);
-    font-size: 0.9rem;
     background: var(--void-mid);
-    box-sizing: border-box;
     color: var(--text-bright);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: border-color 150ms var(--ease-snap);
   }
 
-  .filter-group select:focus,
-  .filter-group input:focus {
+  .filter-select:focus {
     outline: none;
     border-color: var(--glow-primary);
     box-shadow: 0 0 0 2px var(--glow-soft);
-  }
-
-  .price-input-wrap {
-    position: relative;
-    display: flex;
-    align-items: center;
-  }
-
-  .currency-sign {
-    position: absolute;
-    left: 10px;
-    color: var(--color-on-surface-muted);
-    font-size: 0.85rem;
-    pointer-events: none;
-  }
-
-  .price-input-wrap input {
-    padding-left: 22px;
-    width: 100%;
   }
 
   .filter-actions {
@@ -376,61 +320,20 @@
   }
 
   .clear-all-btn {
-    padding: 8px 16px;
+    padding: var(--space-2) var(--space-4);
     background: transparent;
-    color: var(--color-error);
-    border: 1px solid var(--color-error);
-    border-radius: 6px;
-    font-size: 0.85rem;
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+    font-weight: 600;
     cursor: pointer;
-    align-self: flex-end;
+    transition: background 150ms var(--ease-snap), color 150ms var(--ease-snap);
   }
 
   .clear-all-btn:hover {
-    background: var(--color-error);
-    color: var(--color-on-surface);
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .filter-controls {
-      background: rgba(255, 255, 255, 0.05);
-      border-color: var(--color-outline-variant);
-    }
-
-  .filter-group label {
-    color: var(--text-warm);
-  }
-
-  .filter-group select,
-  .filter-group input {
-    background: var(--void-deep);
-    border-color: var(--text-muted);
+    background: var(--danger);
     color: var(--text-bright);
-  }
-
-  .filter-group select:focus,
-  .filter-group input:focus {
-    border-color: var(--glow-primary);
-    box-shadow: 0 0 0 2px var(--glow-soft);
-  }
-
-    .currency-sign {
-      color: var(--color-on-surface-variant);
-    }
-
-    .clear-all-btn {
-      color: var(--color-error);
-      border-color: var(--color-error);
-    }
-
-    .clear-all-btn:hover {
-      background: var(--color-error);
-      color: var(--color-on-surface);
-    }
-
-    .clear-field-btn {
-      color: var(--color-error);
-    }
   }
 
   @media (max-width: 768px) {
@@ -440,11 +343,6 @@
 
     .filter-group {
       min-width: 100%;
-    }
-
-    .clear-all-btn {
-      min-height: 44px;
-      width: 100%;
     }
   }
 </style>
