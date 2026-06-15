@@ -87,14 +87,14 @@
     justify-content: center;
     gap: 10px;
     padding: 48px 0;
-    color: #666;
+    color: var(--color-on-surface-muted);
   }
 
   .spinner {
     width: 20px;
     height: 20px;
-    border: 2px solid #ddd;
-    border-top-color: #1a1a2e;
+    border: 2px solid var(--color-outline);
+    border-top-color: var(--color-secondary);
     border-radius: 50%;
     animation: spin 0.6s linear infinite;
   }
@@ -106,7 +106,7 @@
   .empty-state {
     text-align: center;
     padding: 48px 0;
-    color: #666;
+    color: var(--color-on-surface-muted);
   }
 
   .empty-state p {
@@ -116,26 +116,26 @@
 
   .empty-hint {
     font-size: 0.9rem;
-    color: #999;
+    color: var(--color-on-surface-variant);
   }
 
   .collection-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 16px;
+    gap: var(--spacing-md);
   }
 
   .collection-card {
     background: rgba(255, 255, 255, 0.55);
     backdrop-filter: blur(12px);
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
     border: 1px solid rgba(255, 255, 255, 0.25);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    gap: var(--spacing-3);
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
   }
 
   .collection-card:hover {
@@ -153,13 +153,13 @@
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
-    color: #1a1a2e;
+    color: var(--color-secondary);
   }
 
   .item-brand {
     margin: 0;
     font-size: 0.85rem;
-    color: #666;
+    color: var(--color-on-surface-muted);
   }
 
   .card-body {
@@ -176,12 +176,12 @@
   }
 
   .price-label {
-    color: #666;
+    color: var(--color-on-surface-muted);
   }
 
   .price-value {
     font-weight: 600;
-    color: #1a1a2e;
+    color: var(--color-secondary);
   }
 
   .gain-loss {
@@ -189,11 +189,11 @@
   }
 
   .gain-loss.gain {
-    color: #28a745;
+    color: var(--color-success);
   }
 
   .gain-loss.loss {
-    color: #dc3545;
+    color: var(--color-error);
   }
 
   .card-footer {
@@ -204,17 +204,17 @@
     width: 100%;
     padding: 8px 12px;
     background: transparent;
-    color: #dc3545;
-    border: 1px solid #dc3545;
-    border-radius: 6px;
+    color: var(--color-error);
+    border: 1px solid var(--color-error);
+    border-radius: var(--radius-md);
     font-size: 0.85rem;
     cursor: pointer;
-    transition: background 0.15s, color 0.15s;
+    transition: background var(--transition-fast), color var(--transition-fast);
   }
 
   .remove-btn:hover {
-    background: #dc3545;
-    color: #fff;
+    background: var(--color-error);
+    color: var(--color-on-surface);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -225,46 +225,46 @@
     }
 
     .item-name {
-      color: #e8e8f0;
+      color: var(--color-on-surface);
     }
 
     .price-value {
-      color: #e8e8f0;
+      color: var(--color-on-surface);
     }
 
     .gain-loss.gain {
-      color: #4cd964;
+      color: var(--color-success);
     }
 
     .gain-loss.loss {
-      color: #ff6b6b;
+      color: var(--color-error);
     }
 
     .remove-btn {
-      color: #ff6b6b;
-      border-color: #ff6b6b;
+      color: var(--color-error);
+      border-color: var(--color-error);
     }
 
     .remove-btn:hover {
-      background: #ff6b6b;
-      color: #1a1a2e;
+      background: var(--color-error);
+      color: var(--color-secondary);
     }
 
     .spinner {
-      border-color: #444;
-      border-top-color: #e8e8f0;
+      border-color: var(--color-outline-variant);
+      border-top-color: var(--color-on-surface);
     }
 
     .loading-state {
-      color: #aaa;
+      color: var(--color-on-surface-variant);
     }
 
     .empty-state {
-      color: #ccc;
+      color: var(--color-on-surface-variant);
     }
 
     .empty-hint {
-      color: #888;
+      color: var(--color-on-surface-muted);
     }
   }
 </style>

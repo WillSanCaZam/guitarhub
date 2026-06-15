@@ -84,7 +84,7 @@
 
   .dashboard-cell:focus-visible,
   .dashboard-cell:focus-within {
-    outline: 2px solid #4a90d9;
+    outline: 2px solid var(--color-secondary);
     outline-offset: 2px;
   }
 
@@ -104,7 +104,7 @@
     margin: 0;
     font-size: 0.9rem;
     font-weight: 600;
-    color: #1a1a2e;
+    color: var(--color-secondary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
@@ -122,7 +122,7 @@
     justify-content: center;
     gap: 10px;
     flex: 1;
-    color: #666;
+    color: var(--color-on-surface-muted);
     font-size: 0.95rem;
   }
 
@@ -132,7 +132,7 @@
     align-items: center;
     justify-content: center;
     flex: 1;
-    color: #999;
+    color: var(--color-on-surface-variant);
     text-align: center;
     gap: 6px;
   }
@@ -159,15 +159,15 @@
     }
 
     .cell-title {
-      color: #e8e8f0;
+      color: var(--color-on-surface);
     }
 
     .loading-wrap {
-      color: #aaa;
+      color: var(--color-on-surface-variant);
     }
 
     .empty-wrap {
-      color: #888;
+      color: var(--color-on-surface-muted);
     }
   }
 

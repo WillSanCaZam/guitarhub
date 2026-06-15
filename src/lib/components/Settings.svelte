@@ -277,7 +277,7 @@
     font-size: 1.25rem;
   }
   fieldset {
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-outline);
     border-radius: 8px;
     padding: 16px;
     margin-bottom: 16px;
@@ -301,20 +301,20 @@
     display: block;
     font-size: 0.85rem;
     margin-bottom: 4px;
-    color: #666;
+    color: var(--color-on-surface-muted);
   }
   .config-input input {
     width: 100%;
     padding: 8px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-on-surface-variant);
     border-radius: 4px;
     box-sizing: border-box;
   }
   button {
     padding: 8px 16px;
-    border: 1px solid #888;
+    border: 1px solid var(--color-on-surface-muted);
     border-radius: 4px;
-    background: #fff;
+    background: var(--color-on-surface);
     cursor: pointer;
     font-size: 0.9rem;
   }
@@ -328,9 +328,9 @@
     font-size: 0.85rem;
   }
   .success {
-    color: #155724;
+    color: var(--color-success);
   }
   .error {
-    color: #721c24;
+    color: var(--color-error);
   }
 </style>

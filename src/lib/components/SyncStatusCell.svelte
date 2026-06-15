@@ -52,9 +52,9 @@
 <style>
   .sync-toast {
     padding: 8px 12px;
-    background: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
+    background: var(--color-success-container);
+    color: var(--color-success);
+    border: 1px solid var(--color-success-container);
     border-radius: 6px;
     margin-bottom: 10px;
     font-size: 0.9rem;
@@ -81,22 +81,22 @@
 
   .drop-sku {
     font-weight: 600;
-    color: #1a1a2e;
+    color: var(--color-secondary);
   }
 
   .drop-price {
-    color: #28a745;
+    color: var(--color-success);
     font-family: monospace;
   }
 
   .drop-reason {
-    color: #666;
+    color: var(--color-on-surface-muted);
     font-size: 0.8rem;
   }
 
   .sync-idle {
     margin: 0;
-    color: #888;
+    color: var(--color-on-surface-muted);
     font-size: 0.9rem;
   }
 
@@ -106,11 +106,11 @@
     }
 
     .drop-sku {
-      color: #e8e8f0;
+      color: var(--color-on-surface);
     }
 
     .sync-idle {
-      color: #aaa;
+      color: var(--color-on-surface-variant);
     }
   }
 

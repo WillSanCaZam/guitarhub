@@ -107,17 +107,17 @@
 
 <style>
   .product-card {
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-outline);
     border-radius: 8px;
     overflow: hidden;
-    background: #fff;
+    background: var(--color-on-surface);
     transition: box-shadow 0.2s;
   }
   .product-card:hover {
     box-shadow: 0 2px 8px rgba(0,0,0,0.12);
   }
   .product-card:focus-visible {
-    outline: 2px solid #4a90d9;
+    outline: 2px solid var(--color-secondary);
     outline-offset: 2px;
   }
   .product-image {
@@ -129,12 +129,12 @@
   .placeholder {
     width: 100%;
     height: 200px;
-    background: #f0f0f0;
+    background: var(--color-surface);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 2rem;
-    color: #999;
+    color: var(--color-on-surface-variant);
   }
   .product-info {
     padding: 12px;
@@ -144,7 +144,7 @@
     font-size: 1rem;
   }
   .brand {
-    color: #666;
+    color: var(--color-on-surface-muted);
     font-size: 0.85rem;
     margin: 0 0 4px;
   }
@@ -156,8 +156,8 @@
   .add-btn {
     margin-top: 8px;
     padding: 8px 12px;
-    background: #1a1a2e;
-    color: #fff;
+    background: var(--color-secondary);
+    color: var(--color-on-surface);
     border: none;
     border-radius: 6px;
     font-size: 0.85rem;
@@ -167,7 +167,7 @@
   }
 
   .add-btn:hover:not(:disabled) {
-    background: #2a2a4e;
+    background: var(--color-secondary);
   }
 
   .add-btn:disabled {
@@ -177,12 +177,12 @@
 
   @media (prefers-color-scheme: dark) {
     .add-btn {
-      background: #4a90d9;
-      color: #fff;
+      background: var(--color-secondary);
+      color: var(--color-on-surface);
     }
 
     .add-btn:hover:not(:disabled) {
-      background: #3a7bc8;
+      background: var(--color-secondary-hover);
     }
   }
 </style>

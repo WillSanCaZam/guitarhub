@@ -18,12 +18,12 @@
     margin: 0 0 16px;
     font-size: 1.5rem;
     font-weight: 700;
-    color: #1a1a2e;
+    color: var(--color-secondary);
   }
 
   @media (prefers-color-scheme: dark) {
     h1 {
-      color: #e8e8f0;
+      color: var(--color-on-surface);
     }
   }
 </style>

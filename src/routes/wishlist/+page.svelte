@@ -57,7 +57,7 @@
   .back-link {
     display: inline-block;
     margin-bottom: 12px;
-    color: #4a90d9;
+    color: var(--color-secondary);
     text-decoration: none;
     font-size: 0.9rem;
   }
@@ -70,17 +70,17 @@
     margin: 0;
     font-size: 1.5rem;
     font-weight: 700;
-    color: #1a1a2e;
+    color: var(--color-secondary);
   }
 
   .status,
   .empty-state {
-    color: #666;
+    color: var(--color-on-surface-muted);
     font-size: 0.95rem;
   }
 
   .error {
-    color: #d32f2f;
+    color: var(--color-error);
   }
 
   .wishlist-list {
@@ -94,7 +94,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--color-outline-variant);
   }
 
   .item-info {
@@ -106,63 +106,63 @@
 
   .item-name {
     font-weight: 600;
-    color: #333;
+    color: var(--color-surface-container-high);
   }
 
   .item-brand {
-    color: #888;
+    color: var(--color-on-surface-muted);
     font-size: 0.85rem;
   }
 
   .item-price {
-    color: #555;
+    color: var(--color-on-surface-variant);
     font-size: 0.9rem;
   }
 
   .remove-btn {
     padding: 4px 12px;
-    border: 1px solid #d32f2f;
-    border-radius: 4px;
+    border: 1px solid var(--color-error);
+    border-radius: var(--radius-sm);
     background: transparent;
-    color: #d32f2f;
+    color: var(--color-error);
     cursor: pointer;
     font-size: 0.8rem;
-    transition: background 0.15s;
+    transition: background var(--transition-fast);
   }
 
   .remove-btn:hover {
-    background: #d32f2f;
-    color: #fff;
+    background: var(--color-error);
+    color: var(--color-on-surface);
   }
 
   @media (prefers-color-scheme: dark) {
     h1 {
-      color: #e8e8f0;
+      color: var(--color-on-surface);
     }
 
     .back-link {
-      color: #7ab8e8;
+      color: var(--color-info);
     }
 
     .wishlist-item {
-      border-bottom-color: #333;
+      border-bottom-color: var(--color-surface-container-high);
     }
 
     .item-name {
-      color: #e0e0e0;
+      color: var(--color-outline);
     }
 
     .item-brand {
-      color: #999;
+      color: var(--color-on-surface-variant);
     }
 
     .item-price {
-      color: #b0b0b0;
+      color: var(--color-on-surface-variant);
     }
 
     .status,
     .empty-state {
-      color: #aaa;
+      color: var(--color-on-surface-variant);
     }
   }
 </style>

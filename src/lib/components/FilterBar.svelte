@@ -200,8 +200,8 @@
     align-items: center;
     gap: 6px;
     padding: 8px 16px;
-    background: #1a1a2e;
-    color: #fff;
+    background: var(--color-secondary);
+    color: var(--color-on-surface);
     border: none;
     border-radius: 6px;
     font-size: 0.9rem;
@@ -209,7 +209,7 @@
   }
 
   .filter-toggle:hover {
-    background: #2a2a4e;
+    background: var(--color-secondary);
   }
 
   .filter-controls {
@@ -220,7 +220,7 @@
     padding: 16px;
     background: rgba(0, 0, 0, 0.03);
     border-radius: 8px;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--color-outline);
   }
 
   .filter-group {
@@ -238,7 +238,7 @@
 
   .filter-group label {
     font-size: 0.8rem;
-    color: #666;
+    color: var(--color-on-surface-muted);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -247,7 +247,7 @@
   .clear-field-btn {
     background: none;
     border: none;
-    color: #c0392b;
+    color: var(--color-error);
     font-size: 1rem;
     cursor: pointer;
     padding: 0 2px;
@@ -262,7 +262,7 @@
   .filter-group select,
   .filter-group input {
     padding: 8px 10px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-on-surface-variant);
     border-radius: 6px;
     font-size: 0.9rem;
     background: rgba(255, 255, 255, 0.8);
@@ -272,7 +272,7 @@
   .filter-group select:focus,
   .filter-group input:focus {
     outline: none;
-    border-color: #1a1a2e;
+    border-color: var(--color-secondary);
     box-shadow: 0 0 0 2px rgba(26, 26, 46, 0.15);
   }
 
@@ -285,7 +285,7 @@
   .currency-sign {
     position: absolute;
     left: 10px;
-    color: #888;
+    color: var(--color-on-surface-muted);
     font-size: 0.85rem;
     pointer-events: none;
   }
@@ -303,8 +303,8 @@
   .clear-all-btn {
     padding: 8px 16px;
     background: transparent;
-    color: #c0392b;
-    border: 1px solid #c0392b;
+    color: var(--color-error);
+    border: 1px solid var(--color-error);
     border-radius: 6px;
     font-size: 0.85rem;
     cursor: pointer;
@@ -312,49 +312,49 @@
   }
 
   .clear-all-btn:hover {
-    background: #c0392b;
-    color: #fff;
+    background: var(--color-error);
+    color: var(--color-on-surface);
   }
 
   @media (prefers-color-scheme: dark) {
     .filter-controls {
       background: rgba(255, 255, 255, 0.05);
-      border-color: #444;
+      border-color: var(--color-outline-variant);
     }
 
     .filter-group label {
-      color: #aaa;
+      color: var(--color-on-surface-variant);
     }
 
     .filter-group select,
     .filter-group input {
       background: rgba(30, 30, 40, 0.6);
-      border-color: #444;
-      color: #e8e8f0;
+      border-color: var(--color-outline-variant);
+      color: var(--color-on-surface);
     }
 
     .filter-group select:focus,
     .filter-group input:focus {
-      border-color: #e8e8f0;
+      border-color: var(--color-on-surface);
       box-shadow: 0 0 0 2px rgba(232, 232, 240, 0.15);
     }
 
     .currency-sign {
-      color: #aaa;
+      color: var(--color-on-surface-variant);
     }
 
     .clear-all-btn {
-      color: #e74c3c;
-      border-color: #e74c3c;
+      color: var(--color-error);
+      border-color: var(--color-error);
     }
 
     .clear-all-btn:hover {
-      background: #e74c3c;
-      color: #fff;
+      background: var(--color-error);
+      color: var(--color-on-surface);
     }
 
     .clear-field-btn {
-      color: #e74c3c;
+      color: var(--color-error);
     }
   }
 
