@@ -52,30 +52,22 @@
 
 <style>
   .dashboard-cell {
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-    padding: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    background: var(--color-surface-container);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    border: 1px solid var(--color-outline-variant);
+    box-shadow: var(--shadow-1);
     display: flex;
     flex-direction: column;
     min-height: 120px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
     outline: none;
     cursor: default;
   }
 
-  @supports (backdrop-filter: blur(12px)) {
-    .dashboard-cell {
-      background: rgba(255, 255, 255, 0.55);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-  }
-
   .dashboard-cell:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-2);
   }
 
   .dashboard-cell:active {
@@ -84,15 +76,15 @@
 
   .dashboard-cell:focus-visible,
   .dashboard-cell:focus-within {
-    outline: 2px solid var(--color-secondary);
+    outline: 2px solid var(--color-amber);
     outline-offset: 2px;
   }
 
   .cell-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-sm);
   }
 
   .cell-icon {
@@ -102,11 +94,12 @@
 
   .cell-title {
     margin: 0;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     font-weight: 600;
-    color: var(--color-secondary);
+    color: var(--color-on-surface-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    font-family: var(--font-mono);
   }
 
   .cell-body {
@@ -120,10 +113,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: var(--spacing-sm);
     flex: 1;
     color: var(--color-on-surface-muted);
-    font-size: 0.95rem;
+    font-size: 0.9rem;
   }
 
   .empty-wrap {
@@ -132,43 +125,19 @@
     align-items: center;
     justify-content: center;
     flex: 1;
-    color: var(--color-on-surface-variant);
+    color: var(--color-on-surface-muted);
     text-align: center;
-    gap: 6px;
+    gap: var(--spacing-xs);
   }
 
   .empty-icon {
     font-size: 1.5rem;
-    opacity: 0.6;
+    opacity: 0.5;
   }
 
   .empty-text {
     margin: 0;
-    font-size: 0.9rem;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .dashboard-cell {
-      background: rgba(20, 20, 30, 0.55);
-      border-color: rgba(255, 255, 255, 0.1);
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.25);
-    }
-
-    .dashboard-cell:hover {
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
-    }
-
-    .cell-title {
-      color: var(--color-on-surface);
-    }
-
-    .loading-wrap {
-      color: var(--color-on-surface-variant);
-    }
-
-    .empty-wrap {
-      color: var(--color-on-surface-muted);
-    }
+    font-size: 0.85rem;
   }
 
   @media (max-width: 768px) {
