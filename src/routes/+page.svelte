@@ -1,99 +1,191 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { invoke } from '@tauri-apps/api/core';
   import ProductCard from '$lib/components/ProductCard.svelte';
-  import DashboardCell from '$lib/components/DashboardCell.svelte';
-  import SearchPanel from '$lib/components/SearchPanel.svelte';
-  import Settings from '$lib/components/Settings.svelte';
-  import SyncStatusCell from '$lib/components/SyncStatusCell.svelte';
-  import CollectionStatsCell from '$lib/components/CollectionStatsCell.svelte';
-  import type { RawProduct } from '$lib/types/search';
-  import { syncState } from '$lib/stores/sync.svelte';
-  import { dashboardState, loadDashboard } from '$lib/stores/dashboard.svelte';
+  import HeroSection from '$lib/components/discovery/HeroSection.svelte';
+  import FeaturedRig from '$lib/components/discovery/FeaturedRig.svelte';
+  import FeedSection from '$lib/components/discovery/FeedSection.svelte';
+  import TrendingPill from '$lib/components/discovery/TrendingPill.svelte';
   import { collectionState } from '$lib/stores/collection.svelte';
   import { filterState, restoreFiltersFromUrl } from '$lib/stores/filter.svelte';
-  import '$lib/styles/dashboard.css';
-  import '$lib/styles/page.css';
+  import type { RawProduct } from '$lib/types/search';
 
-  onMount(() => {
-    loadDashboard();
+  let featuredProducts = $state<RawProduct[]>([]);
+  let priceDropProducts = $state<RawProduct[]>([]);
+  let newArrivals = $state<RawProduct[]>([]);
+  let loading = $state(true);
 
-    // Restore filters from URL on mount
+  const trending = [
+    'John Mayer Strat',
+    'Polyphia Tone',
+    'Blues Jr',
+    'Klon Centaur',
+    'Neural DSP',
+    'Strymon BigSky',
+  ];
+
+  onMount(async () => {
+    // Restore filters from URL
     const restored = restoreFiltersFromUrl();
-    const hasFilters = restored.category !== null
-      || restored.price_min !== null
-      || restored.price_max !== null
-      || restored.source !== null
-      || restored.condition !== null
-      || restored.listing_currency !== null
-      || restored.sort !== 'relevance';
-    if (hasFilters) {
-      Object.assign(filterState, restored);
+    Object.assign(filterState, restored);
+
+    // Load discovery data
+    try {
+      const [featured, drops, newItems] = await Promise.all([
+        invoke<RawProduct[]>('get_featured_products', { limit: 6 }).catch(() => []),
+        invoke<RawProduct[]>('get_price_drops', { limit: 6 }).catch(() => []),
+        invoke<RawProduct[]>('get_new_arrivals', { limit: 6 }).catch(() => []),
+      ]);
+      featuredProducts = featured;
+      priceDropProducts = drops;
+      newArrivals = newItems;
+    } catch (e) {
+      console.error('Failed to load discovery feed:', e);
+    } finally {
+      loading = false;
     }
   });
 
-  let featuredProduct: RawProduct | null = $state(null);
+  function handleHeroSearch(query: string) {
+    window.location.href = `/explore?q=${encodeURIComponent(query)}`;
+  }
 </script>
 
-<div class="page">
-  <div class="bento-grid">
-    <!-- Cell 1: Hero (Search Results) -->
-    <div class="cell cell-hero">
-      <SearchPanel
-        filterState={filterState}
-        collectionStore={collectionState}
-        onfeaturedChange={(product: RawProduct | null) => { featuredProduct = product; }}
-      />
-    </div>
+<div class="discovery-feed">
+  <!-- Hero Section -->
+  <HeroSection onSearch={handleHeroSearch} />
 
-    <!-- Cell 2: Wide (Sync Status) -->
-    <div class="cell cell-wide">
-      <SyncStatusCell
-        drops={syncState?.drops ?? []}
-        dropsSent={syncState?.drops_sent ?? 0}
-        syncState={syncState?.state ?? 'idle'}
-      />
-    </div>
+  <!-- Featured Rig of the Week -->
+  <FeaturedRig
+    artist="Tim Henson"
+    band="Polyphia"
+    rigName="Studio Dream Rig"
+    artistPhoto=""
+    quote="This rig captures every texture I need for Polyphia's sound — from crystal cleans to crushing leads."
+  />
 
-    <!-- Cell 3: Standard (Stats KPIs — Products + Wishlist) -->
-    <div class="cell cell-standard">
-      <DashboardCell title="Stats" icon="📊" loading={dashboardState.loading} empty={dashboardState.totalProducts === 0} emptyMessage="No products yet" emptyIcon="📊">
-        {#if !dashboardState.loading}
-          <div class="stats-row">
-            <div class="stat-group">
-              <div class="stat-value">{dashboardState.totalProducts.toLocaleString()}</div>
-              <div class="stat-label">Products</div>
-            </div>
-            <div class="stat-divider"></div>
-            <div class="stat-group">
-              <div class="stat-value">{dashboardState.wishlistCount.toLocaleString()}</div>
-              <div class="stat-label">Wishlist</div>
-            </div>
+  <!-- Trending Searches -->
+  <FeedSection title="Trending Now">
+    <TrendingPill {trending} onSearch={handleHeroSearch} />
+  </FeedSection>
+
+  <!-- Price Drops -->
+  {#if priceDropProducts.length > 0}
+    <FeedSection title="Price Drops" seeAllHref="/explore?sort=price_desc">
+      <div class="product-scroll">
+        {#each priceDropProducts as product (product.sku)}
+          <ProductCard
+            {product}
+            inCollection={collectionState.collectedSkus.has(product.sku)}
+          />
+        {/each}
+      </div>
+    </FeedSection>
+  {/if}
+
+  <!-- New Arrivals -->
+  {#if newArrivals.length > 0}
+    <FeedSection title="New Arrivals" seeAllHref="/explore?sort=newest">
+      <div class="product-scroll">
+        {#each newArrivals as product (product.sku)}
+          <ProductCard
+            {product}
+            inCollection={collectionState.collectedSkus.has(product.sku)}
+          />
+        {/each}
+      </div>
+    </FeedSection>
+  {/if}
+
+  <!-- Featured Products -->
+  {#if featuredProducts.length > 0}
+    <FeedSection title="Because You Viewed">
+      <div class="product-scroll">
+        {#each featuredProducts as product (product.sku)}
+          <ProductCard
+            {product}
+            inCollection={collectionState.collectedSkus.has(product.sku)}
+          />
+        {/each}
+      </div>
+    </FeedSection>
+  {/if}
+
+  <!-- Loading skeleton -->
+  {#if loading}
+    <div class="loading-state">
+      <div class="skeleton-scroll">
+        {#each Array(4) as _, i}
+          <div class="skeleton-card" style="animation-delay: {i * 60}ms">
+            <div class="skeleton-image"></div>
+            <div class="skeleton-text"></div>
+            <div class="skeleton-text short"></div>
           </div>
-        {/if}
-      </DashboardCell>
+        {/each}
+      </div>
     </div>
-
-    <!-- Cell 4: Wide (Featured Deal) -->
-    <div class="cell cell-wide">
-      <DashboardCell title="Featured Deal" icon="⭐" loading={false} empty={!featuredProduct} emptyMessage="No featured deal available" emptyIcon="⭐">
-        {#if featuredProduct}
-          <ProductCard product={featuredProduct} inCollection={collectionState.collectedSkus.has(featuredProduct.sku)} />
-        {/if}
-      </DashboardCell>
-    </div>
-
-    <!-- Cell 5: Standard (Collection Stats) -->
-    <div class="cell cell-standard" data-testid="collection-cell">
-      <CollectionStatsCell
-        stats={collectionState.stats}
-        items={collectionState.items}
-        loading={collectionState.loading}
-      />
-    </div>
-  </div>
-
-  <section id="settings">
-    <Settings />
-  </section>
+  {/if}
 </div>
 
+<style>
+  .discovery-feed {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 var(--space-6);
+  }
+
+  .product-scroll {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-5);
+  }
+
+  /* Loading */
+  .loading-state {
+    padding: var(--space-8) 0;
+  }
+
+  .skeleton-scroll {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-5);
+  }
+
+  .skeleton-card {
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--void-mid);
+    animation: fadeIn 300ms var(--ease-plug) both;
+  }
+
+  .skeleton-image {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    background: linear-gradient(90deg, var(--void-raised) 25%, var(--void-hover) 50%, var(--void-raised) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  .skeleton-text {
+    height: 14px;
+    margin: 12px 16px 0;
+    background: var(--void-raised);
+    border-radius: 4px;
+  }
+
+  .skeleton-text.short {
+    width: 60%;
+    margin-bottom: 16px;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+</style>
