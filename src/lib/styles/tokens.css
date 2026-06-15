@@ -93,6 +93,14 @@
   --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.5);
   --shadow-amber-glow: 0 0 12px rgba(245, 166, 35, 0.3);
 
+  /* Legacy shadow aliases */
+  --shadow-1: var(--shadow-card);
+  --shadow-2: var(--shadow-card-hover);
+
+  /* Amber alias (used by dashboard, wishlist, collection components) */
+  --color-amber: var(--color-primary);
+  --color-on-amber: var(--color-on-primary);
+
   /* Legacy elevation aliases */
   --elevation-0: none;
   --elevation-1: var(--shadow-card);

@@ -102,6 +102,6 @@ describe('Community navigation items in Sidebar', () => {
 
   it('Explore nav item is present', () => {
     render(Sidebar, { props: { currentPath: '/', serverReachable: true } });
-    expect(screen.getByText('Explore')).toBeInTheDocument();
+    expect(screen.getByText('Buscar')).toBeInTheDocument();
   });
 });
