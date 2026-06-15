@@ -7,9 +7,50 @@
   const CONDITION_OPTIONS = ['new', 'used', 'refurbished', 'unknown'];
   const CURRENCY_OPTIONS = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY'];
   const SORT_OPTIONS = ['relevance', 'price_asc', 'price_desc', 'name_asc', 'name_desc'] as const;
+
+  const CATEGORY_CHIPS = [
+    { label: 'All', value: '' },
+    { label: 'Guitar', value: 'Guitar' },
+    { label: 'Bass', value: 'Bass' },
+    { label: 'Amp', value: 'Amplifier' },
+    { label: 'Pedal', value: 'Pedal' },
+    { label: 'Keys', value: 'Keyboard' },
+  ];
+
+  const activeFilters = $derived.by(() => {
+    const filters: { key: keyof FilterState; label: string }[] = [];
+    if (filterState.category) filters.push({ key: 'category', label: filterState.category });
+    if (filterState.price_min) filters.push({ key: 'price_min', label: `$${filterState.price_min}+` });
+    if (filterState.price_max) filters.push({ key: 'price_max', label: `$${filterState.price_max}-` });
+    if (filterState.condition) filters.push({ key: 'condition', label: filterState.condition });
+    if (filterState.listing_currency) filters.push({ key: 'listing_currency', label: filterState.listing_currency });
+    if (filterState.sort !== 'relevance') filters.push({ key: 'sort', label: filterState.sort.replace('_', ' ') });
+    return filters;
+  });
 </script>
 
 <div class="filter-bar">
+  <div class="category-chips">
+    {#each CATEGORY_CHIPS as chip}
+      <button
+        class="chip"
+        class:active={filterState.category === chip.value}
+        onclick={() => updateFilter('category', chip.value || null)}
+      >
+        {chip.label}
+      </button>
+    {/each}
+  </div>
+  {#if activeFilters.length > 0}
+    <div class="active-filters">
+      {#each activeFilters as filter}
+        <span class="filter-pill">
+          {filter.label}
+          <button class="pill-remove" onclick={() => clearFilter(filter.key)} aria-label={`Remove ${filter.label} filter`}>×</button>
+        </span>
+      {/each}
+    </div>
+  {/if}
   <button
     class="filter-toggle"
     onclick={() => (expanded = !expanded)}
@@ -193,6 +234,68 @@
 <style>
   .filter-bar {
     margin-bottom: 16px;
+  }
+
+  .category-chips {
+    display: flex;
+    gap: var(--spacing-sm);
+    overflow-x: auto;
+    padding-bottom: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .chip {
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--color-outline);
+    background: transparent;
+    color: var(--color-on-surface-variant);
+    font-size: 0.85rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background var(--transition-fast), color var(--transition-fast);
+  }
+
+  .chip:hover {
+    background: var(--color-surface-container);
+  }
+
+  .chip.active {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    border-color: var(--color-primary);
+  }
+
+  .active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-2xs) var(--spacing-sm);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-container-high);
+    color: var(--color-on-surface);
+    font-size: 0.75rem;
+  }
+
+  .pill-remove {
+    background: none;
+    border: none;
+    color: var(--color-on-surface-muted);
+    cursor: pointer;
+    padding: 0;
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .pill-remove:hover {
+    color: var(--color-error);
   }
 
   .filter-toggle {
