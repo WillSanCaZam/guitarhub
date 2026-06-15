@@ -48,25 +48,7 @@
 
 <HealthCheck />
 
-<AppShell {currentPath} serverReachable={authState.serverReachable}>
-  <div class="legacy-header">
-    <a href="/" class="nav-title">GuitarHub</a>
-    <div class="nav-actions">
-      <a href="/wishlist" class="nav-link">
-        Wishlist{#if $wishlistState.items.length > 0}
-          <span class="badge">{$wishlistState.items.length}</span>
-        {/if}
-      </a>
-      <a href="/settings" class="nav-link">Settings</a>
-      <button onclick={handleSync} disabled={syncing} class="sync-btn" data-testid="sync-button">
-        {syncing ? 'Syncing\u2026' : 'Sync Catalog'}
-      </button>
-      {#if syncError}
-        <span class="sync-error">{syncError}</span>
-      {/if}
-    </div>
-  </div>
-
+<AppShell {currentPath} serverReachable={authState.serverReachable} syncing={syncing} onSync={handleSync}>
   {@render children()}
 </AppShell>
 
