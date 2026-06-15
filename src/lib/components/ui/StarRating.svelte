@@ -15,7 +15,7 @@
   );
 
   const sizeMap = { sm: 14, md: 16, lg: 20 };
-  const starSize = sizeMap[size];
+  const starSize = $derived(sizeMap[size]);
 </script>
 
 <span class="star-rating" aria-label="{rating} out of 5 stars">
