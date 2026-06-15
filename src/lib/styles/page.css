@@ -21,7 +21,7 @@
 }
 
 .cell:focus-within {
-  outline: 2px solid var(--color-secondary);
+  outline: 2px solid var(--color-amber);
   outline-offset: var(--spacing-2xs);
 }
 
