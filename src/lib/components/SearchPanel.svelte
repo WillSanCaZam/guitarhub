@@ -442,10 +442,10 @@
 
   .product-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-5);
     width: 100%;
-    padding: 0 4px;
+    padding: 0;
     box-sizing: border-box;
   }
 

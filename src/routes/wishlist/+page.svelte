@@ -66,30 +66,30 @@
   .page {
     max-width: 1200px;
     margin: 0 auto;
-    padding: var(--spacing-lg);
+    padding: var(--space-lg);
   }
 
   .wishlist-header {
-    margin-bottom: var(--spacing-xl);
+    margin-bottom: var(--space-xl);
   }
 
   .back-link {
     display: inline-block;
-    margin-bottom: var(--spacing-sm);
-    color: var(--color-on-surface-muted);
+    margin-bottom: var(--space-sm);
+    color: var(--text-dim);
     text-decoration: none;
     font-size: 0.85rem;
     transition: color var(--transition-fast);
   }
 
   .back-link:hover {
-    color: var(--color-amber);
+    color: var(--glow-primary);
   }
 
   .header-content {
     display: flex;
     align-items: baseline;
-    gap: var(--spacing-md);
+    gap: var(--space-md);
   }
 
   h1 {
@@ -97,31 +97,31 @@
     font-family: var(--font-display);
     font-size: 1.75rem;
     font-weight: 700;
-    color: var(--color-on-surface);
+    color: var(--text-bright);
   }
 
   .count {
-    color: var(--color-on-surface-muted);
+    color: var(--text-dim);
     font-size: 0.9rem;
   }
 
   .error {
-    color: var(--color-error);
+    color: var(--danger);
     font-size: 0.95rem;
   }
 
   .wishlist-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-5);
   }
 
   .empty-state {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--spacing-md);
-    padding: var(--spacing-3xl) var(--spacing-lg);
+    gap: var(--space-md);
+    padding: var(--space-3xl) var(--space-lg);
     text-align: center;
   }
 
@@ -129,21 +129,21 @@
     margin: 0;
     font-family: var(--font-display);
     font-size: 1.25rem;
-    color: var(--color-on-surface);
+    color: var(--text-bright);
   }
 
   .empty-state p {
     margin: 0;
-    color: var(--color-on-surface-muted);
+    color: var(--text-dim);
     font-size: 0.9rem;
   }
 
   .empty-cta {
     display: inline-flex;
     align-items: center;
-    padding: var(--spacing-sm) var(--spacing-lg);
-    background: var(--color-amber);
-    color: var(--color-on-amber);
+    padding: var(--space-sm) var(--space-lg);
+    background: var(--glow-primary);
+    color: var(--void-deep);
     border-radius: var(--radius-pill);
     text-decoration: none;
     font-weight: 600;
@@ -158,8 +158,8 @@
 
   .skeleton-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-5);
   }
 
   .skeleton-card {

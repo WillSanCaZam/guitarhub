@@ -1,7 +1,8 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core';
   import { onMount } from 'svelte';
-  import PriceBadge from './PriceBadge.svelte';
+  import StarRating from './ui/StarRating.svelte';
+  import PriceDisplay from './ui/PriceDisplay.svelte';
   import { addToCollection } from '$lib/stores/collection.svelte';
   import { wishlistState, addToWishlist, removeFromWishlist } from '$lib/stores/wishlist.svelte';
   import type { PriceInsight } from '$lib/types/price';
@@ -12,10 +13,20 @@
     brand: string;
     model?: string;
     price: number;
+    original_price?: number;
     currency?: string;
     image_url?: string;
     url?: string;
     condition?: string;
+    store_logo_url?: string;
+    category?: string;
+    discount_pct?: number;
+    artist_badge?: string;
+    rating?: number;
+    review_count?: number;
+    viewers_count?: number;
+    in_stock?: boolean;
+    is_best_price?: boolean;
   }
 
   interface Props {
@@ -31,13 +42,13 @@
   let adding = $state<boolean>(false);
   let added = $state<boolean>(false);
   let imageLoaded = $state<boolean>(false);
+  let hovered = $state<boolean>(false);
 
   const isInWishlist = $derived(
     wishlistState.items.some(item => item.sku === product.sku)
   );
 
   onMount(async () => {
-    // Load image first
     try {
       imageData = await invoke<string>('get_product_image', { imageUrl: product.image_url });
       imageLoaded = true;
@@ -45,7 +56,6 @@
       console.error('Failed to load product image:', e);
       imageError = true;
     }
-    // Fetch price insight after product loads (avoid cascading)
     try {
       priceInsight = await invoke<PriceInsight | null>('get_price_insight', { sku: product.sku });
     } catch (e) {
@@ -94,41 +104,117 @@
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-<div class="product-card" tabindex="0">
+<div
+  class="product-card"
+  tabindex="0"
+  role="article"
+  aria-labelledby="title-{product.sku}"
+  onmouseenter={() => hovered = true}
+  onmouseleave={() => hovered = false}
+>
+  <!-- Image Area -->
   <div class="image-container">
     {#if imageData}
-      <img src={imageData} alt={product.name} class="product-image" />
+      <img src={imageData} alt={product.name} class="product-image" loading="lazy" />
     {:else}
       <div class="shimmer skeleton" aria-label={product.name}></div>
     {/if}
-    {#if product.condition}
-      <span class="condition-badge">{product.condition}</span>
+
+    <!-- Store Logo (top-left) -->
+    {#if product.store_logo_url}
+      <span class="store-logo">
+        <img src={product.store_logo_url} alt="" />
+      </span>
+    {/if}
+
+    <!-- Category Pill (top-right) -->
+    {#if product.category}
+      <span class="category-pill">{product.category}</span>
+    {/if}
+
+    <!-- Deal Badge (absolute top-right) -->
+    {#if product.discount_pct && product.discount_pct > 0}
+      <span class="deal-badge">-{product.discount_pct}%</span>
+    {/if}
+
+    <!-- Artist Badge -->
+    {#if product.artist_badge}
+      <span class="artist-badge">{product.artist_badge}</span>
+    {/if}
+
+    <!-- Quick Actions (hover) -->
+    {#if hovered}
+      <div class="quick-actions">
+        <button
+          class="quick-action"
+          onclick={handleWishlistToggle}
+          aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+        >
+          <svg viewBox="0 0 24 24" fill={isInWishlist ? 'var(--glow-hot)' : 'none'} stroke="currentColor" stroke-width="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+        </button>
+        {#if product.url}
+          <button class="quick-action" onclick={handleOpenUrl} aria-label="View deal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+          </button>
+        {/if}
+      </div>
+    {/if}
+
+    <!-- Play overlay -->
+    {#if hovered && imageData}
+      <div class="play-overlay">
+        <span class="play-text">Play Hear It</span>
+      </div>
     {/if}
   </div>
+
+  <!-- Product Info -->
   <div class="product-info">
-    <h3 class="product-title">{product.name}</h3>
+    <h3 class="product-title" id="title-{product.sku}">{product.name}</h3>
     {#if product.brand}
-      <p class="product-brand">{product.brand}</p>
+      <p class="product-brand">{product.brand}{product.model ? ` ${product.model}` : ''}</p>
     {/if}
-    {#if product.price}
-      <p class="product-price">
-        {product.price} {product.currency ?? ''}
-        {#if priceInsight && priceInsight.level !== 'hidden'}
-          <PriceBadge level={priceInsight.level} pct={priceInsight.pct} confidence={priceInsight.confidence} />
-        {/if}
-      </p>
+
+    {#if product.rating !== undefined}
+      <StarRating rating={product.rating} reviewCount={product.review_count} size="sm" />
     {/if}
+
+    {#if product.viewers_count && product.viewers_count > 0}
+      <span class="viewers">{product.viewers_count} people viewing now</span>
+    {/if}
+
+    <div class="price-row">
+      <PriceDisplay
+        price={product.price}
+        originalPrice={product.original_price}
+        discountPct={product.discount_pct}
+        currency={product.currency}
+      />
+    </div>
+
+    <div class="status-badges">
+      {#if product.in_stock !== false}
+        <span class="badge badge-stock">In Stock</span>
+      {:else}
+        <span class="badge badge-oos">Out of Stock</span>
+      {/if}
+      {#if product.is_best_price}
+        <span class="badge badge-best">Best Price</span>
+      {/if}
+    </div>
+
     <div class="product-actions">
       {#if product.url}
-        <button class="action-btn store-link" onclick={handleOpenUrl} data-testid="store-link" aria-label="Ver oferta en tienda">
-          Ver oferta →
+        <button class="action-btn store-link" onclick={handleOpenUrl} data-testid="store-link" aria-label="View deal in store">
+          View Deals
         </button>
       {/if}
-      <button class="action-btn wishlist-toggle" onclick={handleWishlistToggle} data-testid="wishlist-toggle" aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}>
-        <svg viewBox="0 0 24 24" fill={isInWishlist ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="2">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-        </svg>
-      </button>
       {#if !inCollection}
         <button class="action-btn add-btn" onclick={handleAdd} disabled={adding} data-testid="add-to-collection">
           {#if added}
@@ -136,7 +222,7 @@
           {:else if adding}
             Adding...
           {:else}
-            Add to collection
+            + Collection
           {/if}
         </button>
       {/if}
@@ -146,127 +232,303 @@
 
 <style>
   .product-card {
-    border: 1px solid var(--color-outline);
-    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 122, 61, 0.06);
+    border-radius: var(--radius-lg);
     overflow: hidden;
-    background: var(--color-surface);
-    transition: box-shadow var(--transition-base);
+    background: var(--void-mid);
+    box-shadow: var(--shadow-card);
     display: flex;
     flex-direction: column;
+    transition: transform 350ms var(--ease-plug),
+                box-shadow 350ms var(--ease-plug),
+                border-color 350ms var(--ease-plug);
+    position: relative;
+    min-width: 300px;
+    max-width: 400px;
   }
+
   .product-card:hover {
-    box-shadow: var(--shadow-card-hover);
+    transform: scale(1.03);
+    box-shadow: var(--shadow-hover);
+    border-color: rgba(255, 122, 61, 0.2);
   }
+
   .product-card:focus-visible {
-    outline: 2px solid var(--color-primary);
+    outline: 2px solid var(--glow-primary);
     outline-offset: 2px;
   }
+
+  /* Image */
   .image-container {
     position: relative;
     width: 100%;
     aspect-ratio: 16 / 10;
-    background: var(--color-surface-container);
+    background: var(--void-deep);
+    overflow: hidden;
   }
+
   .product-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
+    transition: transform 350ms var(--ease-plug);
   }
+
+  .product-card:hover .product-image {
+    transform: scale(1.05);
+  }
+
   .shimmer {
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, var(--color-surface-container) 25%, var(--color-surface-container-high) 50%, var(--color-surface-container) 75%);
+    background: linear-gradient(90deg, var(--void-raised) 25%, var(--void-hover) 50%, var(--void-raised) 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
   }
+
   @keyframes shimmer {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
   }
-  .condition-badge {
+
+  /* Store Logo */
+  .store-logo {
     position: absolute;
-    top: var(--spacing-sm);
-    right: var(--spacing-sm);
-    padding: var(--spacing-2xs) var(--spacing-sm);
+    top: var(--space-2);
+    left: var(--space-2);
+    width: 28px;
+    height: 28px;
     border-radius: var(--radius-sm);
-    background: var(--color-surface-container-high);
-    color: var(--color-on-surface);
-    font-size: 0.75rem;
-    font-weight: 500;
-    text-transform: capitalize;
+    background: var(--void-mid);
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.06);
   }
-  .product-info {
-    padding: var(--spacing-md);
+
+  .store-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  /* Category Pill */
+  .category-pill {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-pill);
+    background: var(--void-mid);
+    color: var(--text-warm);
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  /* Deal Badge */
+  .deal-badge {
+    position: absolute;
+    top: var(--space-10);
+    right: var(--space-2);
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--glow-hot);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+
+  /* Artist Badge */
+  .artist-badge {
+    position: absolute;
+    bottom: var(--space-2);
+    left: var(--space-2);
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--glow-medium);
+    color: var(--text-bright);
+    font-size: 0.65rem;
+    font-weight: 600;
+  }
+
+  /* Quick Actions */
+  .quick-actions {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-12);
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-xs);
+    gap: var(--space-1);
+    animation: fadeIn 200ms var(--ease-plug);
+  }
+
+  .quick-action {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-pill);
+    background: var(--void-mid);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-bright);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 150ms var(--ease-snap), transform 150ms var(--ease-strum);
+  }
+
+  .quick-action:hover {
+    background: var(--void-hover);
+    transform: scale(1.1);
+  }
+
+  .quick-action svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Play Overlay */
+  .play-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(7, 7, 12, 0.6);
+    animation: fadeIn 200ms var(--ease-plug);
+  }
+
+  .play-text {
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-pill);
+    background: var(--glow-primary);
+    color: var(--void-deep);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Info */
+  .product-info {
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
     flex: 1;
   }
+
   .product-title {
     margin: 0;
     font-family: var(--font-display);
     font-size: 1rem;
     font-weight: 700;
     line-height: 1.3;
+    color: var(--text-bright);
   }
+
   .product-brand {
     margin: 0;
     font-family: var(--font-body);
     font-size: 0.85rem;
-    color: var(--color-on-surface-muted);
+    color: var(--text-warm);
   }
-  .product-price {
-    font-family: var(--font-mono);
-    font-weight: 600;
-    margin: 0;
-    margin-top: auto;
+
+  .viewers {
+    font-size: 0.75rem;
+    color: var(--glow-cool);
+    font-weight: 500;
   }
+
+  .price-row {
+    margin-top: var(--space-2);
+  }
+
+  .status-badges {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-1);
+  }
+
+  .badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .badge-stock {
+    background: rgba(0, 230, 118, 0.12);
+    color: var(--success);
+  }
+
+  .badge-oos {
+    background: rgba(255, 23, 68, 0.12);
+    color: var(--danger);
+  }
+
+  .badge-best {
+    background: rgba(255, 215, 0, 0.12);
+    color: var(--glow-gold);
+  }
+
+  /* Actions */
   .product-actions {
     display: flex;
-    gap: var(--spacing-sm);
-    margin-top: var(--spacing-sm);
+    gap: var(--space-2);
+    margin-top: auto;
+    padding-top: var(--space-2);
   }
+
   .action-btn {
     flex: 1;
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: var(--space-2) var(--space-3);
     border: none;
-    border-radius: var(--radius-md);
-    font-size: 0.85rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: background var(--transition-fast);
+    transition: background 150ms var(--ease-snap), transform 150ms var(--ease-snap);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--spacing-xs);
+    gap: var(--space-1);
   }
+
+  .action-btn:active {
+    transform: scale(0.96);
+  }
+
   .store-link {
-    background: var(--color-primary);
-    color: var(--color-on-primary);
+    background: var(--glow-primary);
+    color: var(--void-deep);
   }
+
   .store-link:hover {
-    background: var(--color-primary-hover);
+    background: var(--glow-warm);
   }
-  .wishlist-toggle {
-    background: var(--color-surface-container-high);
-    color: var(--color-on-surface);
-    flex: 0;
-    padding: var(--spacing-sm);
-  }
-  .wishlist-toggle:hover {
-    background: var(--color-surface-container-highest);
-  }
-  .wishlist-toggle svg {
-    width: 20px;
-    height: 20px;
-  }
+
   .add-btn {
-    background: var(--color-secondary);
-    color: var(--color-on-secondary);
+    background: var(--void-raised);
+    color: var(--text-bright);
+    border: 1px solid var(--text-muted);
   }
+
   .add-btn:hover:not(:disabled) {
-    background: var(--color-secondary-hover);
+    background: var(--void-hover);
+    border-color: var(--glow-primary);
   }
+
   .add-btn:disabled {
     opacity: 0.7;
     cursor: not-allowed;
