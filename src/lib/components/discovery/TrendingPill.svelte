@@ -18,7 +18,6 @@
     <button
       class="trending-pill"
       onclick={() => onSearch?.(query)}
-      role="listitem"
     >
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="11" cy="11" r="8"/>
