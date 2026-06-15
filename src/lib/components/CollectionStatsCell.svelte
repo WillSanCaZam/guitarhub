@@ -62,37 +62,37 @@
 
   .top-item {
     font-size: 0.8rem;
-    color: #666;
+    color: var(--color-on-surface-muted);
     margin-top: 4px;
   }
 
   .gain-loss-gain {
-    color: #28a745;
+    color: var(--color-success);
   }
 
   .gain-loss-loss {
-    color: #dc3545;
+    color: var(--color-error);
   }
 
   .gain-loss-neutral {
-    color: #666;
+    color: var(--color-on-surface-muted);
   }
 
   @media (prefers-color-scheme: dark) {
     .top-item {
-      color: #aaa;
+      color: var(--color-on-surface-variant);
     }
 
     .gain-loss-gain {
-      color: #4ade80;
+      color: var(--color-success);
     }
 
     .gain-loss-loss {
-      color: #f87171;
+      color: var(--color-error);
     }
 
     .gain-loss-neutral {
-      color: #aaa;
+      color: var(--color-on-surface-variant);
     }
   }
 </style>

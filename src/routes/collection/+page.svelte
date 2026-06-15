@@ -32,7 +32,7 @@
   .back-link {
     display: inline-block;
     margin-bottom: 12px;
-    color: #4a90d9;
+    color: var(--color-secondary);
     text-decoration: none;
     font-size: 0.9rem;
   }
@@ -45,16 +45,16 @@
     margin: 0;
     font-size: 1.5rem;
     font-weight: 700;
-    color: #1a1a2e;
+    color: var(--color-secondary);
   }
 
   @media (prefers-color-scheme: dark) {
     h1 {
-      color: #e8e8f0;
+      color: var(--color-on-surface);
     }
 
     .back-link {
-      color: #7ab8e8;
+      color: var(--color-info);
     }
   }
 </style>

@@ -46,7 +46,7 @@
     font-size: 1.5rem;
   }
   .brand {
-    color: #666;
+    color: var(--color-on-surface-muted);
     font-size: 0.9rem;
     margin: 0 0 4px;
   }
@@ -58,6 +58,6 @@
   .chart-section h3 {
     margin: 0 0 8px;
     font-size: 1rem;
-    color: #444;
+    color: var(--color-outline-variant);
   }
 </style>
