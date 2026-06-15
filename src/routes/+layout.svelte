@@ -55,9 +55,8 @@
 <style>
   :global(body) {
     margin: 0;
-    font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-      Ubuntu, Cantarell, sans-serif);
-    background: var(--color-surface, #121218);
-    color: var(--color-on-surface, #e8e8f0);
+    font-family: var(--font-body);
+    background: var(--void-deep);
+    color: var(--text-warm);
   }
 </style>

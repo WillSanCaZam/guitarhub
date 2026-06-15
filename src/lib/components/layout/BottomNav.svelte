@@ -41,13 +41,13 @@
     left: 0;
     right: 0;
     height: 64px;
-    background: var(--color-surface-container, #1c1c26);
-    border-top: 1px solid var(--color-outline-variant, #2a2a38);
+    background: var(--void-raised);
+    border-top: 1px solid var(--color-outline-variant);
     display: flex;
     align-items: center;
     justify-content: space-around;
-    z-index: var(--z-sticky, 200);
-    padding: 0 var(--spacing-xs, 4px);
+    z-index: var(--z-sticky);
+    padding: 0 var(--space-xs);
   }
 
   .nav-item {
@@ -55,25 +55,25 @@
     flex-direction: column;
     align-items: center;
     gap: 2px;
-    padding: var(--spacing-xs, 4px) var(--spacing-sm, 8px);
-    border-radius: var(--radius-md, 8px);
-    color: var(--color-on-surface-variant, #a0a0b0);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-md);
+    color: var(--text-warm);
     text-decoration: none;
-    font-family: var(--font-sans, system-ui, sans-serif);
+    font-family: var(--font-body);
     font-size: 0.625rem;
     font-weight: 400;
-    transition: color var(--transition-fast, 100ms ease);
+    transition: color var(--transition-fast);
     min-width: 48px;
     min-height: 48px;
     justify-content: center;
   }
 
   .nav-item:hover {
-    color: var(--color-on-surface, #e8e8f0);
+    color: var(--text-bright);
   }
 
   .nav-item.active {
-    color: var(--color-primary, #d4a017);
+    color: var(--glow-primary);
   }
 
   .nav-item.active .nav-icon {

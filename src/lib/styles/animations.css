@@ -1,0 +1,99 @@
+/* GuitarHub — "Amp Glow" Animations */
+/* "Animations should feel like plugging in a guitar cable." */
+
+/* ── Keyframes ─────────────────────────────────────────────────── */
+
+@keyframes amp-glow {
+  0%, 100% { box-shadow: 0 0 20px var(--glow-soft); }
+  50% { box-shadow: 0 0 40px var(--glow-medium), 0 0 60px var(--glow-soft); }
+}
+
+@keyframes string-vibe {
+  0% { transform: translateY(0); }
+  25% { transform: translateY(-2px); }
+  50% { transform: translateY(1px); }
+  75% { transform: translateY(-1px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes power-on {
+  0% { opacity: 0; filter: brightness(0); }
+  30% { opacity: 1; filter: brightness(2); }
+  100% { filter: brightness(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ── Utility Classes ───────────────────────────────────────────── */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid var(--glow-primary);
+  outline-offset: 2px;
+}
+
+/* Custom scrollbar */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: var(--void-raised);
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--glow-primary);
+  border-radius: var(--radius-pill);
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--glow-warm);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,73 @@
+/* GuitarHub — Global Styles */
+/* "The Amp Glow" baseline for the entire app */
+
+/* ── Body Reset ────────────────────────────────────────────────── */
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background: var(--void-deep);
+  color: var(--text-warm);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Custom Scrollbar ──────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--void-raised);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--glow-primary);
+  border-radius: var(--radius-pill);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--glow-warm);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--glow-primary) var(--void-raised);
+}
+
+/* ── Focus Visible ─────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--glow-primary);
+  outline-offset: 2px;
+}
+
+/* ── Base Link Styles ──────────────────────────────────────────── */
+a {
+  color: var(--glow-primary);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--glow-warm);
+}
+
+/* ── Selection ─────────────────────────────────────────────────── */
+::selection {
+  background: var(--glow-medium);
+  color: var(--text-bright);
+}
+
+/* ── Image Defaults ────────────────────────────────────────────── */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ── Reduced Motion ────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

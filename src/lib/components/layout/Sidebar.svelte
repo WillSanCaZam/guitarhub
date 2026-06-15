@@ -86,19 +86,19 @@
   .sidebar {
     width: 240px;
     height: 100vh;
-    background: var(--color-surface-container-low, #161620);
-    border-right: 1px solid var(--color-outline-variant, #2a2a38);
+    background: var(--void-mid);
+    border-right: 1px solid var(--color-outline-variant);
     display: flex;
     flex-direction: column;
     position: fixed;
     top: 0;
     left: 0;
-    z-index: var(--z-sticky, 200);
+    z-index: var(--z-sticky);
   }
 
   .sidebar-header {
-    padding: var(--spacing-lg, 24px) var(--spacing-md, 16px);
-    border-bottom: 1px solid var(--color-outline-variant, #2a2a38);
+    padding: var(--space-lg) var(--space-md);
+    border-bottom: 1px solid var(--color-outline-variant);
   }
 
   .logo {

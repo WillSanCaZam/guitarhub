@@ -1,0 +1,201 @@
+/* GuitarHub — "Amp Glow" Design Tokens */
+/* The warm, dangerous light from a tube amp in the dark. */
+
+:root {
+  /* ── BACKGROUNDS: The Void Behind the Amp ─────────────────────── */
+  --void-deep:        #07070C;
+  --void-mid:         #0F0F18;
+  --void-raised:      #161622;
+  --void-hover:       #1E1E2E;
+  --void-active:      #252538;
+
+  /* ── THE GLOW: Warm Valve Light ──────────────────────────────── */
+  --glow-primary:     #FF7A3D;
+  --glow-warm:        #FFB84D;
+  --glow-hot:         #FF4D4D;
+  --glow-cool:        #4DE1FF;
+  --glow-gold:        #FFD700;
+
+  /* ── GLOW EFFECTS ────────────────────────────────────────────── */
+  --glow-soft:        rgba(255, 122, 61, 0.15);
+  --glow-medium:      rgba(255, 122, 61, 0.3);
+  --glow-intense:     rgba(255, 122, 61, 0.5);
+  --glow-text-shadow: 0 0 20px var(--glow-soft), 0 0 40px var(--glow-soft);
+
+  /* ── TEXT: Illuminated from the Glow ─────────────────────────── */
+  --text-bright:      #F5F0EB;
+  --text-warm:        #C4B8A8;
+  --text-dim:         #7A6E5E;
+  --text-muted:       #4A4339;
+
+  /* ── FUNCTIONAL ──────────────────────────────────────────────── */
+  --success:          #00E676;
+  --warning:          #FFB300;
+  --danger:           #FF1744;
+  --info:             #00B0FF;
+
+  /* ── GRADIENTS ───────────────────────────────────────────────── */
+  --gradient-glow:    linear-gradient(135deg, var(--glow-primary) 0%, var(--glow-warm) 50%, var(--glow-primary) 100%);
+  --gradient-hero:    radial-gradient(ellipse at 50% 0%, var(--glow-soft) 0%, transparent 60%);
+  --gradient-card:    linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%);
+  --gradient-urgency: linear-gradient(90deg, var(--glow-hot) 0%, var(--glow-primary) 100%);
+
+  /* ── SPACING (4px base — "The Quarter Note") ──────────────────── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* Legacy spacing aliases */
+  --space-2xs: 2px;
+  --space-xs:  4px;
+  --space-sm:  8px;
+  --space-md:  16px;
+  --space-lg:  24px;
+  --space-xl:  40px;
+  --space-2xl: 64px;
+  --space-3xl: 96px;
+
+  /* ── BORDER RADIUS ───────────────────────────────────────────── */
+  --radius-xs:   2px;
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   20px;
+  --radius-xl:   28px;
+  --radius-pill:  9999px;
+
+  /* ── SHADOWS ─────────────────────────────────────────────────── */
+  --shadow-card:   0 4px 24px rgba(0, 0, 0, 0.4);
+  --shadow-hover:  0 12px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--glow-soft), 0 0 30px var(--glow-soft);
+  --shadow-modal:  0 24px 64px rgba(0, 0, 0, 0.7);
+  --shadow-glow:   0 0 30px var(--glow-soft);
+
+  /* Legacy shadow aliases */
+  --shadow-card-hover: var(--shadow-hover);
+  --shadow-1: var(--shadow-card);
+  --shadow-2: var(--shadow-hover);
+  --shadow-amber-glow: var(--shadow-glow);
+
+  /* ── TYPOGRAPHY ──────────────────────────────────────────────── */
+  --font-display:  'Space Grotesk', 'Bebas Neue', 'Impact', system-ui, sans-serif;
+  --font-body:     'Inter', 'SF Pro Text', system-ui, sans-serif;
+  --font-mono:     'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  --font-accent:   'Caveat', 'Permanent Marker', cursive;
+  --font-sans:     var(--font-body);
+
+  /* ── EASING ──────────────────────────────────────────────────── */
+  --ease-plug:  cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-strum: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-fade:  cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-snap:  cubic-bezier(0.7, 0, 0.3, 1);
+
+  /* Legacy transition aliases */
+  --transition-fast:  100ms var(--ease-fade);
+  --transition-base:  200ms var(--ease-fade);
+  --transition-slow:  300ms var(--ease-fade);
+
+  /* ── Z-INDEX ─────────────────────────────────────────────────── */
+  --z-base:     0;
+  --z-dropdown: 100;
+  --z-sticky:   200;
+  --z-overlay:  300;
+  --z-modal:    400;
+  --z-popover:  500;
+  --z-toast:    600;
+
+  /* ── MAPPING TO LEGACY TOKEN NAMES ───────────────────────────── */
+  --color-primary:           var(--glow-primary);
+  --color-primary-hover:     var(--glow-warm);
+  --color-primary-active:    var(--glow-hot);
+  --color-on-primary:        var(--void-deep);
+  --color-primary-container: rgba(255, 122, 61, 0.15);
+  --color-on-primary-container: var(--text-bright);
+
+  --color-secondary:           var(--void-raised);
+  --color-secondary-hover:     var(--void-hover);
+  --color-on-secondary:        var(--text-bright);
+  --color-secondary-container: var(--void-raised);
+  --color-on-secondary-container: var(--text-warm);
+
+  --color-surface:                     var(--void-mid);
+  --color-surface-dim:                 var(--void-deep);
+  --color-surface-bright:              var(--void-raised);
+  --color-surface-container-lowest:    var(--void-deep);
+  --color-surface-container-low:       var(--void-mid);
+  --color-surface-container:           var(--void-raised);
+  --color-surface-container-high:      var(--void-hover);
+  --color-surface-container-highest:   var(--void-active);
+
+  --color-graphite: var(--void-raised);
+
+  --color-on-surface:          var(--text-bright);
+  --color-on-surface-variant:  var(--text-warm);
+  --color-on-surface-muted:    var(--text-dim);
+
+  --color-outline:        var(--text-muted);
+  --color-outline-variant: rgba(255, 122, 61, 0.08);
+
+  --color-success:           var(--success);
+  --color-success-container: rgba(0, 230, 118, 0.12);
+  --color-on-success-container: var(--success);
+
+  --color-warning:           var(--warning);
+  --color-warning-container: rgba(255, 179, 0, 0.12);
+  --color-on-warning-container: var(--warning);
+
+  --color-error:           var(--danger);
+  --color-error-container: rgba(255, 23, 68, 0.12);
+  --color-on-error-container: var(--danger);
+
+  --color-info:           var(--info);
+  --color-info-container: rgba(0, 176, 255, 0.12);
+  --color-on-info-container: var(--info);
+
+  /* Amber alias */
+  --color-amber: var(--glow-primary);
+  --color-on-amber: var(--void-deep);
+
+  /* Legacy elevation aliases */
+  --elevation-0: none;
+  --elevation-1: var(--shadow-card);
+  --elevation-2: 0 2px 6px rgba(0, 0, 0, 0.5);
+  --elevation-3: 0 4px 12px rgba(0, 0, 0, 0.6);
+  --elevation-4: 0 8px 24px rgba(0, 0, 0, 0.7);
+}
+
+/* Light Mode: "Studio Day" */
+:root[data-theme="light"] {
+  --void-deep:        #F5F3EF;
+  --void-mid:         #FFFFFF;
+  --void-raised:      #EDE9E3;
+  --void-hover:       #E5E0D8;
+  --void-active:      #D9D3CA;
+
+  --glow-primary:     #E85D04;
+  --glow-warm:        #F48C06;
+
+  --text-bright:      #1A1612;
+  --text-warm:        #5A5448;
+  --text-dim:         #8A8276;
+  --text-muted:       #B5AFA5;
+
+  --glow-soft:        rgba(232, 93, 4, 0.12);
+  --glow-medium:      rgba(232, 93, 4, 0.25);
+  --glow-intense:     rgba(232, 93, 4, 0.4);
+
+  --shadow-card:   0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-hover:  0 12px 36px rgba(0, 0, 0, 0.12), 0 0 0 1px var(--glow-soft);
+  --shadow-modal:  0 24px 48px rgba(0, 0, 0, 0.16);
+  --shadow-glow:   0 0 24px var(--glow-soft);
+
+  --color-on-primary: #FFFFFF;
+  --color-on-amber: #FFFFFF;
+}

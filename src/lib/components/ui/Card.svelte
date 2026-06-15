@@ -23,12 +23,12 @@
 
 <style>
   .card {
-    background: var(--color-surface-container, #1c1c26);
-    border: 1px solid var(--color-outline-variant, #2a2a38);
-    border-radius: var(--radius-lg, 16px);
+    background: var(--void-raised);
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--radius-lg);
     overflow: hidden;
-    transition: box-shadow var(--transition-base, 200ms ease),
-                border-color var(--transition-base, 200ms ease);
+    transition: box-shadow var(--transition-base),
+                border-color var(--transition-base);
     position: relative;
   }
 
@@ -42,22 +42,22 @@
     background: linear-gradient(
       90deg,
       transparent,
-      rgba(255, 255, 255, 0.06),
+      var(--glow-soft),
       transparent
     );
     pointer-events: none;
   }
 
   .card:hover {
-    box-shadow: var(--elevation-2, 0 2px 6px rgba(0, 0, 0, 0.5));
-    border-color: var(--color-outline, #3a3a4a);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--text-muted);
   }
 
   .card-media {
     width: 100%;
     aspect-ratio: 16 / 9;
     overflow: hidden;
-    background: var(--color-surface-container-low, #161620);
+    background: var(--void-mid);
   }
 
   .card-media img {

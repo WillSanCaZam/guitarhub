@@ -292,8 +292,8 @@
     gap: 12px;
     margin-top: 12px;
     padding: 16px;
-    background: rgba(0, 0, 0, 0.03);
-    border-radius: 8px;
+    background: var(--void-raised);
+    border-radius: var(--radius-sm);
     border: 1px solid var(--color-outline);
   }
 
@@ -336,18 +336,19 @@
   .filter-group select,
   .filter-group input {
     padding: 8px 10px;
-    border: 1px solid var(--color-on-surface-variant);
-    border-radius: 6px;
+    border: 1px solid var(--text-muted);
+    border-radius: var(--radius-sm);
     font-size: 0.9rem;
-    background: rgba(255, 255, 255, 0.8);
+    background: var(--void-mid);
     box-sizing: border-box;
+    color: var(--text-bright);
   }
 
   .filter-group select:focus,
   .filter-group input:focus {
     outline: none;
-    border-color: var(--color-secondary);
-    box-shadow: 0 0 0 2px rgba(26, 26, 46, 0.15);
+    border-color: var(--glow-primary);
+    box-shadow: 0 0 0 2px var(--glow-soft);
   }
 
   .price-input-wrap {
@@ -396,22 +397,22 @@
       border-color: var(--color-outline-variant);
     }
 
-    .filter-group label {
-      color: var(--color-on-surface-variant);
-    }
+  .filter-group label {
+    color: var(--text-warm);
+  }
 
-    .filter-group select,
-    .filter-group input {
-      background: rgba(30, 30, 40, 0.6);
-      border-color: var(--color-outline-variant);
-      color: var(--color-on-surface);
-    }
+  .filter-group select,
+  .filter-group input {
+    background: var(--void-deep);
+    border-color: var(--text-muted);
+    color: var(--text-bright);
+  }
 
-    .filter-group select:focus,
-    .filter-group input:focus {
-      border-color: var(--color-on-surface);
-      box-shadow: 0 0 0 2px rgba(232, 232, 240, 0.15);
-    }
+  .filter-group select:focus,
+  .filter-group input:focus {
+    border-color: var(--glow-primary);
+    box-shadow: 0 0 0 2px var(--glow-soft);
+  }
 
     .currency-sign {
       color: var(--color-on-surface-variant);
