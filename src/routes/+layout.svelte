@@ -1,9 +1,11 @@
 <script>
   import { onMount } from 'svelte';
+  import { page } from '$app/stores';
   import { invoke } from '@tauri-apps/api/core';
   import { syncState } from '$lib/stores/sync.svelte';
   import { wishlistState, loadWishlist } from '$lib/stores/wishlist.svelte';
   import { authState } from '$lib/stores/auth.svelte';
+  import { drawerState } from '$lib/stores/drawerState.svelte';
   import HealthCheck from '$lib/components/community/HealthCheck.svelte';
   import AppShell from '$lib/components/layout/AppShell.svelte';
   import '$lib/styles/design-tokens.css';
@@ -14,11 +16,11 @@
   let syncing = $state(false);
   let syncError = $state(null);
   let catalogUrl = $state('https://pages.guitarhub.app/catalog.json');
-  let currentPath = $state('/');
+  let currentPath = $derived($page.url.pathname);
+  let drawer = drawerState();
 
   onMount(async () => {
     loadWishlist();
-    currentPath = window.location.pathname;
     try {
       const saved = await invoke('get_setting', { key: 'catalog_url' });
       if (saved) {
@@ -47,11 +49,30 @@
       syncing = false;
     }
   }
+
+  // Auto-close drawer on route change
+  $effect(() => {
+    if (currentPath) {
+      drawer.close();
+    }
+  });
+
+  // Auto-close drawer on breakpoint crossing
+  $effect(() => {
+    const mql = matchMedia('(min-width: 768px)');
+    function handleChange(e) {
+      if (e.matches) {
+        drawer.close();
+      }
+    }
+    mql.addEventListener('change', handleChange);
+    return () => mql.removeEventListener('change', handleChange);
+  });
 </script>
 
 <HealthCheck />
 
-<AppShell {currentPath} serverReachable={authState.serverReachable} syncing={syncing} onSync={handleSync}>
+<AppShell {currentPath} serverReachable={authState.serverReachable} syncing={syncing} onSync={handleSync} drawerOpen={drawer.open} ondrawerClose={drawer.close} ondrawerToggle={drawer.toggle}>
   {@render children()}
 </AppShell>
 

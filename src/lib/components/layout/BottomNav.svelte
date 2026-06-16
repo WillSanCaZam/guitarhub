@@ -2,9 +2,12 @@
   interface Props {
     currentPath: string;
     serverReachable: boolean;
+    drawerOpen: boolean;
+    ondrawerClose: () => void;
+    ondrawerToggle: () => void;
   }
 
-  let { currentPath, serverReachable }: Props = $props();
+  let { currentPath, serverReachable, drawerOpen, ondrawerClose, ondrawerToggle }: Props = $props();
 
   const navItems = [
     { path: '/feed', label: 'Feed', icon: '📡' },
@@ -21,6 +24,16 @@
 </script>
 
 <nav class="bottom-nav" aria-label="Mobile navigation">
+  <button
+    class="hamburger"
+    aria-expanded={drawerOpen}
+    aria-label="Toggle navigation menu"
+    onclick={ondrawerToggle}
+  >
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M3 12h18M3 6h18M3 18h18" />
+    </svg>
+  </button>
   {#each navItems as item}
     <a
       href={item.path}
@@ -48,6 +61,29 @@
     justify-content: space-around;
     z-index: var(--z-sticky);
     padding: 0 var(--space-xs);
+  }
+
+  .hamburger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-warm);
+    border-radius: var(--radius-md);
+    transition: color var(--transition-fast);
+  }
+
+  .hamburger:hover {
+    color: var(--text-bright);
+  }
+
+  .hamburger svg {
+    width: 24px;
+    height: 24px;
   }
 
   .nav-item {
@@ -87,5 +123,12 @@
 
   .nav-label {
     line-height: 1;
+  }
+
+  /* Hide hamburger on desktop */
+  @media (min-width: 768px) {
+    .hamburger {
+      display: none;
+    }
   }
 </style>

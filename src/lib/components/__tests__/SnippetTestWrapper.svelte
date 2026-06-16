@@ -30,7 +30,7 @@
 {:else if component === 'card'}
   <Card {media}>{text}</Card>
 {:else if component === 'appshell'}
-  <AppShell {currentPath} {serverReachable}>{text}</AppShell>
+  <AppShell {currentPath} {serverReachable} drawerOpen={false} ondrawerClose={() => {}} ondrawerToggle={() => {}}>{text}</AppShell>
 {:else if component === 'authguard'}
   <AuthGuard>{text}</AuthGuard>
 {/if}
