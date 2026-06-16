@@ -22,18 +22,18 @@
     display: inline-flex;
     align-items: center;
     padding: 4px 12px;
-    border-radius: var(--radius-sm, 4px);
-    background: var(--color-surface-container-high, #242430);
-    color: var(--color-on-surface-variant, #a0a0b0);
-    font-family: var(--font-sans, system-ui, sans-serif);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-container-high);
+    color: var(--color-on-surface-variant);
+    font-family: var(--font-sans);
     font-size: 0.75rem;
     font-weight: 500;
     line-height: 1.4;
-    border: 1px solid var(--color-outline-variant, #2a2a38);
+    border: 1px solid var(--color-outline-variant);
     cursor: default;
     white-space: nowrap;
-    transition: background var(--transition-fast, 100ms ease),
-                border-color var(--transition-fast, 100ms ease);
+    transition: background var(--transition-fast),
+                border-color var(--transition-fast);
   }
 
   button.chip {
@@ -41,13 +41,13 @@
   }
 
   button.chip:hover {
-    background: var(--color-surface-container-highest, #2c2c3a);
-    border-color: var(--color-outline, #3a3a4a);
-    color: var(--color-on-surface, #e8e8f0);
+    background: var(--color-surface-container-highest);
+    border-color: var(--color-outline);
+    color: var(--color-on-surface);
   }
 
   button.chip:focus-visible {
-    outline: 2px solid var(--color-primary, #d4a017);
+    outline: 2px solid var(--color-primary);
     outline-offset: 2px;
   }
 </style>

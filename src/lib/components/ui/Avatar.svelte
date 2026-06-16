@@ -39,9 +39,9 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: var(--radius-full, 9999px);
-    background: var(--color-secondary-container, #1e3a5f);
-    color: var(--color-on-secondary-container, #c8ddf5);
+    border-radius: var(--radius-full);
+    background: var(--color-secondary-container);
+    color: var(--color-on-secondary-container);
     overflow: hidden;
     flex-shrink: 0;
   }

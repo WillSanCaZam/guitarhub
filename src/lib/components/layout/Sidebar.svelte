@@ -119,7 +119,7 @@
 
   .sidebar-nav {
     flex: 1;
-    padding: var(--spacing-sm, 8px);
+    padding: var(--spacing-sm);
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -129,26 +129,26 @@
   .nav-item {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm, 8px);
-    padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
-    border-radius: var(--radius-md, 8px);
-    color: var(--color-on-surface-variant, #a0a0b0);
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    color: var(--color-on-surface-variant);
     text-decoration: none;
-    font-family: var(--font-sans, system-ui, sans-serif);
+    font-family: var(--font-sans);
     font-size: 0.875rem;
     font-weight: 400;
-    transition: background var(--transition-fast, 100ms ease),
-                color var(--transition-fast, 100ms ease);
+    transition: background var(--transition-fast),
+                color var(--transition-fast);
   }
 
   .nav-item:hover {
-    background: var(--color-surface-container, #1c1c26);
-    color: var(--color-on-surface, #e8e8f0);
+    background: var(--color-surface-container);
+    color: var(--color-on-surface);
   }
 
   .nav-item.active {
-    background: var(--color-primary-container, #3d3520);
-    color: var(--color-on-primary-container, #f5e6b8);
+    background: var(--color-primary-container);
+    color: var(--color-on-primary-container);
     font-weight: 500;
   }
 
@@ -169,12 +169,12 @@
 
   .offline-badge {
     font-size: 0.5625rem;
-    font-family: var(--font-mono, monospace);
+    font-family: var(--font-mono);
     font-weight: 600;
     padding: 1px 4px;
-    border-radius: var(--radius-xs, 2px);
-    background: var(--color-warning-container, #3d2a10);
-    color: var(--color-on-warning-container, #ffcc80);
+    border-radius: var(--radius-xs);
+    background: var(--color-warning-container);
+    color: var(--color-on-warning-container);
     letter-spacing: 0.05em;
   }
 
@@ -191,12 +191,12 @@
   }
 
   .sidebar-footer {
-    padding: var(--spacing-sm, 8px);
-    border-top: 1px solid var(--color-outline-variant, #2a2a38);
+    padding: var(--spacing-sm);
+    border-top: 1px solid var(--color-outline-variant);
   }
 
   .settings-link {
-    color: var(--color-on-surface-muted, #666680);
+    color: var(--color-on-surface-muted);
   }
 
   .sync-button {

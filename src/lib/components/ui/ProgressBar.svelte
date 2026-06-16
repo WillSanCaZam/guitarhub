@@ -27,16 +27,16 @@
   .progress-bar {
     width: 100%;
     height: 4px;
-    background: var(--color-surface-container-high, #242430);
-    border-radius: var(--radius-full, 9999px);
+    background: var(--color-surface-container-high);
+    border-radius: var(--radius-full);
     overflow: hidden;
   }
 
   .progress-fill {
     height: 100%;
-    background: var(--color-primary, #d4a017);
-    border-radius: var(--radius-full, 9999px);
-    transition: width var(--transition-base, 200ms ease);
+    background: var(--color-primary);
+    border-radius: var(--radius-full);
+    transition: width var(--transition-base);
     animation: progress-pulse 2s ease-in-out infinite;
   }
 
