@@ -6,6 +6,9 @@
   import { authState } from '$lib/stores/auth.svelte';
   import HealthCheck from '$lib/components/community/HealthCheck.svelte';
   import AppShell from '$lib/components/layout/AppShell.svelte';
+  import '$lib/styles/design-tokens.css';
+  import '$lib/styles/global.css';
+  import '$lib/styles/animations.css';
 
   let { children } = $props();
   let syncing = $state(false);

@@ -38,7 +38,7 @@
     border-radius: var(--radius-xl);
     background: var(--void-mid);
     background-image: var(--gradient-hero);
-    border: 1px solid rgba(255, 122, 61, 0.08);
+    border: 1px solid var(--glow-soft);
     overflow: hidden;
     min-height: 280px;
     display: flex;
