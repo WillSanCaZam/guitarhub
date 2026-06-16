@@ -1,6 +1,8 @@
 <script lang="ts">
   import Sidebar from './Sidebar.svelte';
   import BottomNav from './BottomNav.svelte';
+  import DrawerOverlay from './DrawerOverlay.svelte';
+  import DrawerPanel from './DrawerPanel.svelte';
   import type { Snippet } from 'svelte';
 
   interface Props {
@@ -8,10 +10,13 @@
     serverReachable: boolean;
     syncing?: boolean;
     onSync?: () => void;
+    drawerOpen: boolean;
+    ondrawerClose: () => void;
+    ondrawerToggle: () => void;
     children: Snippet;
   }
 
-  let { currentPath, serverReachable, syncing = false, onSync, children }: Props = $props();
+  let { currentPath, serverReachable, syncing = false, onSync, drawerOpen, ondrawerClose, ondrawerToggle, children }: Props = $props();
 </script>
 
 <div class="app-shell">
@@ -21,14 +26,25 @@
   </div>
 
   <!-- Content area -->
-  <main class="content">
+  <main class="content" aria-hidden={drawerOpen} inert={drawerOpen}>
     {@render children()}
   </main>
 
   <!-- Mobile: Bottom Nav (hidden on desktop via CSS) -->
   <div class="bottomnav-container">
-    <BottomNav {currentPath} {serverReachable} />
+    <BottomNav {currentPath} {serverReachable} {drawerOpen} ondrawerClose={ondrawerClose} ondrawerToggle={ondrawerToggle} />
   </div>
+
+  <!-- Drawer -->
+  <DrawerOverlay open={drawerOpen} onclose={ondrawerClose} />
+  <DrawerPanel
+    open={drawerOpen}
+    {currentPath}
+    {serverReachable}
+    {syncing}
+    {onSync}
+    onclose={ondrawerClose}
+  />
 </div>
 
 <style>

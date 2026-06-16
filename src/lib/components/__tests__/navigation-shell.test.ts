@@ -85,13 +85,13 @@ describe('Navigation Shell', () => {
 
   describe('BottomNav', () => {
     it('renders 5 navigation icons', () => {
-      render(BottomNav, { props: { currentPath: '/', serverReachable: false } });
+      render(BottomNav, { props: { currentPath: '/', serverReachable: false, drawerOpen: false, ondrawerClose: () => {}, ondrawerToggle: () => {} } });
       const navItems = screen.getAllByRole('link');
       expect(navItems.length).toBe(5);
     });
 
     it('renders navigation items', () => {
-      render(BottomNav, { props: { currentPath: '/', serverReachable: false } });
+      render(BottomNav, { props: { currentPath: '/', serverReachable: false, drawerOpen: false, ondrawerClose: () => {}, ondrawerToggle: () => {} } });
       expect(screen.getByText('Feed')).toBeInTheDocument();
       expect(screen.getByText('Explore')).toBeInTheDocument();
       expect(screen.getByText('My Gear')).toBeInTheDocument();
@@ -100,7 +100,7 @@ describe('Navigation Shell', () => {
     });
 
     it('marks active route', () => {
-      render(BottomNav, { props: { currentPath: '/feed', serverReachable: false } });
+      render(BottomNav, { props: { currentPath: '/feed', serverReachable: false, drawerOpen: false, ondrawerClose: () => {}, ondrawerToggle: () => {} } });
       const feedLink = screen.getByText('Feed').closest('a');
       expect(feedLink).toHaveAttribute('aria-current', 'page');
     });
@@ -111,7 +111,7 @@ describe('Navigation Shell', () => {
       render(SnippetTestWrapper, {
         props: { component: 'appshell', text: 'page content' },
       });
-      expect(screen.getByText(/GuitarHub/)).toBeInTheDocument();
+      expect(screen.getAllByText(/GuitarHub/).length).toBeGreaterThanOrEqual(1);
     });
 
     it('renders content area', () => {
