@@ -25,6 +25,9 @@ jobs:
           - os: macos-latest
             target: aarch64-apple-darwin
             bundles: dmg
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundles: nsis,msi
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -46,6 +49,11 @@ jobs:
             librsvg2-dev \
             libsoup-3.0-dev \
             libjavascriptcoregtk-4.1-dev
+      - name: Install WebView2 (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          # WebView2 is pre-installed on windows-latest
+          echo "WebView2 runtime available"
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -77,6 +85,27 @@ jobs:
             done
           elif [ "${{ runner.os }}" = "macOS" ]; then
             find "target/$TARGET/release/bundle/dmg" -name "*.dmg" | while read -r f; do
+              echo "Signing $f"
+              npx tauri signer sign \
+                --private-key <(echo "$TAURI_PRIVATE_KEY") \
+                --password "$TAURI_PRIVATE_KEY_PASSWORD" \
+                "$f"
+              dir=$(dirname "$f")
+              base=$(basename "$f")
+              mv "${f}.sig" "${dir}/${TARGET}-${base}.sig"
+            done
+          elif [ "${{ runner.os }}" = "Windows" ]; then
+            find "target/$TARGET/release/bundle/nsis" -name "*.exe" 2>/dev/null | while read -r f; do
+              echo "Signing $f"
+              npx tauri signer sign \
+                --private-key <(echo "$TAURI_PRIVATE_KEY") \
+                --password "$TAURI_PRIVATE_KEY_PASSWORD" \
+                "$f"
+              dir=$(dirname "$f")
+              base=$(basename "$f")
+              mv "${f}.sig" "${dir}/${TARGET}-${base}.sig"
+            done
+            find "target/$TARGET/release/bundle/msi" -name "*.msi" 2>/dev/null | while read -r f; do
               echo "Signing $f"
               npx tauri signer sign \
                 --private-key <(echo "$TAURI_PRIVATE_KEY") \
