@@ -1,4 +1,4 @@
-.PHONY: setup dev build test test-app test-scraper test-e2e lint lint-rust lint-py clean audit help
+.PHONY: setup dev build test test-app test-scraper test-e2e lint lint-rust lint-py lint-frontend clean audit help
 
 CARGO = cd src-tauri && cargo
 
@@ -61,8 +61,8 @@ test-e2e:
 
 # ── Lint ─────────────────────────────────────────────────────────────────────
 
-## Run all linters (Rust + Python)
-lint: lint-rust lint-py
+## Run all linters (Rust + Python + Frontend)
+lint: lint-rust lint-py lint-frontend
 
 ## Run only Rust linters (clippy)
 lint-rust:
@@ -84,6 +84,10 @@ lint-py:
 	else \
 		echo "No $(SCRAPER_DIR)/ directory found — skipping Python linting"; \
 	fi
+
+## Run only frontend linter (svelte-check)
+lint-frontend:
+	npx svelte-check --tsconfig ./tsconfig.json
 
 # ── Clean ────────────────────────────────────────────────────────────────────
 
