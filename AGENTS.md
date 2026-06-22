@@ -142,9 +142,8 @@ pre-commit run --all-files   # run manually on all files
 - `ruff check .` with no errors.
 - `mypy . --strict` with no errors.
 - Hexagonal architecture strict:
-  - `domain/`: pure entities. Zero imports from I/O, adapters, frameworks.
-  - `use_cases/`: orchestration of domain + ports. No direct I/O.
-  - `ports/`: abstract interfaces (ABC). No implementations.
+  - `domain.py`: pure entities (Pydantic). Zero imports from I/O, adapters, frameworks.
+  - `ports.py`: abstract interfaces (Protocol). No implementations.
   - `adapters/`: concrete implementations. May import external libs.
 - Files: snake_case. Classes: PascalCase.
 - Docstring on every public function and class.
@@ -435,7 +434,7 @@ engram tui   # visual browser of project memory
 - `ci.yml`: Python lint/test, frontend lint/test/build, Rust lint/test/audit.
 - `scrape.yml`: matrix by source, each marketplace in parallel.
 - `e2e.yml`: E2E tests with tauri-driver.
-- `release.yml`: multi-platform build (linux-x86_64, win-x86_64, macos-aarch64, macos-x86_64), SBOM with syft, publish to GitHub Releases.
+- `release.yml`: multi-platform build (linux-x86_64, macos-aarch64, win-x86_64), SBOM with syft, publish to GitHub Releases.
 
 ### Versioning (SemVer)
 
