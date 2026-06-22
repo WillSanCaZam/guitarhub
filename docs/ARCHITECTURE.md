@@ -24,12 +24,12 @@ guitarhub/
 │       ├── commands/             # Tauri IPC commands
 │       ├── services/             # Business logic
 │       ├── repository/           # Data access layer
-│       └── models/               # Domain types
+│       └── domain/               # Domain types
 ├── scraper/                      # Python scraper
-│   ├── domain/                   # Domain models
-│   ├── use_cases/                # Orchestration
-│   ├── ports/                    # Interfaces
-│   └── adapters/                 # Source adapters (Reverb)
+│   ├── domain.py                 # Domain models (Pydantic)
+│   ├── ports.py                  # ScraperPort Protocol
+│   ├── adapters/                 # Source adapters (Reverb)
+│   └── tests/                    # Unit + contract tests
 └── .github/workflows/            # CI/CD
 ```
 
@@ -62,12 +62,12 @@ External API (Reverb) → Scraper Adapter → Catalog JSON → Sync Service → 
 
 ## Design Decisions
 
-| Decision | Rationale |
-|----------|-----------|
-| **Offline-first with local SQLite + FTS5** | Users browse the full catalog without internet; FTS5 enables fast full-text search locally |
-| **Clean architecture in Rust** | Commands are thin IPC glue, services hold business logic, repositories handle data access — makes testing and swapping storage trivial |
-| **Ports-and-adapters in Python** | Adding a new marketplace only requires implementing a `SourcePort` interface; no pipeline changes needed |
-| **CSP security headers in Tauri config** | Mitigates XSS and data injection risks by restricting sources for scripts, styles, and connections |
+| Decision | Rationale | ADR |
+|----------|-----------|-----|
+| **Offline-first with local SQLite + FTS5** | Users browse the full catalog without internet; FTS5 enables fast full-text search locally | [ADR-001](adr/001-offline-first-sqlite-fts5.md) |
+| **Clean architecture in Rust** | Commands are thin IPC glue, services hold business logic, repositories handle data access — makes testing and swapping storage trivial | [ADR-002](adr/002-clean-architecture-rust.md) |
+| **Ports-and-adapters in Python** | Adding a new marketplace only requires implementing a `ScraperPort` interface; no pipeline changes needed | [ADR-003](adr/003-ports-and-adapters-scraper.md) |
+| **CSP security headers in Tauri config** | Mitigates XSS and data injection risks by restricting sources for scripts, styles, and connections | [ADR-004](adr/004-csp-security-headers.md) |
 
 ## Error Handling
 
