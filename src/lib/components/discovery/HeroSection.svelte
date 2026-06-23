@@ -275,6 +275,7 @@
     margin-bottom: var(--space-6);
   }
 
+
   /* Trending */
   .trending-row {
     display: flex;

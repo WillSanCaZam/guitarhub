@@ -66,7 +66,7 @@
   .category-pill:hover {
     border-color: var(--border-active);
     color: var(--text-secondary);
-    background: rgba(232, 86, 10, 0.06);
+    background: var(--pill-hover-bg);
   }
 
   .category-pill:focus-visible {
@@ -79,10 +79,10 @@
   }
 
   .category-pill.active {
-    background: rgba(232, 86, 10, 0.15);
+    background: var(--glow-soft);
     border-color: var(--orange-500);
     color: var(--orange-300);
-    box-shadow: 0 0 12px rgba(232, 86, 10, 0.2);
+    box-shadow: 0 0 12px var(--glow-medium);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -112,7 +112,7 @@
   }
 
   .category-pill.active .cat-count {
-    background: rgba(232, 86, 10, 0.25);
+    background: var(--glow-medium);
     color: var(--orange-300);
   }
 </style>

@@ -7,41 +7,33 @@
   let { trending, onSearch }: Props = $props();
 </script>
 
-<div class="trending-pills" role="list" aria-label="Trending searches">
+<div class="trending-section" role="list" aria-label="Trending searches">
   <span class="trending-label" aria-hidden="true">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-    </svg>
+    <span class="fire-icon" aria-hidden="true">🔥</span>
     Trending
   </span>
-  {#each trending as query}
-    <button
-      class="trending-pill"
-      onclick={() => onSearch?.(query)}
-    >
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="8"/>
-        <path d="m21 21-4.35-4.35"/>
-      </svg>
-      {query}
-    </button>
-  {/each}
+  <div class="trending-scroll">
+    {#each trending as query}
+      <button
+        class="trending-pill"
+        onclick={() => onSearch?.(query)}
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
+        {query}
+      </button>
+    {/each}
+  </div>
 </div>
 
 <style>
-  .trending-pills {
+  .trending-section {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    padding: var(--space-1) 0;
-    scrollbar-width: none;
-  }
-
-  .trending-pills::-webkit-scrollbar {
-    display: none;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
   }
 
   .trending-label {
@@ -53,6 +45,26 @@
     font-weight: 600;
     white-space: nowrap;
     flex-shrink: 0;
+  }
+
+  .fire-icon {
+    font-size: 0.9rem;
+  }
+
+  .trending-scroll {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: var(--space-1) 0;
+    scroll-behavior: smooth;
+  }
+
+  .trending-scroll::-webkit-scrollbar {
+    display: none;
   }
 
   .trending-pill {
@@ -69,12 +81,22 @@
     cursor: pointer;
     white-space: nowrap;
     scroll-snap-align: start;
-    transition: background 150ms var(--ease-snap), color 150ms var(--ease-snap);
+    transition: background 150ms var(--ease-snap), color 150ms var(--ease-snap), border-color 150ms var(--ease-snap), box-shadow 150ms var(--ease-snap);
   }
 
   .trending-pill:hover {
     background: var(--void-hover);
     color: var(--text-bright);
     border-color: var(--border-glow);
+    box-shadow: 0 0 12px var(--glow-soft);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .trending-pill {
+      transition: none;
+    }
+    .trending-scroll {
+      scroll-behavior: auto;
+    }
   }
 </style>
