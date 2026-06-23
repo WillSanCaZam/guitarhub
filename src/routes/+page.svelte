@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
-  import ProductCard from '$lib/components/ProductCard.svelte';
+  import GearCard from '$lib/components/GearCard.svelte';
+  import SkeletonLoader from '$lib/components/ui/SkeletonLoader.svelte';
   import HeroSection from '$lib/components/discovery/HeroSection.svelte';
   import FeaturedRig from '$lib/components/discovery/FeaturedRig.svelte';
   import FeedSection from '$lib/components/discovery/FeedSection.svelte';
@@ -74,7 +75,7 @@
     <FeedSection title="Price Drops" seeAllHref="/explore?sort=price_desc">
       <div class="product-scroll">
         {#each priceDropProducts as product (product.sku)}
-          <ProductCard
+          <GearCard
             {product}
             inCollection={collectionState.collectedSkus.has(product.sku)}
           />
@@ -88,7 +89,7 @@
     <FeedSection title="New Arrivals" seeAllHref="/explore?sort=newest">
       <div class="product-scroll">
         {#each newArrivals as product (product.sku)}
-          <ProductCard
+          <GearCard
             {product}
             inCollection={collectionState.collectedSkus.has(product.sku)}
           />
@@ -102,7 +103,7 @@
     <FeedSection title="Because You Viewed">
       <div class="product-scroll">
         {#each featuredProducts as product (product.sku)}
-          <ProductCard
+          <GearCard
             {product}
             inCollection={collectionState.collectedSkus.has(product.sku)}
           />
@@ -114,15 +115,7 @@
   <!-- Loading skeleton -->
   {#if loading}
     <div class="loading-state">
-      <div class="skeleton-scroll">
-        {#each Array(4) as _, i}
-          <div class="skeleton-card" style="animation-delay: {i * 60}ms">
-            <div class="skeleton-image"></div>
-            <div class="skeleton-text"></div>
-            <div class="skeleton-text short"></div>
-          </div>
-        {/each}
-      </div>
+      <SkeletonLoader variant="card-grid" count={4} />
     </div>
   {/if}
 </div>
@@ -143,49 +136,5 @@
   /* Loading */
   .loading-state {
     padding: var(--space-8) 0;
-  }
-
-  .skeleton-scroll {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: var(--space-5);
-  }
-
-  .skeleton-card {
-    border: 1px solid var(--color-outline-variant);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    background: var(--void-mid);
-    animation: fadeIn 300ms var(--ease-plug) both;
-  }
-
-  .skeleton-image {
-    width: 100%;
-    aspect-ratio: 16 / 10;
-    background: linear-gradient(90deg, var(--void-raised) 25%, var(--void-hover) 50%, var(--void-raised) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-  }
-
-  .skeleton-text {
-    height: 14px;
-    margin: 12px 16px 0;
-    background: var(--void-raised);
-    border-radius: 4px;
-  }
-
-  .skeleton-text.short {
-    width: 60%;
-    margin-bottom: 16px;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
   }
 </style>

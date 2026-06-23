@@ -2,9 +2,11 @@
   import { invoke } from '@tauri-apps/api/core';
   import { onMount, onDestroy, untrack } from 'svelte';
   import { createVirtualizer } from '@tanstack/svelte-virtual';
-  import ProductCard from './ProductCard.svelte';
+  import GearCard from './GearCard.svelte';
   import DashboardCell from './DashboardCell.svelte';
   import FilterBar from './FilterBar.svelte';
+  import SkeletonLoader from './ui/SkeletonLoader.svelte';
+  import EmptyState from './ui/EmptyState.svelte';
   import { pageFromOffset } from '$lib/types/search';
   import type { SearchResult, RawProduct } from '$lib/types/search';
   import type { FilterState } from '$lib/stores/filter.svelte';
@@ -200,20 +202,13 @@
     {/if}
 
     {#if loading && results.length === 0}
-      <div class="skeleton-grid" aria-busy="true">
-        {#each Array(6) as _, i}
-          <div class="skeleton-card" style="animation-delay: {i * 50}ms">
-            <div class="skeleton-image"></div>
-            <div class="skeleton-text"></div>
-            <div class="skeleton-text short"></div>
-          </div>
-        {/each}
-      </div>
+      <SkeletonLoader variant="card-grid" count={6} />
     {:else if searched && results.length === 0 && !loading}
-      <div class="empty-state" role="status">
-        <p>No products found for "{query.trim()}"</p>
-        <p class="empty-hint">Try a different search term or browse all products.</p>
-      </div>
+      <EmptyState
+        variant="search"
+        title="No products found"
+        description="Try a different search term or browse all products."
+      />
     {:else if results.length > 0}
       <div class="results-meta">
         <span>{total} result{total !== 1 ? 's' : ''} found</span>
@@ -234,7 +229,7 @@
             >
               <div class="product-grid">
                 {#each getRowItems(virtualRow.index) as item (item.sku)}
-                  <ProductCard
+                  <GearCard
                     product={item}
                     inCollection={collectionStore.collectedSkus.has(item.sku)}
                   />
@@ -252,11 +247,11 @@
         {/if}
       </div>
     {:else if !searched}
-      <div class="empty-state" role="status">
-        <span class="search-hint-icon" aria-hidden="true">🔍</span>
-        <p>Search to find guitar deals</p>
-        <p class="empty-hint">Type at least 3 characters and press Enter or click Search.</p>
-      </div>
+      <EmptyState
+        variant="search"
+        title="Search to find guitar deals"
+        description="Type at least 3 characters and press Enter or click Search."
+      />
     {/if}
   </DashboardCell>
 </div>
@@ -294,46 +289,6 @@
   .recent-chip:hover {
     background: var(--color-surface-container);
     color: var(--color-on-surface);
-  }
-
-  .skeleton-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 16px;
-    padding: 16px 0;
-  }
-
-  .skeleton-card {
-    border: 1px solid var(--color-outline);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    background: var(--color-surface);
-    animation: fadeIn 0.3s ease both;
-  }
-
-  .skeleton-image {
-    width: 100%;
-    aspect-ratio: 16 / 10;
-    background: linear-gradient(90deg, var(--color-surface-container) 25%, var(--color-surface-container-high) 50%, var(--color-surface-container) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-  }
-
-  .skeleton-text {
-    height: 14px;
-    margin: 12px 16px 0;
-    background: var(--color-surface-container);
-    border-radius: 4px;
-  }
-
-  .skeleton-text.short {
-    width: 60%;
-    margin-bottom: 16px;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
   }
 
   .search-bar {
@@ -386,29 +341,6 @@
     border-radius: 6px;
     margin-bottom: 16px;
     font-size: 0.9rem;
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: 48px 0;
-    color: var(--color-on-surface-muted);
-  }
-
-  .empty-state p {
-    margin: 0 0 8px;
-    font-size: 1.1rem;
-  }
-
-  .empty-hint {
-    font-size: 0.9rem !important;
-    color: var(--color-on-surface-variant);
-  }
-
-  .search-hint-icon {
-    font-size: 1.5rem;
-    display: block;
-    margin-bottom: 8px;
-    opacity: 0.6;
   }
 
   .results-meta {
@@ -507,10 +439,5 @@
     .load-more-btn {
       min-height: 44px;
     }
-  }
-
-  @keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
   }
 </style>
