@@ -1,7 +1,7 @@
 export const SELECTORS = {
   searchInput: '[data-testid="search-input"]',
   searchButton: '[data-testid="search-button"]',
-  productCard: '.product-card',
+  productCard: '.gear-card',
   syncButton: '[data-testid="sync-button"]',
   toast: '.sync-toast',
   collectionCell: '[data-testid="collection-cell"]',

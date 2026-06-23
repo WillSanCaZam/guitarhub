@@ -7,7 +7,7 @@
   import { wishlistState, addToWishlist, removeFromWishlist } from '$lib/stores/wishlist.svelte';
   import type { PriceInsight } from '$lib/types/price';
 
-  interface ProductCardProduct {
+  export interface GearCardProduct {
     sku: string;
     name: string;
     brand: string;
@@ -30,7 +30,7 @@
   }
 
   interface Props {
-    product: ProductCardProduct;
+    product: GearCardProduct;
     inCollection?: boolean;
   }
 
@@ -42,7 +42,9 @@
   let adding = $state<boolean>(false);
   let added = $state<boolean>(false);
   let imageLoaded = $state<boolean>(false);
+  let imageFadeIn = $state<boolean>(false);
   let hovered = $state<boolean>(false);
+  let wishlistAnimating = $state<boolean>(false);
 
   const isInWishlist = $derived(
     wishlistState.items.some(item => item.sku === product.sku)
@@ -78,6 +80,7 @@
   }
 
   async function handleWishlistToggle() {
+    wishlistAnimating = true
     if (isInWishlist) {
       const item = wishlistState.items.find(i => i.sku === product.sku);
       if (item) {
@@ -94,6 +97,11 @@
         product_url: product.url,
       });
     }
+    setTimeout(() => { wishlistAnimating = false }, 300)
+  }
+
+  function handleImageLoad() {
+    imageFadeIn = true
   }
 
   function handleOpenUrl() {
@@ -105,7 +113,7 @@
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div
-  class="product-card"
+  class="gear-card"
   tabindex="0"
   role="article"
   aria-labelledby="title-{product.sku}"
@@ -115,7 +123,14 @@
   <!-- Image Area -->
   <div class="image-container">
     {#if imageData}
-      <img src={imageData} alt={product.name} class="product-image" loading="lazy" />
+      <img
+        src={imageData}
+        alt={product.name}
+        class="product-image"
+        class:loaded={imageFadeIn}
+        loading="lazy"
+        onload={handleImageLoad}
+      />
     {:else}
       <div class="shimmer skeleton" aria-label={product.name}></div>
     {/if}
@@ -147,6 +162,8 @@
       <div class="quick-actions">
         <button
           class="quick-action"
+          class:wishlist-active={isInWishlist}
+          class:wishlist-bounce={wishlistAnimating}
           onclick={handleWishlistToggle}
           aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
         >
@@ -207,6 +224,9 @@
       {#if product.is_best_price}
         <span class="badge badge-best">Best Price</span>
       {/if}
+      {#if product.condition}
+        <span class="badge badge-condition-{product.condition.toLowerCase()}">{product.condition}</span>
+      {/if}
     </div>
 
     <div class="product-actions">
@@ -216,7 +236,7 @@
         </button>
       {/if}
       {#if !inCollection}
-        <button class="action-btn add-btn" onclick={handleAdd} disabled={adding} data-testid="add-to-collection">
+        <button class="action-btn add-btn" class:added onclick={handleAdd} disabled={adding} data-testid="add-to-collection">
           {#if added}
             Added ✓
           {:else if adding}
@@ -231,31 +251,40 @@
 </div>
 
 <style>
-  .product-card {
-    border: 1px solid rgba(255, 122, 61, 0.06);
+  .gear-card {
+    border: 1px solid var(--glow-card-border);
     border-radius: var(--radius-lg);
     overflow: hidden;
     background: var(--void-mid);
     box-shadow: var(--shadow-card);
     display: flex;
     flex-direction: column;
-    transition: transform 350ms var(--ease-plug),
-                box-shadow 350ms var(--ease-plug),
-                border-color 350ms var(--ease-plug);
+    transition: transform 250ms var(--ease-plug),
+                box-shadow 250ms var(--ease-plug),
+                border-color 250ms var(--ease-plug);
     position: relative;
     min-width: 300px;
     max-width: 400px;
   }
 
-  .product-card:hover {
-    transform: scale(1.03);
-    box-shadow: var(--shadow-hover);
-    border-color: rgba(255, 122, 61, 0.2);
+  .gear-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--glow-card-hover-border), 0 0 24px var(--glow-soft);
+    border-color: var(--glow-card-hover-border);
   }
 
-  .product-card:focus-visible {
+  .gear-card:focus-visible {
     outline: 2px solid var(--glow-primary);
     outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gear-card {
+      transition: none;
+    }
+    .gear-card:hover {
+      transform: none;
+    }
   }
 
   /* Image */
@@ -272,24 +301,36 @@
     height: 100%;
     object-fit: cover;
     display: block;
-    transition: transform 350ms var(--ease-plug);
+    opacity: 0;
+    transition: opacity 400ms var(--ease-fade), transform 350ms var(--ease-plug);
   }
 
-  .product-card:hover .product-image {
+  .product-image.loaded {
+    opacity: 1;
+  }
+
+  .gear-card:hover .product-image.loaded {
     transform: scale(1.05);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .product-image {
+      transition: opacity 100ms var(--ease-fade);
+    }
+    .product-image.loaded {
+      opacity: 1;
+    }
+    .gear-card:hover .product-image.loaded {
+      transform: none;
+    }
   }
 
   .shimmer {
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, var(--void-raised) 25%, var(--glow-soft) 50%, var(--void-raised) 75%);
+    background: linear-gradient(90deg, var(--shimmer-base) 25%, var(--shimmer-highlight) 50%, var(--shimmer-base) 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
-  }
-
-  @keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
   }
 
   /* Store Logo */
@@ -305,7 +346,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-subtle);
   }
 
   .store-logo img {
@@ -327,7 +368,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-subtle);
   }
 
   /* Deal Badge */
@@ -372,7 +413,7 @@
     height: 32px;
     border-radius: var(--radius-pill);
     background: var(--void-mid);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-active);
     color: var(--text-bright);
     display: flex;
     align-items: center;
@@ -384,6 +425,26 @@
   .quick-action:hover {
     background: var(--void-hover);
     transform: scale(1.1);
+  }
+
+  .quick-action.wishlist-active {
+    color: var(--glow-hot);
+  }
+
+  .quick-action.wishlist-bounce {
+    animation: heartBounce 300ms var(--ease-strum);
+  }
+
+  @keyframes heartBounce {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .quick-action.wishlist-bounce {
+      animation: none;
+    }
   }
 
   .quick-action svg {
@@ -398,7 +459,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(7, 7, 12, 0.6);
+    background: var(--surface-overlay);
     animation: fadeIn 200ms var(--ease-plug);
   }
 
@@ -468,18 +529,58 @@
   }
 
   .badge-stock {
-    background: rgba(0, 230, 118, 0.12);
+    background: var(--glow-success);
     color: var(--success);
   }
 
   .badge-oos {
-    background: rgba(255, 23, 68, 0.12);
+    background: var(--glow-danger);
     color: var(--danger);
   }
 
   .badge-best {
-    background: rgba(255, 215, 0, 0.12);
+    background: var(--glow-gold-soft);
     color: var(--glow-gold);
+  }
+
+  .badge-condition-new {
+    background: var(--condition-new);
+    color: var(--success);
+  }
+
+  .badge-condition-excellent {
+    background: var(--condition-excellent);
+    color: var(--success);
+  }
+
+  .badge-condition-good {
+    background: var(--condition-good);
+    color: var(--glow-warm);
+  }
+
+  .badge-condition-fair {
+    background: var(--condition-fair);
+    color: var(--danger);
+  }
+
+  .add-btn.added {
+    background: var(--glow-success);
+    color: var(--success);
+    border-color: var(--success);
+    animation: addBounce 400ms var(--ease-strum);
+  }
+
+  @keyframes addBounce {
+    0% { transform: scale(1); }
+    30% { transform: scale(0.96); }
+    60% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .add-btn.added {
+      animation: none;
+    }
   }
 
   /* Actions */

@@ -17,12 +17,37 @@
   }
 
   let { currentPath, serverReachable, syncing = false, onSync, drawerOpen, ondrawerClose, ondrawerToggle, children }: Props = $props();
+
+  let sidebarCollapsed = $state(false);
+
+  $effect(() => {
+    if (typeof localStorage !== 'undefined') {
+      sidebarCollapsed = localStorage.getItem('guitarhub:sidebar-collapsed') === 'true';
+    }
+  });
+
+  function handleToggleCollapse() {
+    sidebarCollapsed = !sidebarCollapsed;
+  }
+
+  $effect(() => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('guitarhub:sidebar-collapsed', String(sidebarCollapsed));
+    }
+  });
 </script>
 
-<div class="app-shell">
+<div class="app-shell" class:sidebar-collapsed={sidebarCollapsed}>
   <!-- Desktop: Sidebar (hidden on mobile via CSS) -->
   <div class="sidebar-container">
-    <Sidebar {currentPath} {serverReachable} {syncing} {onSync} />
+    <Sidebar
+      {currentPath}
+      {serverReachable}
+      {syncing}
+      {onSync}
+      collapsed={sidebarCollapsed}
+      onToggleCollapse={handleToggleCollapse}
+    />
   </div>
 
   <!-- Content area -->
@@ -61,6 +86,7 @@
     flex: 1;
     min-height: 100vh;
     padding-bottom: 0;
+    transition: margin-left var(--sidebar-transition);
   }
 
   .bottomnav-container {
@@ -74,12 +100,22 @@
     }
 
     .content {
-      margin-left: 240px;
+      margin-left: var(--sidebar-expanded);
       padding-bottom: 0;
+    }
+
+    .sidebar-collapsed .content {
+      margin-left: var(--sidebar-collapsed);
     }
 
     .bottomnav-container {
       display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .content {
+      transition: none;
     }
   }
 
