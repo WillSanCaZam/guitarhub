@@ -1,4 +1,6 @@
 <script lang="ts">
+  import CategoryPills from '$lib/components/ui/CategoryPills.svelte';
+
   interface Props {
     onSearch?: (query: string) => void;
   }
@@ -7,6 +9,7 @@
 
   let searchQuery = $state('');
   let currentPlaceholder = $state(0);
+  let selectedCategories = $state<string[]>([]);
 
   const placeholders = [
     'Stratocaster...',
@@ -17,14 +20,14 @@
   ];
 
   const categories = [
-    { label: 'Guitars', icon: '🎸' },
-    { label: 'Amps', icon: '🔊' },
-    { label: 'Pedals', icon: '🎛️' },
-    { label: 'Pickups', icon: '🎵' },
-    { label: 'Drums', icon: '🥁' },
-    { label: 'Keys', icon: '🎹' },
-    { label: 'Studio', icon: '🎤' },
-    { label: 'Accessories', icon: '🔧' },
+    { id: 'guitars', label: 'Guitars', icon: '🎸' },
+    { id: 'amps', label: 'Amps', icon: '🔊' },
+    { id: 'pedals', label: 'Pedals', icon: '🎛️' },
+    { id: 'pickups', label: 'Pickups', icon: '🎵' },
+    { id: 'drums', label: 'Drums', icon: '🥁' },
+    { id: 'keys', label: 'Keys', icon: '🎹' },
+    { id: 'studio', label: 'Studio', icon: '🎤' },
+    { id: 'accessories', label: 'Accessories', icon: '🔧' },
   ];
 
   const trending = [
@@ -35,6 +38,14 @@
     'Neural DSP',
     'Strymon BigSky',
   ];
+
+  function handleCategoryToggle(id: string) {
+    if (selectedCategories.includes(id)) {
+      selectedCategories = selectedCategories.filter(c => c !== id);
+    } else {
+      selectedCategories = [...selectedCategories, id];
+    }
+  }
 
   function handleSearch() {
     if (searchQuery.trim().length >= 3) {
@@ -90,13 +101,12 @@
     </div>
 
     <!-- Category Pills -->
-    <div class="category-pills">
-      {#each categories as cat}
-        <button class="category-pill">
-          <span class="cat-icon">{cat.icon}</span>
-          <span class="cat-label">{cat.label}</span>
-        </button>
-      {/each}
+    <div class="category-pills-wrap">
+      <CategoryPills
+        {categories}
+        selected={selectedCategories}
+        onToggle={handleCategoryToggle}
+      />
     </div>
 
     <!-- Trending -->
@@ -260,38 +270,9 @@
     background: var(--glow-warm);
   }
 
-  /* Categories */
-  .category-pills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    justify-content: center;
+  /* Categories (delegated to CategoryPills component) */
+  .category-pills-wrap {
     margin-bottom: var(--space-6);
-  }
-
-  .category-pill {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-2) var(--space-4);
-    height: 44px;
-    border-radius: var(--radius-pill);
-    background: var(--void-mid);
-    color: var(--text-warm);
-    border: 1px solid var(--border-subtle);
-    cursor: pointer;
-    font-size: 0.85rem;
-    font-weight: 500;
-    transition: background 150ms var(--ease-snap), border-color 150ms var(--ease-snap);
-  }
-
-  .category-pill:hover {
-    background: var(--void-hover);
-    border-color: var(--border-hover);
-  }
-
-  .cat-icon {
-    font-size: 1rem;
   }
 
   /* Trending */
