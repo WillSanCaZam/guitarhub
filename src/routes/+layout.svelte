@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
+  import { fade } from 'svelte/transition';
   import { invoke } from '@tauri-apps/api/core';
   import { syncState } from '$lib/stores/sync.svelte';
   import { wishlistState, loadWishlist } from '$lib/stores/wishlist.svelte';
@@ -73,7 +74,11 @@
 <HealthCheck />
 
 <AppShell {currentPath} serverReachable={authState.serverReachable} syncing={syncing} onSync={handleSync} drawerOpen={drawer.open} ondrawerClose={drawer.close} ondrawerToggle={drawer.toggle}>
-  {@render children()}
+  {#key currentPath}
+    <div class="page-transition" in:fade={{ duration: 150, delay: 50 }} out:fade={{ duration: 100 }}>
+      {@render children()}
+    </div>
+  {/key}
 </AppShell>
 
 <style>
@@ -82,5 +87,15 @@
     font-family: var(--font-body);
     background: var(--void-deep);
     color: var(--text-warm);
+  }
+
+  .page-transition {
+    min-height: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .page-transition {
+      animation: none !important;
+    }
   }
 </style>

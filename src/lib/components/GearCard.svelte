@@ -269,7 +269,7 @@
 
   .gear-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--glow-card-hover-border), 0 0 24px var(--glow-soft);
+    box-shadow: 0 8px 32px var(--surface-backdrop), 0 0 0 1px var(--glow-card-hover-border), 0 0 24px var(--glow-soft);
     border-color: var(--glow-card-hover-border);
   }
 
