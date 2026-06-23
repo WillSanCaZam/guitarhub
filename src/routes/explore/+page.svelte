@@ -4,6 +4,7 @@
   import { communityState, loadFeed } from '$lib/stores/community.svelte';
   import LessonCard from '$lib/components/community/LessonCard.svelte';
   import AuthGuard from '$lib/components/auth/AuthGuard.svelte';
+  import EmptyState from '$lib/components/ui/EmptyState.svelte';
   import type { Lesson } from '$lib/types/community';
   import { onMount } from 'svelte';
 
@@ -73,9 +74,11 @@
     </div>
 
     {#if filteredLessons().length === 0 && !communityState.loading}
-      <div class="empty-state">
-        <p>No results found. Try a different search term.</p>
-      </div>
+      <EmptyState
+        variant="search"
+        title="No results found"
+        description="Try a different search term."
+      />
     {/if}
   </div>
 </AuthGuard>
@@ -152,11 +155,5 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: var(--spacing-md);
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: var(--spacing-xl);
-    color: var(--color-on-surface-muted);
   }
 </style>

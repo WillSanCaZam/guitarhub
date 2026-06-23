@@ -3,6 +3,7 @@
 <script lang="ts">
   import { communityState, loadFeed } from '$lib/stores/community.svelte';
   import AuthGuard from '$lib/components/auth/AuthGuard.svelte';
+  import EmptyState from '$lib/components/ui/EmptyState.svelte';
   import type { Riff } from '$lib/types/community';
   import { onMount } from 'svelte';
 
@@ -51,9 +52,11 @@
         {/each}
       </div>
     {:else}
-      <div class="empty-state">
-        <p>No saved riffs yet. Browse the Explore page to find riffs.</p>
-      </div>
+      <EmptyState
+        variant="riffs"
+        title="No saved riffs yet"
+        description="Browse the Explore page to find riffs."
+      />
     {/if}
   </div>
 </AuthGuard>
@@ -150,11 +153,5 @@
     font-size: 0.75rem;
     color: var(--color-secondary);
     font-family: var(--font-mono);
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: var(--spacing-xl);
-    color: var(--color-on-surface-muted);
   }
 </style>

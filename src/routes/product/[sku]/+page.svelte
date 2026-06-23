@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   import { invoke } from '@tauri-apps/api/core';
   import ProductDetail from '$lib/components/product/ProductDetail.svelte';
+  import SkeletonLoader from '$lib/components/ui/SkeletonLoader.svelte';
   import type { RawProduct } from '$lib/types/search';
 
   let product = $state<RawProduct | null>(null);
@@ -47,14 +48,7 @@
 
   {#if loading}
     <div class="loading-state" aria-busy="true">
-      <div class="skeleton-detail">
-        <div class="skeleton-gallery"></div>
-        <div class="skeleton-info">
-          <div class="skeleton-text wide"></div>
-          <div class="skeleton-text"></div>
-          <div class="skeleton-text short"></div>
-        </div>
-      </div>
+      <SkeletonLoader variant="detail" />
     </div>
   {:else if error}
     <div class="error-state" role="alert">
@@ -120,41 +114,5 @@
   .error-state a {
     color: var(--glow-primary);
     text-decoration: none;
-  }
-
-  .skeleton-detail {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-8);
-  }
-
-  .skeleton-gallery {
-    aspect-ratio: 4 / 3;
-    border-radius: var(--radius-lg);
-    background: linear-gradient(90deg, var(--void-raised) 25%, var(--void-hover) 50%, var(--void-raised) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-  }
-
-  .skeleton-info {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-  }
-
-  .skeleton-text {
-    height: 18px;
-    border-radius: 4px;
-    background: linear-gradient(90deg, var(--void-raised) 25%, var(--void-hover) 50%, var(--void-raised) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-  }
-
-  .skeleton-text.wide { width: 80%; }
-  .skeleton-text.short { width: 40%; }
-
-  @keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
   }
 </style>

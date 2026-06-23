@@ -5,6 +5,7 @@
   import { communityState, loadFeed, likeContent } from '$lib/stores/community.svelte';
   import FeedCard from '$lib/components/community/FeedCard.svelte';
   import AuthGuard from '$lib/components/auth/AuthGuard.svelte';
+  import EmptyState from '$lib/components/ui/EmptyState.svelte';
 
   onMount(() => {
     loadFeed(true);
@@ -50,9 +51,11 @@
     {/if}
 
     {#if !communityState.loading && communityState.feed.length === 0}
-      <div class="empty-state">
-        <p>No feed items yet. Follow some users to see their activity here.</p>
-      </div>
+      <EmptyState
+        variant="feed"
+        title="No feed items yet"
+        description="Follow some users to see their activity here."
+      />
     {/if}
   </div>
 </AuthGuard>
@@ -106,11 +109,5 @@
 
   .load-more:hover {
     background: var(--color-surface-container-high);
-  }
-
-  .empty-state {
-    text-align: center;
-    padding: var(--spacing-xl);
-    color: var(--color-on-surface-muted);
   }
 </style>

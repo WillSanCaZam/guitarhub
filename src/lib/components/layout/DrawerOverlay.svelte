@@ -19,7 +19,7 @@
   .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--surface-backdrop);
     z-index: var(--z-overlay);
     opacity: 0;
     pointer-events: none;

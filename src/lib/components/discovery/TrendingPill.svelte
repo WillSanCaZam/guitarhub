@@ -65,7 +65,7 @@
     color: var(--text-warm);
     font-size: 0.8rem;
     font-weight: 500;
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-subtle);
     cursor: pointer;
     white-space: nowrap;
     scroll-snap-align: start;
@@ -75,6 +75,6 @@
   .trending-pill:hover {
     background: var(--void-hover);
     color: var(--text-bright);
-    border-color: rgba(255, 122, 61, 0.15);
+    border-color: var(--border-glow);
   }
 </style>

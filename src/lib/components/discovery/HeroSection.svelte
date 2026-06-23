@@ -134,8 +134,8 @@
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(ellipse at 20% 50%, rgba(255, 122, 61, 0.08) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 50%, rgba(77, 225, 255, 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at 20% 50%, var(--glow-featured) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 50%, var(--glow-cool-soft) 0%, transparent 50%),
       radial-gradient(ellipse at 50% 0%, var(--glow-soft) 0%, transparent 60%);
     animation: gradientShift 20s ease infinite;
     background-size: 200% 200%;
@@ -207,9 +207,9 @@
   .search-input-wrap {
     display: flex;
     align-items: center;
-    background: rgba(15, 15, 24, 0.9);
+    background: var(--surface-glass);
     backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 122, 61, 0.1);
+    border: 1px solid var(--border-glow);
     border-radius: var(--radius-lg);
     padding: var(--space-1);
     height: 64px;
@@ -278,7 +278,7 @@
     border-radius: var(--radius-pill);
     background: var(--void-mid);
     color: var(--text-warm);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-subtle);
     cursor: pointer;
     font-size: 0.85rem;
     font-weight: 500;
@@ -287,7 +287,7 @@
 
   .category-pill:hover {
     background: var(--void-hover);
-    border-color: rgba(255, 122, 61, 0.2);
+    border-color: var(--border-hover);
   }
 
   .cat-icon {
@@ -316,7 +316,7 @@
     background: var(--void-raised);
     color: var(--text-warm);
     font-size: 0.8rem;
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-subtle);
     cursor: pointer;
     transition: background 150ms var(--ease-snap);
   }
