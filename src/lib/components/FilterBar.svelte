@@ -165,7 +165,7 @@
     border-radius: var(--radius-pill);
     background: var(--void-mid);
     color: var(--text-warm);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-subtle);
     font-size: 0.85rem;
     font-weight: 500;
     cursor: pointer;
@@ -176,7 +176,7 @@
 
   .chip:hover {
     background: var(--void-hover);
-    border-color: rgba(255, 122, 61, 0.15);
+    border-color: var(--border-hover);
   }
 
   .chip.active {
@@ -232,7 +232,7 @@
     padding: var(--space-4);
     background: var(--void-raised);
     border-radius: var(--radius-md);
-    border: 1px solid rgba(255, 122, 61, 0.06);
+    border: 1px solid var(--border-subtle);
   }
 
   .filter-group {
@@ -314,7 +314,7 @@
   }
 
   .filter-select:hover {
-    border-color: rgba(255, 122, 61, 0.2);
+    border-color: var(--border-hover);
   }
 
   .filter-select:focus {

@@ -169,6 +169,82 @@
   --elevation-2: 0 2px 6px rgba(0, 0, 0, 0.5);
   --elevation-3: 0 4px 12px rgba(0, 0, 0, 0.6);
   --elevation-4: 0 8px 24px rgba(0, 0, 0, 0.7);
+
+  /* ── SEMANTIC GLOW: Success / Danger ────────────────────────── */
+  --glow-success:   rgba(0, 230, 118, 0.15);
+  --glow-danger:    rgba(255, 23, 68, 0.15);
+  --glow-gold-soft: rgba(255, 215, 0, 0.15);
+  --glow-cool-soft: rgba(77, 225, 255, 0.15);
+
+  /* ── SURFACES: Overlays & Glass ─────────────────────────────── */
+  --surface-overlay: rgba(7, 7, 12, 0.6);
+  --surface-glass:   rgba(15, 15, 24, 0.9);
+
+  /* ── BORDERS: Semantic Accents ──────────────────────────────── */
+  --border-subtle:  rgba(255, 255, 255, 0.06);
+  --border-active:  rgba(255, 122, 61, 0.2);
+  --border-glow:    rgba(255, 122, 61, 0.1);
+  --border-success: rgba(0, 230, 118, 0.2);
+  --border-hover:   rgba(255, 122, 61, 0.2);
+
+  /* ── SHIMMER: Skeleton Placeholder ──────────────────────────── */
+  --shimmer-base:      var(--void-raised);
+  --shimmer-highlight: var(--glow-soft);
+
+  /* ── SIDEBAR: Collapse Dimensions ───────────────────────────── */
+  --sidebar-expanded:   240px;
+  --sidebar-collapsed:  64px;
+  --sidebar-transition: 200ms var(--ease-plug);
+
+  /* ── TRANSITIONS: Semantic Durations ────────────────────────── */
+  --transition-page:  150ms var(--ease-fade);
+  --transition-bounce: 300ms var(--ease-strum);
+  --transition-pulse:  400ms var(--ease-fade);
+
+  /* ── CARD GLOW: Border States ───────────────────────────────── */
+  --glow-card-border:      rgba(255, 122, 61, 0.06);
+  --glow-card-hover-border: rgba(255, 122, 61, 0.2);
+  --glow-featured:         rgba(255, 122, 61, 0.08);
+
+  /* ── SCROLL: Fade Edges ─────────────────────────────────────── */
+  --scroll-fade-left:  linear-gradient(90deg, var(--void-mid), transparent);
+  --scroll-fade-right: linear-gradient(270deg, var(--void-mid), transparent);
+
+  /* ── PILL: Category Selection ───────────────────────────────── */
+  --pill-selected-bg:  var(--glow-primary);
+  --pill-selected-text: var(--void-deep);
+  --pill-hover-bg:     var(--void-hover);
+
+  /* ── TOOLTIP ────────────────────────────────────────────────── */
+  --tooltip-bg:  var(--void-active);
+  --tooltip-text: var(--text-bright);
+
+  /* ── EMPTY STATE ────────────────────────────────────────────── */
+  --empty-state-illustration: var(--text-muted);
+  --empty-state-title:        var(--text-bright);
+  --empty-state-description:  var(--text-warm);
+
+  /* ── SKELETON ───────────────────────────────────────────────── */
+  --skeleton-card-height:  340px;
+  --skeleton-image-ratio:  16 / 10;
+
+  /* ── CAROUSEL ───────────────────────────────────────────────── */
+  --carousel-gap: var(--space-4);
+
+  /* ── MOMENTUM SCROLL ────────────────────────────────────────── */
+  --momentum-scroll: auto;
+
+  /* ── CONDITION BADGES ──────────────────────────────────────── */
+  --condition-new:       #0A3D2E;
+  --condition-excellent: #1A2D0A;
+  --condition-good:      #2D1A0A;
+  --condition-fair:      #2D0A0A;
+
+  /* ── SURFACE MISC ───────────────────────────────────────────── */
+  --surface-backdrop: rgba(0, 0, 0, 0.5);
+  --shadow-subtle:    rgba(0, 0, 0, 0.2);
+  --surface-dim:      rgba(0, 0, 0, 0.03);
+  --surface-bright:   rgba(255, 255, 255, 0.05);
 }
 
 /* Light Mode: "Studio Day" */
@@ -198,4 +274,32 @@
 
   --color-on-primary: #FFFFFF;
   --color-on-amber: #FFFFFF;
+
+  /* Semantic glow — light overrides */
+  --glow-success:   rgba(0, 230, 118, 0.12);
+  --glow-danger:    rgba(255, 23, 68, 0.12);
+  --glow-gold-soft: rgba(255, 215, 0, 0.12);
+  --glow-cool-soft: rgba(77, 225, 255, 0.12);
+
+  /* Surfaces — light overrides */
+  --surface-overlay: rgba(0, 0, 0, 0.4);
+  --surface-glass:   rgba(255, 255, 255, 0.85);
+
+  /* Borders — light overrides */
+  --border-subtle:  rgba(0, 0, 0, 0.06);
+  --border-active:  rgba(232, 93, 4, 0.2);
+  --border-glow:    rgba(232, 93, 4, 0.1);
+  --border-success: rgba(0, 230, 118, 0.2);
+  --border-hover:   rgba(232, 93, 4, 0.2);
+
+  /* Card glow — light overrides */
+  --glow-card-border:      rgba(232, 93, 4, 0.04);
+  --glow-card-hover-border: rgba(232, 93, 4, 0.15);
+  --glow-featured:         rgba(232, 93, 4, 0.06);
+
+  /* Surface misc — light overrides */
+  --surface-backdrop: rgba(0, 0, 0, 0.3);
+  --shadow-subtle:    rgba(0, 0, 0, 0.08);
+  --surface-dim:      rgba(0, 0, 0, 0.02);
+  --surface-bright:   rgba(0, 0, 0, 0.03);
 }

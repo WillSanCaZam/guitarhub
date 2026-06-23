@@ -90,7 +90,7 @@
   }
 
   .store-row.cheapest {
-    border: 1px solid rgba(0, 230, 118, 0.2);
+    border: 1px solid var(--border-success);
   }
 
   .store-info {
@@ -139,7 +139,7 @@
     font-weight: 700;
     padding: 2px 6px;
     border-radius: var(--radius-sm);
-    background: rgba(0, 230, 118, 0.12);
+    background: var(--glow-success);
     color: var(--success);
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -150,7 +150,7 @@
     border-radius: var(--radius-sm);
     background: var(--void-raised);
     color: var(--glow-primary);
-    border: 1px solid rgba(255, 122, 61, 0.15);
+    border: 1px solid var(--border-glow);
     font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;

@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   import PriceDisplay from '$lib/components/ui/PriceDisplay.svelte';
   import StarRating from '$lib/components/ui/StarRating.svelte';
+  import SkeletonLoader from '$lib/components/ui/SkeletonLoader.svelte';
   import StoreComparison from '$lib/components/product/StoreComparison.svelte';
   import PriceHistory from '$lib/components/product/PriceHistory.svelte';
   import { addToWishlist, removeFromWishlist, wishlistState } from '$lib/stores/wishlist.svelte';
@@ -373,12 +374,12 @@
   }
 
   .badge-stock {
-    background: rgba(0, 230, 118, 0.12);
+    background: var(--glow-success);
     color: var(--success);
   }
 
   .badge-best {
-    background: rgba(255, 215, 0, 0.12);
+    background: var(--glow-gold-soft);
     color: var(--glow-gold);
   }
 
@@ -429,7 +430,7 @@
   .section {
     padding: var(--space-6);
     background: var(--void-mid);
-    border: 1px solid rgba(255, 122, 61, 0.06);
+    border: 1px solid var(--border-subtle);
     border-radius: var(--radius-lg);
   }
 
@@ -487,7 +488,7 @@
     padding: var(--space-4);
     background: var(--void-raised);
     border-radius: var(--radius-md);
-    border: 1px solid rgba(255, 122, 61, 0.06);
+    border: 1px solid var(--border-subtle);
   }
 
   .review-header {
@@ -550,11 +551,6 @@
 
   .vote-btn svg {
     fill: currentColor;
-  }
-
-  @keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
   }
 
   @media (max-width: 768px) {

@@ -75,7 +75,7 @@
     gap: 10px;
     font-size: 0.85rem;
     padding: 6px 8px;
-    background: rgba(0, 0, 0, 0.03);
+    background: var(--surface-dim);
     border-radius: 6px;
   }
 
@@ -102,7 +102,7 @@
 
   @media (prefers-color-scheme: dark) {
     .drop-item {
-      background: rgba(255, 255, 255, 0.05);
+      background: var(--surface-bright);
     }
 
     .drop-sku {
