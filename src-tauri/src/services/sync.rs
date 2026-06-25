@@ -32,6 +32,7 @@ pub struct SyncResult {
     pub source_id: String,
     pub products_loaded: u32,
     pub products_updated: u32,
+    pub delisted: u32,
     pub state: SyncState,
     pub progress: f32,
     pub drops: Vec<PriceDrop>,
@@ -116,7 +117,7 @@ impl CatalogSyncService {
         &self,
         source_id: &str,
         products: &[RawProduct],
-    ) -> Result<(u32, u32, Vec<PriceDrop>), AppError> {
+    ) -> Result<(u32, u32, Vec<PriceDrop>, u32), AppError> {
         let total = products.len() as u32;
         let mut drops: Vec<PriceDrop> = Vec::new();
         let synced_at = std::time::SystemTime::now()
@@ -204,7 +205,78 @@ impl CatalogSyncService {
                 }
             }
         }
-        Ok((total, updated, drops))
+
+        // Phase 4: Soft-delete detection — mark as inactive any previously-active
+        // SKU from this source that was NOT present in the current sync batch.
+        //
+        // Uses a scoped table to hold current batch SKUs, then runs a source-scoped
+        // UPDATE to delist absent items. A regular table (not TEMP) is used so that
+        // the table is visible across all connections in the pool.
+        let delisted = if products.is_empty() {
+            // When batch is empty, delist ALL currently-active products for this source.
+            let result = sqlx::query(
+                "UPDATE products_meta
+                 SET is_active = 0, delisted_at = ?2
+                 WHERE source_id = ?1
+                   AND is_active = 1",
+            )
+            .bind(source_id)
+            .bind(synced_at)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+            result.rows_affected() as u32
+        } else {
+            // Create batch SKU table, populate it, diff, then clean up.
+            sqlx::query(
+                "CREATE TABLE IF NOT EXISTS _sync_batch_skus (
+                    sku TEXT PRIMARY KEY
+                )",
+            )
+            .execute(&self.pool)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+            // Clear any previous batch data
+            sqlx::query("DELETE FROM _sync_batch_skus")
+                .execute(&self.pool)
+                .await
+                .map_err(|e| AppError::Database(e.to_string()))?;
+
+            // Insert current batch SKUs
+            for p in products {
+                sqlx::query("INSERT OR IGNORE INTO _sync_batch_skus (sku) VALUES (?1)")
+                    .bind(&p.sku)
+                    .execute(&self.pool)
+                    .await
+                    .map_err(|e| AppError::Database(e.to_string()))?;
+            }
+
+            // Delist active SKUs from this source not in the batch
+            let result = sqlx::query(
+                "UPDATE products_meta
+                 SET is_active = 0, delisted_at = ?2
+                 WHERE source_id = ?1
+                   AND is_active = 1
+                   AND sku NOT IN (SELECT sku FROM _sync_batch_skus)",
+            )
+            .bind(source_id)
+            .bind(synced_at)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+            // Clean up the table
+            sqlx::query("DROP TABLE IF EXISTS _sync_batch_skus")
+                .execute(&self.pool)
+                .await
+                .map_err(|e| AppError::Database(e.to_string()))?;
+
+            result.rows_affected() as u32
+        };
+
+        Ok((total, updated, drops, delisted))
     }
 
     /// Read a local catalog JSON file and upsert all products into the database.
@@ -238,7 +310,7 @@ impl CatalogSyncService {
         self.set_state(source_id, SyncState::Inserting.as_str(), None)
             .await?;
 
-        let (loaded, updated, drops) = self
+        let (loaded, updated, drops, delisted) = self
             .upsert_products(source_id, &catalog.products)
             .await?;
 
@@ -251,6 +323,7 @@ impl CatalogSyncService {
             products_updated: updated,
             state: SyncState::Done,
             progress: 1.0,
+            delisted,
             drops,
             drops_sent: 0,
         })
@@ -293,8 +366,9 @@ impl SyncService for CatalogSyncService {
                 products_loaded: 0,
                 products_updated: 0,
                 state: SyncState::Done,
-                progress: 1.0,
-                drops: vec![],
+            progress: 1.0,
+            delisted: 0,
+            drops: vec![],
                 drops_sent: 0,
             });
         }
@@ -343,7 +417,7 @@ impl SyncService for CatalogSyncService {
         self.set_state(source_id, SyncState::Inserting.as_str(), None)
             .await?;
 
-        let (loaded, updated, drops) = self
+        let (loaded, updated, drops, delisted) = self
             .upsert_products(source_id, &catalog.products)
             .await?;
 
@@ -356,6 +430,7 @@ impl SyncService for CatalogSyncService {
             products_updated: updated,
             state: SyncState::Done,
             progress: 1.0,
+            delisted,
             drops,
             drops_sent: 0,
         })
@@ -390,7 +465,7 @@ impl SyncService for CatalogSyncService {
         self.set_state(source_id, SyncState::Inserting.as_str(), None)
             .await?;
 
-        let (loaded, updated, drops) = self
+        let (loaded, updated, drops, delisted) = self
             .upsert_products(source_id, &catalog.products)
             .await?;
 
@@ -403,6 +478,7 @@ impl SyncService for CatalogSyncService {
             products_updated: updated,
             state: SyncState::Done,
             progress: 1.0,
+            delisted,
             drops,
             drops_sent: 0,
         })
@@ -430,6 +506,7 @@ mod tests {
             source_id: "test".to_string(),
             products_loaded: 0,
             products_updated: 0,
+            delisted: 0,
             state: SyncState::Done,
             progress: 1.0,
             drops: Vec::<PriceDrop>::new(),
@@ -437,6 +514,42 @@ mod tests {
         };
         assert!(r.drops.is_empty(), "fresh SyncResult.drops must be empty");
         assert_eq!(r.drops_sent, 0, "fresh SyncResult.drops_sent must be 0");
+    }
+
+    // ── SyncResult.delisted field test (RED — does not exist yet) ─────────
+
+    #[tokio::test]
+    async fn sync_result_delisted_defaults_to_zero() {
+        let pool = setup_db().await;
+        let _ = pool;
+        let r = SyncResult {
+            source_id: "test".to_string(),
+            products_loaded: 0,
+            products_updated: 0,
+            delisted: 0,
+            state: SyncState::Done,
+            progress: 1.0,
+            drops: Vec::<PriceDrop>::new(),
+            drops_sent: 0,
+        };
+        assert_eq!(r.delisted, 0, "fresh SyncResult.delisted must be 0");
+    }
+
+    #[tokio::test]
+    async fn sync_result_delisted_round_trips_positive_value() {
+        let pool = setup_db().await;
+        let _ = pool;
+        let r = SyncResult {
+            source_id: "test".to_string(),
+            products_loaded: 0,
+            products_updated: 0,
+            delisted: 5,
+            state: SyncState::Done,
+            progress: 1.0,
+            drops: Vec::<PriceDrop>::new(),
+            drops_sent: 0,
+        };
+        assert_eq!(r.delisted, 5, "SyncResult.delisted must be 5 when set");
     }
 
     // ── upsert_products writes price_history rows (RED) ──────────────────
@@ -453,7 +566,7 @@ mod tests {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_secs() as i64;
-        let (_loaded, _updated, drops) = svc
+        let (_loaded, _updated, drops, _delisted) = svc
             .upsert_products("test-source", &products)
             .await
             .expect("upsert_products must succeed");
@@ -516,7 +629,7 @@ mod tests {
 
         // Now sync: catalog has SKU-DROP-1 at $850 (15% drop).
         let products = vec![raw_product("SKU-DROP-1", 850.0)];
-        let (_loaded, _updated, drops) = svc
+        let (_loaded, _updated, drops, _delisted) = svc
             .upsert_products("test-source", &products)
             .await
             .expect("upsert_products must succeed");
@@ -556,7 +669,7 @@ mod tests {
         let svc = CatalogSyncService::new(pool.clone(), reqwest::Client::new());
 
         let products = vec![raw_product("SKU-FIRST-1", 500.0)];
-        let (_loaded, _updated, drops) = svc
+        let (_loaded, _updated, drops, _delisted) = svc
             .upsert_products("test-source", &products)
             .await
             .expect("upsert_products must succeed");
@@ -623,7 +736,9 @@ mod tests {
                 image_url    TEXT CHECK(image_url = '' OR image_url LIKE 'https://%'),
                 seller       TEXT,
                 location     TEXT,
-                synced_at    INTEGER NOT NULL
+                synced_at    INTEGER NOT NULL,
+                is_active    INTEGER DEFAULT 1,
+                delisted_at  INTEGER
             )",
         )
         .execute(&pool)
@@ -1221,5 +1336,260 @@ mod tests {
         .await
         .unwrap();
         assert!(stored.is_none(), "no ETag header → no stored ETag");
+    }
+
+    // ── Soft-delete: delisting detection (RED — Phase 4 not implemented yet) ─
+
+    /// Helper: insert a product directly into products_meta bypassing upsert_products,
+    /// for seeding test data that represents previously-synced products.
+    async fn seed_product(pool: &SqlitePool, sku: &str, source_id: &str, is_active: bool) {
+        let synced_at = 1000i64;
+        sqlx::query(
+            r#"INSERT INTO products_meta
+               (sku, source_id, name, brand, model, category, subcategory,
+                price, currency, condition, availability, url, image_url,
+                seller, location, synced_at, is_active, delisted_at)
+               VALUES (?1, ?2, 'Test', 'TestBrand', '', 'Electric Guitars', '',
+                       100.0, 'USD', 'new', 'in_stock',
+                       'https://example.com/' || ?1, '', 'Test Seller', 'USA',
+                       ?3, ?4, NULL)"#,
+        )
+        .bind(sku)
+        .bind(source_id)
+        .bind(synced_at)
+        .bind(if is_active { 1i64 } else { 0i64 })
+        .execute(pool)
+        .await
+        .unwrap();
+    }
+
+    /// Test 4.1: SKU present in current batch stays active after sync.
+    #[tokio::test]
+    async fn soft_delete_sku_present_stays_active() {
+        let pool = setup_db().await;
+        let svc = CatalogSyncService::new(pool.clone(), reqwest::Client::new());
+
+        // Seed: SKU-001 is active before this sync
+        seed_product(&pool, "SKU-001", "test-source", true).await;
+
+        // Sync a batch that includes SKU-001
+        let products = vec![raw_product("SKU-001", 100.0)];
+        let (_loaded, _updated, _drops, delisted) = svc
+            .upsert_products("test-source", &products)
+            .await
+            .expect("upsert_products must succeed");
+
+        // SKU-001 should still be active
+        let is_active: i64 = sqlx::query_scalar(
+            "SELECT is_active FROM products_meta WHERE sku = 'SKU-001'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(is_active, 1, "SKU present in batch must stay active");
+
+        // No products should have been delisted
+        assert_eq!(delisted, 0, "no products should be delisted when all are present");
+    }
+
+    /// Test 4.2: SKU absent from current batch is marked is_active=0, delisted_at set.
+    #[tokio::test]
+    async fn soft_delete_sku_absent_gets_delisted() {
+        let pool = setup_db().await;
+        let svc = CatalogSyncService::new(pool.clone(), reqwest::Client::new());
+
+        // Seed: SKU-001 is active before this sync
+        seed_product(&pool, "SKU-001", "test-source", true).await;
+
+        // Sync a batch that does NOT include SKU-001
+        let products = vec![raw_product("SKU-002", 200.0)];
+        let (_loaded, _updated, _drops, delisted) = svc
+            .upsert_products("test-source", &products)
+            .await
+            .expect("upsert_products must succeed");
+
+        // SKU-001 should now be inactive
+        let is_active: i64 = sqlx::query_scalar(
+            "SELECT is_active FROM products_meta WHERE sku = 'SKU-001'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(is_active, 0, "SKU absent from batch must be delisted");
+
+        // delisted_at should be set
+        let delisted_at: Option<i64> = sqlx::query_scalar(
+            "SELECT delisted_at FROM products_meta WHERE sku = 'SKU-001'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert!(
+            delisted_at.is_some(),
+            "delisted_at must be set when SKU is delisted"
+        );
+
+        // delisted count should be 1
+        assert_eq!(delisted, 1, "exactly 1 product should be delisted");
+    }
+
+    /// Test 4.3: Already-delisted SKU unchanged by subsequent delisting pass.
+    #[tokio::test]
+    async fn soft_delete_already_delisted_unchanged() {
+        let pool = setup_db().await;
+        let svc = CatalogSyncService::new(pool.clone(), reqwest::Client::new());
+
+        // Seed: SKU-001 is already delisted (is_active=0) with a delisted_at timestamp
+        let synced_at = 1000i64;
+        sqlx::query(
+            r#"INSERT INTO products_meta
+               (sku, source_id, name, brand, model, category, subcategory,
+                price, currency, condition, availability, url, image_url,
+                seller, location, synced_at, is_active, delisted_at)
+               VALUES ('SKU-001', 'test-source', 'Test', 'TestBrand', '', 'Electric Guitars', '',
+                       100.0, 'USD', 'new', 'in_stock',
+                       'https://example.com/SKU-001', '', 'Test Seller', 'USA',
+                       ?1, 0, 500)"#,
+        )
+        .bind(synced_at)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        // Sync a batch that does NOT include SKU-001
+        let products = vec![raw_product("SKU-002", 200.0)];
+        let (_loaded, _updated, _drops, delisted) = svc
+            .upsert_products("test-source", &products)
+            .await
+            .expect("upsert_products must succeed");
+
+        // SKU-001 should still be inactive (unchanged)
+        let is_active: i64 = sqlx::query_scalar(
+            "SELECT is_active FROM products_meta WHERE sku = 'SKU-001'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(is_active, 0, "already-delisted SKU must stay inactive");
+
+        // delisted_at should still be 500 (unchanged)
+        let delisted_at: i64 = sqlx::query_scalar(
+            "SELECT delisted_at FROM products_meta WHERE sku = 'SKU-001'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(delisted_at, 500, "delisted_at must not change for already-delisted SKU");
+
+        // Only the new product SKU-002 is in the batch, SKU-001 was already delisted
+        assert_eq!(delisted, 0, "already-delisted products should not be re-counted");
+    }
+
+    /// Test 4.4: Re-listed SKU gets is_active=1, delisted_at=NULL via INSERT OR REPLACE.
+    #[tokio::test]
+    async fn soft_delete_relisted_sku_reactivates() {
+        let pool = setup_db().await;
+        let svc = CatalogSyncService::new(pool.clone(), reqwest::Client::new());
+
+        // Seed: SKU-001 is delisted (is_active=0, delisted_at=500)
+        let synced_at = 1000i64;
+        sqlx::query(
+            r#"INSERT INTO products_meta
+               (sku, source_id, name, brand, model, category, subcategory,
+                price, currency, condition, availability, url, image_url,
+                seller, location, synced_at, is_active, delisted_at)
+               VALUES ('SKU-001', 'test-source', 'Test', 'TestBrand', '', 'Electric Guitars', '',
+                       100.0, 'USD', 'new', 'in_stock',
+                       'https://example.com/SKU-001', '', 'Test Seller', 'USA',
+                       ?1, 0, 500)"#,
+        )
+        .bind(synced_at)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        // Sync a batch that INCLUDES SKU-001 (reappearing)
+        let products = vec![raw_product("SKU-001", 100.0)];
+        let (_loaded, _updated, _drops, delisted) = svc
+            .upsert_products("test-source", &products)
+            .await
+            .expect("upsert_products must succeed");
+
+        // SKU-001 should be active again (INSERT OR REPLACE resets defaults)
+        let is_active: i64 = sqlx::query_scalar(
+            "SELECT is_active FROM products_meta WHERE sku = 'SKU-001'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(is_active, 1, "re-listed SKU must be reactivated");
+
+        // delisted_at should be NULL
+        let delisted_at: Option<i64> = sqlx::query_scalar(
+            "SELECT delisted_at FROM products_meta WHERE sku = 'SKU-001'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert!(
+            delisted_at.is_none(),
+            "re-listed SKU must have delisted_at=NULL"
+        );
+
+        // No new delistings (SKU-001 was in the batch and already delisted before)
+        assert_eq!(delisted, 0, "re-listing should not count as delisted");
+    }
+
+    /// Test 4.6: SyncResult.delisted reports correct count across multiple sources.
+    #[tokio::test]
+    async fn soft_delete_delisted_count_is_source_scoped() {
+        let pool = setup_db().await;
+        let svc = CatalogSyncService::new(pool.clone(), reqwest::Client::new());
+
+        // Seed: SKU-A (source-a, active), SKU-B (source-b, active)
+        seed_product(&pool, "SKU-A", "source-a", true).await;
+        seed_product(&pool, "SKU-B", "source-b", true).await;
+
+        // Sync source-a with a batch that includes SKU-A but not SKU-B
+        let products_a = vec![raw_product("SKU-A", 100.0)];
+        let (_loaded, _updated, _drops, delisted_a) = svc
+            .upsert_products("source-a", &products_a)
+            .await
+            .expect("upsert source-a must succeed");
+
+        // Only SKU-B from source-a... wait, SKU-B is from source-b, not source-a.
+        // Actually, SKU-A from source-a is in the batch, so no delistings for source-a.
+        assert_eq!(delisted_a, 0, "source-a should have 0 delistings");
+
+        // Source-b now has no active products — but SKU-B is from source-b, not source-a.
+        // This test verifies source scoping: syncing source-a only affects source-a rows.
+        let is_active_b: i64 = sqlx::query_scalar(
+            "SELECT is_active FROM products_meta WHERE sku = 'SKU-B'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(
+            is_active_b, 1,
+            "SKU-B from source-b must NOT be affected by source-a sync"
+        );
+
+        // Now sync source-b WITHOUT SKU-B
+        let products_b = vec![];
+        let (_loaded, _updated, _drops, delisted_b) = svc
+            .upsert_products("source-b", &products_b)
+            .await
+            .expect("upsert source-b must succeed");
+
+        // SKU-B should be delisted now
+        assert_eq!(delisted_b, 1, "source-b should delist SKU-B");
+
+        let is_active_b2: i64 = sqlx::query_scalar(
+            "SELECT is_active FROM products_meta WHERE sku = 'SKU-B'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(is_active_b2, 0, "SKU-B should be delisted after source-b sync");
     }
 }
