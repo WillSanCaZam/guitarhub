@@ -59,7 +59,9 @@ async fn setup_integration_db() -> SqlitePool {
             image_url    TEXT CHECK(image_url = '' OR image_url LIKE 'https://%'),
             seller       TEXT,
             location     TEXT,
-            synced_at    INTEGER NOT NULL
+            synced_at    INTEGER NOT NULL,
+            is_active    INTEGER DEFAULT 1,
+            delisted_at  INTEGER
         )",
     )
     .execute(&pool)

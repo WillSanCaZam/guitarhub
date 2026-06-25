@@ -81,6 +81,7 @@ pub struct SearchFilters {
     pub source: Option<String>,
     pub condition: Option<String>,
     pub listing_currency: Option<String>,
+    pub include_inactive: bool,
 }
 
 /// Sort order for product search results.
@@ -317,6 +318,27 @@ mod tests {
         assert!(filters.source.is_none());
         assert!(filters.condition.is_none());
         assert!(filters.listing_currency.is_none());
+        assert!(!filters.include_inactive, "include_inactive must default to false");
+    }
+
+    #[test]
+    fn search_filters_include_inactive_can_be_set_to_true() {
+        let filters = SearchFilters {
+            include_inactive: true,
+            ..Default::default()
+        };
+        assert!(filters.include_inactive, "include_inactive should be true when set");
+    }
+
+    #[test]
+    fn search_filters_include_inactive_round_trips_through_json() {
+        let filters = SearchFilters {
+            include_inactive: true,
+            ..Default::default()
+        };
+        let json = serde_json::to_string(&filters).unwrap();
+        let restored: SearchFilters = serde_json::from_str(&json).unwrap();
+        assert!(restored.include_inactive, "include_inactive=true must survive JSON round-trip");
     }
 
     #[test]
@@ -328,6 +350,7 @@ mod tests {
             source: Some("reverb".into()),
             condition: Some("excellent".into()),
             listing_currency: Some("USD".into()),
+            include_inactive: true,
         };
         let json = serde_json::to_string(&filters).unwrap();
         let restored: SearchFilters = serde_json::from_str(&json).unwrap();
@@ -337,6 +360,7 @@ mod tests {
         assert_eq!(restored.source.unwrap(), "reverb");
         assert_eq!(restored.condition.unwrap(), "excellent");
         assert_eq!(restored.listing_currency.unwrap(), "USD");
+        assert!(restored.include_inactive, "include_inactive must survive JSON round-trip");
     }
 
     // ── SortOrder ───────────────────────────────────────────────────────

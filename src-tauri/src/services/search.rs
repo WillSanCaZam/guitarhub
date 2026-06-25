@@ -139,6 +139,12 @@ impl FtsSearchService {
             data_sql.push_str(" AND m.currency = ?");
         }
 
+        // Soft-delete filter: exclude inactive products unless explicitly asked
+        if !filters.include_inactive {
+            count_sql.push_str(" AND m.is_active = 1");
+            data_sql.push_str(" AND m.is_active = 1");
+        }
+
         // Add ORDER BY and LIMIT/OFFSET to data query
         let order_by = Self::order_by_clause(&sort);
         data_sql.push_str(&format!(" {} LIMIT ? OFFSET ?", order_by));
@@ -292,7 +298,9 @@ mod tests {
                 image_url    TEXT CHECK(image_url = '' OR image_url LIKE 'https://%'),
                 seller       TEXT,
                 location     TEXT,
-                synced_at    INTEGER NOT NULL
+                synced_at    INTEGER NOT NULL,
+                is_active    INTEGER DEFAULT 1,
+                delisted_at  INTEGER
             )",
         )
         .execute(&pool)
@@ -480,6 +488,7 @@ mod tests {
             source: None,
             condition: None,
             listing_currency: None,
+            include_inactive: false,
         };
         let result = svc.search("guitar", &filters, SortOrder::Relevance, 1, 20).await.unwrap();
         assert_eq!(result.total, 1, "expected 1 product in Electric Guitars");
@@ -505,6 +514,7 @@ mod tests {
             source: None,
             condition: None,
             listing_currency: None,
+            include_inactive: false,
         };
         let result = svc.search("guitar", &filters, SortOrder::Relevance, 1, 20).await.unwrap();
         assert_eq!(result.total, 1, "expected 1 product in price range 150-400");
@@ -529,6 +539,7 @@ mod tests {
             source: Some("reverb".into()),
             condition: None,
             listing_currency: None,
+            include_inactive: false,
         };
         let result = svc.search("guitar", &filters, SortOrder::Relevance, 1, 20).await.unwrap();
         assert_eq!(result.total, 1, "expected 1 product from reverb");
@@ -553,6 +564,7 @@ mod tests {
             source: Some("reverb".into()),
             condition: None,
             listing_currency: None,
+            include_inactive: false,
         };
         let result = svc.search("fender", &filters, SortOrder::Relevance, 1, 20).await.unwrap();
         assert_eq!(result.total, 1, "expected 1 product matching all filters");
@@ -598,6 +610,7 @@ mod tests {
             source: None,
             condition: Some("new".into()),
             listing_currency: None,
+            include_inactive: false,
         };
         let result = svc.search("guitar", &filters, SortOrder::Relevance, 1, 20)
             .await
@@ -646,6 +659,7 @@ mod tests {
             source: None,
             condition: None,
             listing_currency: Some("EUR".into()),
+            include_inactive: false,
         };
         let result = svc.search("guitar", &filters, SortOrder::Relevance, 1, 20)
             .await
@@ -706,6 +720,7 @@ mod tests {
             source: None,
             condition: Some("new".into()),
             listing_currency: Some("EUR".into()),
+            include_inactive: false,
         };
         let result = svc.search("guitar", &filters, SortOrder::Relevance, 1, 20)
             .await
@@ -957,5 +972,64 @@ mod tests {
         let result = svc.search("guitar", &filters, SortOrder::Relevance, 1, 0).await.unwrap();
         // page_size 0 clamped to 1
         assert_eq!(result.limit, 1);
+    }
+
+    // ── Test: soft-delete filter (include_inactive) ─────────────────────
+
+    #[tokio::test]
+    async fn search_excludes_delisted_products_by_default() {
+        let pool = setup_db().await;
+        let svc = FtsSearchService::new(pool.clone());
+
+        insert_product(&pool, "SKU-ACTIVE", "Electric Guitar Fender", "Fender", "Electric", 999.99, "reverb").await;
+        insert_product(&pool, "SKU-DELISTED", "Electric Guitar Gibson", "Gibson", "Electric", 2499.99, "reverb").await;
+
+        // Mark second product as delisted
+        sqlx::query("UPDATE products_meta SET is_active = 0, delisted_at = 2000 WHERE sku = 'SKU-DELISTED'")
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        // Default search (include_inactive: false) — should exclude delisted
+        let default_filters = SearchFilters {
+            category: Some("Electric".into()),
+            price_min: None,
+            price_max: None,
+            source: None,
+            condition: None,
+            listing_currency: None,
+            include_inactive: false,
+        };
+        let result = svc.search("guitar", &default_filters, SortOrder::Relevance, 1, 20).await.unwrap();
+        assert_eq!(result.total, 1, "expected 1 active product");
+        assert_eq!(result.products[0].sku, "SKU-ACTIVE");
+    }
+
+    #[tokio::test]
+    async fn search_include_inactive_returns_all_products() {
+        let pool = setup_db().await;
+        let svc = FtsSearchService::new(pool.clone());
+
+        insert_product(&pool, "SKU-ACTIVE", "Electric Guitar Fender", "Fender", "Electric", 999.99, "reverb").await;
+        insert_product(&pool, "SKU-DELISTED", "Electric Guitar Gibson", "Gibson", "Electric", 2499.99, "reverb").await;
+
+        // Mark second product as delisted
+        sqlx::query("UPDATE products_meta SET is_active = 0, delisted_at = 2000 WHERE sku = 'SKU-DELISTED'")
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        // include_inactive: true — should return both
+        let inclusive_filters = SearchFilters {
+            category: Some("Electric".into()),
+            price_min: None,
+            price_max: None,
+            source: None,
+            condition: None,
+            listing_currency: None,
+            include_inactive: true,
+        };
+        let result = svc.search("guitar", &inclusive_filters, SortOrder::Relevance, 1, 20).await.unwrap();
+        assert_eq!(result.total, 2, "expected both products");
     }
 }

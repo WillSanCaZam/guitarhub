@@ -152,7 +152,9 @@ mod tests {
                 image_url    TEXT,
                 seller       TEXT,
                 location     TEXT,
-                synced_at    INTEGER NOT NULL
+                synced_at    INTEGER NOT NULL,
+                is_active    INTEGER DEFAULT 1,
+                delisted_at  INTEGER
             )",
         )
         .execute(pool)
