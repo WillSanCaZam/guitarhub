@@ -1,0 +1,379 @@
+{
+  "hits": [
+    {
+      "display_name": "Fender American Professional II Stratocaster",
+      "brand": "Fender",
+      "product_id": "LIVESTRAT-001",
+      "identifiers": {
+        "gcItemNumber": "LIVESTRAT-001"
+      },
+      "current_price": 1599.99,
+      "price": 1599.99,
+      "condition": {
+        "lvl0": "New",
+        "lvl1": "New"
+      },
+      "seoUrl": "/guitar/fender-american-professional-ii-stratocaster",
+      "imageId": "FENAP2STRAT001",
+      "sticker": ["Price Drop"],
+      "categories": {
+        "lvl0": "Guitars",
+        "lvl1": "Electric Guitars",
+        "lvl2": "Solid Body"
+      },
+      "inventoryStatus": 1000,
+      "stores": ["Store1", "Store2"]
+    },
+    {
+      "display_name": "Gibson Les Paul Standard '50s",
+      "brand": "Gibson",
+      "product_id": "GIBSONLP50-002",
+      "identifiers": {
+        "gcItemNumber": "GIBSONLP50-002"
+      },
+      "current_price": 2499.99,
+      "price": 2499.99,
+      "condition": {
+        "lvl0": "Used",
+        "lvl1": "Used > Excellent"
+      },
+      "seoUrl": "/guitar/gibson-les-paul-standard-50s",
+      "imageId": "GIBSLP50S002",
+      "sticker": [],
+      "categories": {
+        "lvl0": "Guitars",
+        "lvl1": "Electric Guitars",
+        "lvl2": "Solid Body"
+      },
+      "inventoryStatus": 1000,
+      "stores": ["Store5"]
+    },
+    {
+      "display_name": "PRS Custom 24-08",
+      "brand": "PRS",
+      "product_id": "PRSC24-003",
+      "identifiers": {
+        "gcItemNumber": "PRSC24-003"
+      },
+      "current_price": 3299.99,
+      "price": 3299.99,
+      "condition": {
+        "lvl0": "Used",
+        "lvl1": "Used > Great"
+      },
+      "seoUrl": "/guitar/prs-custom-24-08",
+      "imageId": "PRSC2408003",
+      "sticker": [],
+      "categories": {
+        "lvl0": "Guitars",
+        "lvl1": "Electric Guitars",
+        "lvl2": "Solid Body"
+      },
+      "inventoryStatus": 1003,
+      "stores": ["Store3"]
+    },
+    {
+      "display_name": "Martin D-28 Acoustic",
+      "brand": "Martin",
+      "product_id": "MARTIND28-004",
+      "identifiers": {
+        "gcItemNumber": "MARTIND28-004"
+      },
+      "current_price": 2799.00,
+      "price": 2799.00,
+      "condition": {
+        "lvl0": "Used",
+        "lvl1": "Used > Good"
+      },
+      "seoUrl": "/guitar/martin-d-28-acoustic",
+      "imageId": "MARTD28004",
+      "sticker": ["Vintage"],
+      "categories": {
+        "lvl0": "Guitars",
+        "lvl1": "Acoustic Guitars",
+        "lvl2": "Dreadnought"
+      },
+      "inventoryStatus": 1000,
+      "stores": ["Store2", "Store4"]
+    },
+    {
+      "display_name": "Fender Jazz Bass",
+      "brand": "Fender",
+      "product_id": "FENJB-005",
+      "identifiers": {
+        "gcItemNumber": "FENJB-005"
+      },
+      "current_price": 899.99,
+      "price": 899.99,
+      "condition": {
+        "lvl0": "Used",
+        "lvl1": "Used > Fair"
+      },
+      "seoUrl": "/bass/fender-jazz-bass",
+      "imageId": "FENJB005",
+      "sticker": ["Price Drop"],
+      "categories": {
+        "lvl0": "Guitars",
+        "lvl1": "Bass Guitars"
+      },
+      "inventoryStatus": 1000,
+      "stores": ["Store1"]
+    },
+    {
+      "display_name": "Squier Affinity Telecaster",
+      "brand": "Squier",
+      "product_id": "SQUIERAT-006",
+      "identifiers": {
+        "gcItemNumber": "SQUIERAT-006"
+      },
+      "current_price": 299.99,
+      "price": 299.99,
+      "condition": {
+        "lvl0": "Used",
+        "lvl1": "Used > Poor"
+      },
+      "seoUrl": "/guitar/squier-affinity-telecaster",
+      "imageId": "SQUIERAT006",
+      "sticker": [],
+      "categories": {
+        "lvl0": "Guitars",
+        "lvl1": "Electric Guitars"
+      },
+      "inventoryStatus": 1003,
+      "stores": ["Store7"]
+    },
+    {
+      "display_name": "Line 6 Helix Floor",
+      "brand": "Line 6",
+      "product_id": "L6HELIX-007",
+      "identifiers": {
+        "gcItemNumber": "L6HELIX-007"
+      },
+      "current_price": 1499.99,
+      "price": 1499.99,
+      "condition": {
+        "lvl0": "New",
+        "lvl1": "New"
+      },
+      "skuCondition": 3,
+      "seoUrl": "/pedal/line-6-helix-floor",
+      "imageId": "L6HELIX007",
+      "sticker": ["Price Drop"],
+      "categories": {
+        "lvl0": "Guitars",
+        "lvl1": "Pedals & Effects",
+        "lvl2": "Multi-Effects"
+      },
+      "inventoryStatus": 1000,
+      "stores": ["Store1", "Store3", "Store5"]
+    },
+    {
+      "display_name": "Boss Katana 100 MKII",
+      "brand": "Boss",
+      "product_id": "BOSSKAT-008",
+      "identifiers": {
+        "gcItemNumber": "BOSSKAT-008"
+      },
+      "current_price": 399.99,
+      "price": 399.99,
+      "condition": {
+        "lvl0": "New",
+        "lvl1": "New"
+      },
+      "skuCondition": 11,
+      "seoUrl": "/amplifier/boss-katana-100-mkii",
+      "imageId": "BOSSKAT008",
+      "sticker": [],
+      "categories": {
+        "lvl0": "Guitars",
+        "lvl1": "Amplifiers",
+        "lvl2": "Combo"
+      },
+      "inventoryStatus": 1000,
+      "stores": ["Store2"]
+    },
+    {
+      "display_name": "Mesa Boogie Triple Rectifier",
+      "brand": "Mesa Boogie",
+      "product_id": "MESATR-009",
+      "identifiers": {
+        "gcItemNumber": "MESATR-009"
+      },
+      "current_price": 1899.99,
+      "price": 1899.99,
+      "condition": {
+        "lvl0": "New",
+        "lvl1": "New"
+      },
+      "skuCondition": 2,
+      "seoUrl": "/amplifier/mesa-boogie-triple-rectifier",
+      "imageId": "MESATR009",
+      "sticker": [],
+      "categories": {
+        "lvl0": "Guitars",
+        "lvl1": "Amplifiers",
+        "lvl2": "Head"
+      },
+      "inventoryStatus": 1003,
+      "stores": ["Store9"]
+    },
+    {
+      "display_name": "No Brand Guitar",
+      "brand": null,
+      "product_id": "NOBRAND-010",
+      "identifiers": {
+        "gcItemNumber": "NOBRAND-010"
+      },
+      "current_price": 199.99,
+      "price": 199.99,
+      "condition": {
+        "lvl0": "Used",
+        "lvl1": "Used > Good"
+      },
+      "seoUrl": "/guitar/no-brand-guitar",
+      "imageId": "NOBRAND010",
+      "sticker": [],
+      "categories": {
+        "lvl0": "Guitars",
+        "lvl1": "Electric Guitars"
+      },
+      "inventoryStatus": 1000,
+      "stores": ["Store1"]
+    },
+    {
+      "display_name": "Mystery Pedal No Image",
+      "brand": "Unknown Brand",
+      "product_id": "NOPIC-011",
+      "identifiers": {
+        "gcItemNumber": "NOPIC-011"
+      },
+      "current_price": 149.99,
+      "price": 149.99,
+      "condition": {
+        "lvl0": "Used",
+        "lvl1": "Used > Excellent"
+      },
+      "seoUrl": "/pedal/mystery-pedal",
+      "imageId": null,
+      "sticker": [],
+      "categories": {
+        "lvl0": "Guitars",
+        "lvl1": "Pedals & Effects"
+      },
+      "inventoryStatus": 1000,
+      "stores": ["Store6"]
+    },
+    {
+      "display_name": "Out Of Stock Guitar",
+      "brand": "Fender",
+      "product_id": "OOS-012",
+      "identifiers": {
+        "gcItemNumber": "OOS-012"
+      },
+      "current_price": 599.99,
+      "price": 599.99,
+      "condition": {
+        "lvl0": "New",
+        "lvl1": "New"
+      },
+      "seoUrl": "/guitar/out-of-stock-guitar",
+      "imageId": "OOS012",
+      "sticker": [],
+      "categories": {
+        "lvl0": "Guitars",
+        "lvl1": "Electric Guitars"
+      },
+      "inventoryStatus": 1000,
+      "stores": []
+    },
+    {
+      "display_name": "No Inventory Guitar",
+      "brand": "Gibson",
+      "product_id": "NOINV-013",
+      "identifiers": {
+        "gcItemNumber": "NOINV-013"
+      },
+      "current_price": 3499.00,
+      "price": 3499.00,
+      "condition": {
+        "lvl0": "New",
+        "lvl1": "New"
+      },
+      "seoUrl": "/guitar/no-inventory-guitar",
+      "imageId": "NOINV013",
+      "sticker": [],
+      "categories": {
+        "lvl0": "Guitars",
+        "lvl1": "Electric Guitars"
+      },
+      "stores": ["Store1"]
+    },
+    {
+      "display_name": "Skip Category Product",
+      "brand": "TestBrand",
+      "product_id": "SKIPCAT-014",
+      "identifiers": {
+        "gcItemNumber": "SKIPCAT-014"
+      },
+      "current_price": 499.00,
+      "price": 499.00,
+      "condition": {
+        "lvl0": "Unknown",
+        "lvl1": "Unknown"
+      },
+      "seoUrl": "/test/skip-category",
+      "imageId": "SKIPCAT014",
+      "sticker": [],
+      "inventoryStatus": 1000,
+      "stores": ["Store1"]
+    },
+    {
+      "display_name": "No Condition Product",
+      "brand": "TestBrand",
+      "product_id": "NOCOND-015",
+      "identifiers": {
+        "gcItemNumber": "NOCOND-015"
+      },
+      "current_price": 299.00,
+      "price": 299.00,
+      "seoUrl": "/test/no-condition",
+      "imageId": "NOCOND015",
+      "sticker": [],
+      "categories": {
+        "lvl0": "Guitars",
+        "lvl1": "Electric Guitars"
+      },
+      "inventoryStatus": 1000,
+      "stores": ["Store1"]
+    },
+    {
+      "display_name": "B-Stock Open Box Product",
+      "brand": "EVH",
+      "product_id": "EVH5150-016",
+      "identifiers": {
+        "gcItemNumber": "EVH5150-016"
+      },
+      "current_price": 899.99,
+      "price": 899.99,
+      "condition": {
+        "lvl0": "New",
+        "lvl1": "New"
+      },
+      "skuCondition": 3,
+      "seoUrl": "/amplifier/evh-5150-iii",
+      "imageId": "EVH5150016",
+      "sticker": ["Price Drop"],
+      "categories": {
+        "lvl0": "Guitars",
+        "lvl1": "Amplifiers",
+        "lvl2": "Head"
+      },
+      "inventoryStatus": 1000,
+      "stores": ["Store4"]
+    }
+  ],
+  "page": 0,
+  "nbPages": 1,
+  "nbHits": 16,
+  "hitsPerPage": 50
+}

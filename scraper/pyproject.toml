@@ -27,5 +27,9 @@ module = "scraper.adapters.reverb"
 disable_error_code = ["assignment", "attr-defined", "unused-ignore", "var-annotated", "no-any-return", "type-arg"]
 
 [[tool.mypy.overrides]]
+module = "scraper.adapters.guitarcenter"
+disable_error_code = ["no-any-return", "type-arg"]
+
+[[tool.mypy.overrides]]
 module = "scraper.domain"
 disable_error_code = ["call-arg"]

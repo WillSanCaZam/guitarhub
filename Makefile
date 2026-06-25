@@ -109,6 +109,20 @@ audit:
 		echo "No $(SCRAPER_DIR)/requirements.txt found — skipping pip-audit"; \
 	fi
 
+# ── Scrape Targets ──────────────────────────────────────────────────────────
+
+## Scrape Guitar Center catalog (requires GC_ALGOLIA_* env vars)
+scrape-guitarcenter:
+	@if [ -d "$(SCRAPER_DIR)" ]; then \
+		if [ -d ".venv" ]; then \
+			source .venv/bin/activate && python -m scraper --adapter guitarcenter --output artifacts/catalog-gc.json; \
+		else \
+			python3 -m scraper --adapter guitarcenter --output artifacts/catalog-gc.json; \
+		fi; \
+	else \
+		echo "No $(SCRAPER_DIR)/ directory found — skipping"; \
+	fi
+
 # ── Help ─────────────────────────────────────────────────────────────────────
 
 ## Show this help message
