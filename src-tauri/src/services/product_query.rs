@@ -239,7 +239,7 @@ mod tests {
     }
 
     /// Insert a product for testing.
-    #[allow(dead_code)]
+    #[allow(dead_code, clippy::too_many_arguments)]
     async fn seed_product(
         pool: &SqlitePool,
         sku: &str,
