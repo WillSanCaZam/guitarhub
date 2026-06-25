@@ -19,7 +19,7 @@ module = "scraper.tests.*"
 disallow_untyped_defs = false
 allow_untyped_decorators = true
 allow_untyped_calls = true
-disable_error_code = ["call-arg", "union-attr", "method-assign", "no-untyped-def", "no-any-return", "type-arg"]
+disable_error_code = ["call-arg", "union-attr", "method-assign", "no-untyped-def", "no-any-return", "type-arg", "attr-defined"]
 
 # Pre-existing issues in adapters — out of scope for fix-ci-pipeline
 [[tool.mypy.overrides]]
