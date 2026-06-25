@@ -96,54 +96,67 @@ Run `make help` for the full list of available targets.
 
 ## Adding a new source adapter
 
-The scraper uses a **SourcePort** abstraction to decouple each marketplace from
-the ingestion pipeline. Source adapters connect to REST/JSON APIs (e.g., the
-Reverb adapter uses the public Reverb JSON API) — no HTML scraping or
-BeautifulSoup required. To add a new source:
+The scraper uses a **Ports & Adapters** (Hexagonal) architecture. Each
+marketplace is a self-contained adapter in `scraper/adapters/`. Source
+adapters connect to REST/JSON APIs (e.g., the Reverb adapter uses the
+public Reverb JSON API) — no HTML scraping or BeautifulSoup required. To
+add a new source:
 
-### Step 1: check the port interface
+### Step 1: understand the port interface
 
-Look at `scraper/ports/source_port.py`. Your adapter must implement:
+Look at `scraper/ports.py`. Your adapter must implement the `ScraperPort`
+protocol:
 
 ```python
-class YourSourcePort(SourcePort):
-    NAME: ClassVar[str] = "your_source"
-    REQUIRED_ENV: ClassVar[tuple[str, ...]] = ()
-
-    async def fetch_listings(self) -> AsyncIterator[dict]:
+class YourAdapter:
+    def scrape(self, url: str = "") -> CatalogFile:
+        """Fetch and parse products from the source."""
         ...
 ```
 
 ### Step 2: create the adapter file
 
 ```bash
-touch scraper/adapters/sources/your_source.py
+touch scraper/adapters/your_source.py
 ```
 
-Implement `fetch_listings` — yield raw listing dicts. Handle pagination,
-rate-limiting, and authentication.
+The adapter lives directly in `scraper/adapters/` (not a subdirectory).
+Implement the `scrape()` method handling pagination, rate-limiting,
+authentication, and field mapping to `CatalogProduct`.
 
-### Step 3: register the adapter
+### Step 3: register the adapter in CLI
 
-Add your source name to the CI matrix in `.github/workflows/scrape.yml`:
+Add your adapter name to the choices list in `scraper/cli.py`:
 
-```yaml
-matrix:
-  source: [reverb, your_source]
+```python
+choices=["reverb", "guitarcenter", "your_source"]
 ```
+
+And add a corresponding import/instantiation block in the adapter
+selection section.
 
 ### Step 4: test the adapter
 
 ```bash
 make test-scraper
-ruff check scraper/adapters/sources/your_source.py
+ruff check scraper/adapters/your_source.py
 mypy scraper/ --strict
 ```
 
+Create unit tests in `scraper/tests/unit/test_your_source.py` and
+add a protocol conformance test in
+`scraper/tests/contract/test_protocol.py`.
+
 ### Step 5: document required env vars
 
-If your adapter needs API keys, add them to `REQUIRED_ENV` and document them in
-[`.env.example`](../.env.example).
+If your adapter needs credentials, document them in
+[`.env.example`](../.env.example) with extraction instructions. The
+adapter should resolve credentials from constructor args with env var
+fallback, raising `ValueError` if both are missing.
+
+### Step 6: add a Makefile target
+
+Add a `scrape-your_source` target to the `Makefile` for easy local runs.
 
 ## Running the scraper locally
 

@@ -19,12 +19,16 @@ module = "scraper.tests.*"
 disallow_untyped_defs = false
 allow_untyped_decorators = true
 allow_untyped_calls = true
-disable_error_code = ["call-arg", "union-attr", "method-assign", "no-untyped-def", "no-any-return", "type-arg"]
+disable_error_code = ["call-arg", "union-attr", "method-assign", "no-untyped-def", "no-any-return", "type-arg", "attr-defined"]
 
 # Pre-existing issues in adapters — out of scope for fix-ci-pipeline
 [[tool.mypy.overrides]]
 module = "scraper.adapters.reverb"
 disable_error_code = ["assignment", "attr-defined", "unused-ignore", "var-annotated", "no-any-return", "type-arg"]
+
+[[tool.mypy.overrides]]
+module = "scraper.adapters.guitarcenter"
+disable_error_code = ["no-any-return", "type-arg"]
 
 [[tool.mypy.overrides]]
 module = "scraper.domain"

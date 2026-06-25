@@ -21,7 +21,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--adapter",
-        choices=["reverb"],
+        choices=["reverb", "guitarcenter"],
         help="Scraper adapter to use",
     )
     parser.add_argument(
@@ -70,10 +70,21 @@ def main() -> int:
         parser.error("--adapter and --output are required unless --validate-input is used")
 
     # ── Select and instantiate adapter ──────────────────────────────
+    from scraper.ports import ScraperPort
+
+    adapter: ScraperPort
     if args.adapter == "reverb":
         from scraper.adapters.reverb import ReverbAdapter
 
         adapter = ReverbAdapter()
+    elif args.adapter == "guitarcenter":
+        from scraper.adapters.guitarcenter import GuitarCenterAdapter
+
+        try:
+            adapter = GuitarCenterAdapter()
+        except ValueError as exc:
+            logger.error("Guitar Center adapter: %s", exc)
+            return 1
     else:
         logger.error("Unknown adapter: %s", args.adapter)
         return 1
