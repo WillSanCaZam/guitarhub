@@ -254,87 +254,87 @@ class TestConditionNormalization:
     """GC 9-value condition vocabulary → 4-value normalized output."""
 
     def test_new_condition(self, adapter, sample_hits) -> None:
-        """New → condition='new'."""
+        """New → condition='New' (raw, normalization deferred to Rust)."""
         hit = sample_hits[0]
         product = adapter._map_hit(hit)
         assert product is not None
-        assert product.condition == "new"
+        assert product.condition == "New"
 
     def test_used_excellent(self, adapter, sample_hits) -> None:
-        """Used > Excellent → condition='used'."""
+        """Used > Excellent → condition='Used > Excellent' (raw)."""
         hit = sample_hits[1]
         product = adapter._map_hit(hit)
         assert product is not None
-        assert product.condition == "used"
+        assert product.condition == "Used > Excellent"
 
     def test_used_great(self, adapter, sample_hits) -> None:
-        """Used > Great → condition='used'."""
+        """Used > Great → condition='Used > Great' (raw)."""
         hit = sample_hits[2]
         product = adapter._map_hit(hit)
         assert product is not None
-        assert product.condition == "used"
+        assert product.condition == "Used > Great"
 
     def test_used_good(self, adapter, sample_hits) -> None:
-        """Used > Good → condition='used'."""
+        """Used > Good → condition='Used > Good' (raw)."""
         hit = sample_hits[3]
         product = adapter._map_hit(hit)
         assert product is not None
-        assert product.condition == "used"
+        assert product.condition == "Used > Good"
 
     def test_used_fair(self, adapter, sample_hits) -> None:
-        """Used > Fair → condition='used'."""
+        """Used > Fair → condition='Used > Fair' (raw)."""
         hit = sample_hits[4]
         product = adapter._map_hit(hit)
         assert product is not None
-        assert product.condition == "used"
+        assert product.condition == "Used > Fair"
 
     def test_used_poor(self, adapter, sample_hits) -> None:
-        """Used > Poor → condition='used'."""
+        """Used > Poor → condition='Used > Poor' (raw)."""
         hit = sample_hits[5]
         product = adapter._map_hit(hit)
         assert product is not None
-        assert product.condition == "used"
+        assert product.condition == "Used > Poor"
 
     def test_open_box_condition(self, adapter, sample_hits) -> None:
-        """Open Box (skuCondition=3) → condition='new' + sticker open_box."""
+        """Open Box (skuCondition=3) → condition='Open Box' + sticker open_box."""
         hit = sample_hits[6]
         product = adapter._map_hit(hit)
         assert product is not None
-        assert product.condition == "new"
+        assert product.condition == "Open Box"
         specs = json.loads(product.specs_json)
         assert "open_box" in specs.get("stickers", [])
 
     def test_blemished_condition(self, adapter, sample_hits) -> None:
-        """Blemished (skuCondition=11) → condition='new' + sticker blemished."""
+        """Blemished (skuCondition=11) → condition='Blemished' + sticker blemished."""
         hit = sample_hits[7]
         product = adapter._map_hit(hit)
         assert product is not None
-        assert product.condition == "new"
+        assert product.condition == "Blemished"
         specs = json.loads(product.specs_json)
         assert "blemished" in specs.get("stickers", [])
 
     def test_restock_condition(self, adapter, sample_hits) -> None:
-        """Restock (skuCondition=2) → condition='refurbished' + sticker restock."""
+        """Restock (skuCondition=2) → condition='Restock' + sticker restock."""
         hit = sample_hits[8]
         product = adapter._map_hit(hit)
         assert product is not None
-        assert product.condition == "refurbished"
+        assert product.condition == "Restock"
         specs = json.loads(product.specs_json)
         assert "restock" in specs.get("stickers", [])
 
     def test_unknown_condition(self, adapter, sample_hits) -> None:
-        """Unknown condition → condition='unknown'."""
+        """Unknown condition → condition='Unknown' (raw, normalization deferred to Rust)."""
         hit = sample_hits[13]
         product = adapter._map_hit(hit)
         assert product is not None
-        assert product.condition == "unknown"
+        assert product.condition == "Unknown"
 
     def test_missing_condition_defaults_unknown(self, adapter, sample_hits) -> None:
-        """When condition is missing entirely → condition='unknown'."""
+        """When condition is missing entirely → condition='' (raw empty)."""
         hit = sample_hits[14]
         product = adapter._map_hit(hit)
         assert product is not None
-        assert product.condition == "unknown"
+        assert product.condition == ""
 
     def test_condition_original_preserved_in_specs(self, adapter, sample_hits) -> None:
         """Raw condition value is preserved in specs_json.condition_original."""

@@ -25,28 +25,6 @@ from scraper.ports import FetchError, ParseError
 
 logger = logging.getLogger(__name__)
 
-# ── Condition normalization maps ──────────────────────────────────────────
-
-_CONDITION_MAP: dict[str, str] = {
-    "New": "new",
-    "Open Box": "new",
-    "Blemished": "new",
-    "Restock": "refurbished",
-    "Used > Excellent": "used",
-    "Used > Great": "used",
-    "Used > Good": "used",
-    "Used > Fair": "used",
-    "Used > Poor": "used",
-}
-
-# skuCondition codes from GC's Algolia index
-_SKU_CONDITION_MAP: dict[int, tuple[str, str | None]] = {
-    1: ("new", None),       # New
-    2: ("refurbished", "restock"),      # Restock
-    3: ("new", "open_box"),            # Open Box
-    11: ("new", "blemished"),          # Blemished
-}
-
 # inventoryStatus values that indicate available stock
 _IN_STOCK_STATUSES: set[int] = {1000, 1003}
 
@@ -353,14 +331,18 @@ class GuitarCenterAdapter:
         )
 
     def _normalize_condition(self, hit: dict[str, Any]) -> tuple[str, dict[str, Any]]:
-        """Normalize GC condition to 4-value vocabulary.
+        """Extract raw condition and stickers from Algolia hit.
 
-        Maps GC's 9-condition vocabulary to (new, used, refurbished,
-        unknown). Preserves the original raw condition value in the
-        returned specs dict under ``condition_original``.
+        Returns the raw condition string (normalization deferred to Rust
+        ``normalize_condition()`` in the sanitize pipeline). Preserves the
+        original raw condition value in the returned specs dict under
+        ``condition_original``.
+
+        For skuCondition items (Open Box, Blemished, Restock), returns the
+        semantic name and adds the corresponding condition sticker.
 
         Returns:
-            Tuple of (normalized_condition, specs_dict).
+            Tuple of (condition_string, specs_dict).
         """
         specs: dict[str, Any] = {}
         condition_lvl1 = ""
@@ -374,26 +356,37 @@ class GuitarCenterAdapter:
         # Check skuCondition first (for Open Box, Blemished, Restock)
         sku_condition = hit.get("skuCondition")
         if sku_condition is not None:
-            normalized, sticker = _SKU_CONDITION_MAP.get(
-                int(sku_condition), ("unknown", None)
+            sku_condition_int = int(sku_condition)
+            # Sticker mapping: 2=restock, 3=open_box, 11=blemished
+            _SKU_STICKER_MAP: dict[int, str | None] = {
+                1: None,
+                2: "restock",
+                3: "open_box",
+                11: "blemished",
+            }
+            _SKU_NAME_MAP: dict[int, str] = {
+                2: "Restock",
+                3: "Open Box",
+                11: "Blemished",
+            }
+            sticker = _SKU_STICKER_MAP.get(sku_condition_int)
+            condition_name = _SKU_NAME_MAP.get(
+                sku_condition_int,
+                condition_lvl1 or condition_lvl0 or "",
             )
-            # Derive original name from skuCondition
-            sku_names = {2: "Restock", 3: "Open Box", 11: "Blemished"}
-            original = sku_names.get(int(sku_condition), condition_lvl1 or condition_lvl0)
-            specs["condition_original"] = original
+            specs["condition_original"] = condition_name
             if sticker:
                 specs.setdefault("stickers", []).append(sticker)
-            return normalized, specs
+            return condition_name, specs
 
         # Use condition.lvl1 if available (e.g., "Used > Excellent")
         raw_condition = condition_lvl1 or condition_lvl0
         specs["condition_original"] = raw_condition or ""
 
         if not raw_condition:
-            return "unknown", specs
+            return "", specs
 
-        normalized = _CONDITION_MAP.get(raw_condition, "unknown")
-        return normalized, specs
+        return raw_condition, specs
 
 
 # ── Standalone helpers ────────────────────────────────────────────────────

@@ -139,6 +139,21 @@ pub struct RawProduct {
     pub location: String,
 }
 
+/// Normalize a condition string to the 4-value vocabulary (new/used/refurbished/unknown).
+///
+/// Input is lowercased and trimmed before matching. Handles GC hierarchical
+/// values like "Used > Excellent" via `starts_with`, exact vocabulary matches,
+/// and falls back to "unknown" for anything unrecognized.
+pub fn normalize_condition(condition: &str) -> &str {
+    match condition.to_lowercase().trim() {
+        s if s.starts_with("used >") => "used",
+        "new" | "brand_new" | "mint" | "open box" | "blemished" => "new",
+        "used" | "excellent" | "great" | "good" | "fair" | "poor" => "used",
+        "refurbished" | "restock" => "refurbished",
+        _ => "unknown",
+    }
+}
+
 impl RawProduct {
     /// Sanitize product fields: trim whitespace, normalize case, validate price.
     pub fn sanitize(&mut self) {
@@ -149,7 +164,7 @@ impl RawProduct {
         self.category = self.category.trim().to_string();
         self.subcategory = self.subcategory.trim().to_string();
         self.currency = self.currency.trim().to_uppercase();
-        self.condition = self.condition.trim().to_lowercase();
+        // condition handled below (normalize_condition)
         self.availability = self.availability.trim().to_lowercase();
         self.url = self.url.trim().to_string();
         self.image_url = self.image_url.trim().to_string();
@@ -161,14 +176,25 @@ impl RawProduct {
             self.price = 0.0;
         }
 
+        // Preserve original condition before normalization
+        let original_condition = self.condition.trim().to_string();
+        if !original_condition.is_empty() {
+            if let Ok(mut specs) = serde_json::from_str::<serde_json::Value>(&self.specs_json) {
+                if specs.get("condition_original").is_none_or(|v| v.is_null() || v.as_str().is_none_or(|s| s.is_empty())) {
+                    specs["condition_original"] = serde_json::Value::String(original_condition);
+                    self.specs_json = serde_json::to_string(&specs).unwrap_or(self.specs_json.clone());
+                }
+            }
+        }
+
+        // Normalize condition using the pure function
+        self.condition = normalize_condition(&self.condition).to_string();
+
         if self.brand.is_empty() {
             self.brand = "Unknown".to_string();
         }
         if self.category.is_empty() {
             self.category = "Unknown".to_string();
-        }
-        if self.condition.is_empty() {
-            self.condition = "unknown".to_string();
         }
     }
 }
@@ -176,6 +202,93 @@ impl RawProduct {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // ── normalize_condition ────────────────────────────────────────────
+
+    #[test]
+    fn normalize_condition_returns_new_for_brand_new() {
+        assert_eq!(normalize_condition("brand_new"), "new");
+    }
+
+    #[test]
+    fn normalize_condition_returns_new_for_mint() {
+        assert_eq!(normalize_condition("mint"), "new");
+    }
+
+    #[test]
+    fn normalize_condition_handles_whitespace() {
+        assert_eq!(normalize_condition("  MINT  "), "new");
+    }
+
+    #[test]
+    fn normalize_condition_returns_used_for_excellent() {
+        assert_eq!(normalize_condition("excellent"), "used");
+    }
+
+    #[test]
+    fn normalize_condition_returns_used_for_gc_used_hierarchical() {
+        assert_eq!(normalize_condition("Used > Excellent"), "used");
+    }
+
+    #[test]
+    fn normalize_condition_returns_unknown_for_empty() {
+        assert_eq!(normalize_condition(""), "unknown");
+    }
+
+    #[test]
+    fn normalize_condition_returns_unknown_for_unrecognized() {
+        assert_eq!(normalize_condition("foobar"), "unknown");
+    }
+
+    #[test]
+    fn normalize_condition_returns_refurbished_for_refurbished() {
+        assert_eq!(normalize_condition("refurbished"), "refurbished");
+    }
+
+    #[test]
+    fn normalize_condition_returns_used_for_great() {
+        assert_eq!(normalize_condition("great"), "used");
+    }
+
+    #[test]
+    fn normalize_condition_returns_used_for_good() {
+        assert_eq!(normalize_condition("good"), "used");
+    }
+
+    #[test]
+    fn normalize_condition_returns_used_for_fair() {
+        assert_eq!(normalize_condition("fair"), "used");
+    }
+
+    #[test]
+    fn normalize_condition_returns_used_for_poor() {
+        assert_eq!(normalize_condition("poor"), "used");
+    }
+
+    #[test]
+    fn normalize_condition_returns_new_for_open_box() {
+        assert_eq!(normalize_condition("Open Box"), "new");
+    }
+
+    #[test]
+    fn normalize_condition_returns_new_for_blemished() {
+        assert_eq!(normalize_condition("Blemished"), "new");
+    }
+
+    #[test]
+    fn normalize_condition_returns_refurbished_for_restock() {
+        assert_eq!(normalize_condition("Restock"), "refurbished");
+    }
+
+    #[test]
+    fn normalize_condition_returns_unknown_for_unknown_input() {
+        assert_eq!(normalize_condition("Unknown"), "unknown");
+    }
+
+    #[test]
+    fn normalize_condition_returns_used_for_gc_used_great() {
+        assert_eq!(normalize_condition("Used > Great"), "used");
+    }
 
     #[test]
     fn deserialize_catalog_file_with_products() {
@@ -425,6 +538,58 @@ mod tests {
     // ── RawProduct::sanitize ────────────────────────────────────────────
 
     #[test]
+    fn sanitize_preserves_condition_original_in_specs_json() {
+        let mut product = RawProduct {
+            sku: "T-1".into(),
+            name: "Test".into(),
+            brand: "B".into(),
+            model: "M".into(),
+            category: "C".into(),
+            subcategory: "S".into(),
+            price: 100.0,
+            currency: "USD".into(),
+            condition: "brand_new".into(),
+            availability: "in_stock".into(),
+            url: "https://example.com".into(),
+            image_url: "".into(),
+            specs_json: "{}".into(),
+            seller: "Seller".into(),
+            location: "Loc".into(),
+        };
+        product.sanitize();
+        assert_eq!(product.condition, "new");
+        let specs: serde_json::Value =
+            serde_json::from_str(&product.specs_json).unwrap();
+        assert_eq!(specs["condition_original"], "brand_new");
+    }
+
+    #[test]
+    fn sanitize_leaves_existing_condition_original_intact() {
+        let mut product = RawProduct {
+            sku: "T-1".into(),
+            name: "Test".into(),
+            brand: "B".into(),
+            model: "M".into(),
+            category: "C".into(),
+            subcategory: "S".into(),
+            price: 100.0,
+            currency: "USD".into(),
+            condition: "mint".into(),
+            availability: "in_stock".into(),
+            url: "https://example.com".into(),
+            image_url: "".into(),
+            specs_json: r#"{"condition_original":"Open Box"}"#.into(),
+            seller: "Seller".into(),
+            location: "Loc".into(),
+        };
+        product.sanitize();
+        assert_eq!(product.condition, "new");
+        let specs: serde_json::Value =
+            serde_json::from_str(&product.specs_json).unwrap();
+        assert_eq!(specs["condition_original"], "Open Box");
+    }
+
+    #[test]
     fn sanitize_trims_whitespace() {
         let mut product = RawProduct {
             sku: "  SKU-123  ".to_string(),
@@ -450,7 +615,7 @@ mod tests {
         assert_eq!(product.name, "Fender Strat");
         assert_eq!(product.brand, "Fender");
         assert_eq!(product.currency, "USD");
-        assert_eq!(product.condition, "mint");
+        assert_eq!(product.condition, "new");
         assert_eq!(product.availability, "in stock");
     }
 

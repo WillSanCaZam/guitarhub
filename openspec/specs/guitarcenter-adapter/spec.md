@@ -37,18 +37,19 @@ Maps per design field table. Prefixes SKU with `gc-`, constructs image URLs from
 | Missing image | `imageId` absent | Default | `image_url = ""` |
 | SKU prefix | `identifiers.gcItemNumber = "12345"` | Map | `sku = "gc-12345"` |
 
-### Requirement: Adapter SHALL normalize GC conditions to 4-value vocabulary
+### Requirement: Adapter SHALL extract raw condition and stickers from Algolia
 
-Maps GC conditions (`Excellent`, `Great`, `Good`, `Fair`, `Poor`, `New`, `Open Box`, `Blemished`, `Restock`) to (`new`, `used`, `refurbished`, `unknown`). Raw value in `specs_json`.
+The adapter MUST extract raw `condition_lvl0`/`condition_lvl1` values and derive stickers from `skuCondition`. Vocabulary mapping to `new/used/refurbished/unknown` is delegated to Rust `sanitize()`.
+(Previously: adapter normalized GC conditions to 4-value vocabulary inline)
 
 | Case | Precondition | Action | Outcome |
 |------|-------------|--------|---------|
-| Used variants | `condition.lvl1 = "Used > Excellent"` | Normalize | `condition = "used"`, original in `specs_json` |
-| New | `condition.lvl0 = "New"` | Normalize | `condition = "new"` |
-| Open Box | `skuCondition = 3` | Normalize | `condition = "new"`, sticker `"open_box"` |
-| Blemished | `skuCondition = 11` | Normalize | `condition = "new"`, sticker `"blemished"` |
-| Restock | `skuCondition = 2` | Normalize | `condition = "refurbished"`, sticker `"restock"` |
-| Unknown | No condition data | Normalize | `condition = "unknown"` |
+| Used variants | `condition.lvl1 = "Used > Excellent"` | Extract raw condition | `condition` = `"Used > Excellent"`, no sticker |
+| New | `condition.lvl0 = "New"` | Extract raw condition | `condition` = `"New"`, no sticker |
+| Open Box | `skuCondition = 3` | Extract sticker | `condition` from raw value, sticker `"open_box"` |
+| Blemished | `skuCondition = 11` | Extract sticker | `condition` from raw value, sticker `"blemished"` |
+| Restock | `skuCondition = 2` | Extract sticker | `condition` from raw value, sticker `"restock"` |
+| Unknown | No condition data | Handle absence | `condition = ""`, no sticker |
 
 ### Requirement: Adapter SHALL set availability from Algolia stock signals
 
