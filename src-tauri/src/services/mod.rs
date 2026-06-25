@@ -7,5 +7,6 @@ pub mod export_service;
 pub mod image_cache;
 pub mod price_drop;
 pub mod profile_service;
+pub mod product_query;
 pub mod search;
 pub mod sync;
