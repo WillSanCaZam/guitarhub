@@ -9,6 +9,7 @@ use repository::settings::SettingsRepository;
 use repository::sqlite::migrations::MigrationRunner;
 use repository::sqlite::settings::SqliteSettingsRepository;
 use services::image_cache::ImageCacheService;
+use services::product_query::ProductQueryService;
 use sqlx::sqlite::SqlitePoolOptions;
 use std::sync::Arc;
 
@@ -21,6 +22,7 @@ pub struct AppState {
     pub pool: sqlx::SqlitePool,
     pub image_cache_service: ImageCacheService,
     pub http_client: reqwest::Client,
+    pub product_query: ProductQueryService,
 }
 
 /// Initialize the database connection, run pending migrations, and
@@ -62,6 +64,8 @@ pub async fn initialize_database(db_path: &str) -> anyhow::Result<AppState> {
         Arc::new(SqliteSettingsRepository::new(pool.clone()));
     let image_cache_service = ImageCacheService::new_default(pool.clone(), settings_repo);
 
+    let product_query = ProductQueryService::new(pool.clone());
+
     let http_client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(30))
         .user_agent("GuitarHub/0.2.0")
@@ -71,6 +75,7 @@ pub async fn initialize_database(db_path: &str) -> anyhow::Result<AppState> {
     Ok(AppState {
         pool,
         image_cache_service,
+        product_query,
         http_client,
     })
 }

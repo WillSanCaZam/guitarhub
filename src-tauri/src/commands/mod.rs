@@ -7,6 +7,7 @@ pub mod dashboard_command;
 pub mod export_command;
 pub mod image_command;
 pub mod price_command;
+pub mod product_command;
 pub mod profile_command;
 pub mod settings_command;
 pub mod search_command;
