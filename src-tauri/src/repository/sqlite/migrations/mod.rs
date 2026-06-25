@@ -1780,7 +1780,7 @@ END;",
     // ── Migration 010: Community Schema ─────────────────────────────────
 
     /// Apply the full migration chain 001→010 on an in-memory pool.
-    async fn apply_full_chain_001_to_010(pool: &sqlx::SqlitePool) -> PathBuf {
+    async fn apply_full_chain_001_to_011(pool: &sqlx::SqlitePool) -> PathBuf {
         let dir = temp_dir_with_files(&[
             "001_init.sql",
             "002_add_url_validation.sql",
@@ -1793,6 +1793,7 @@ END;",
             "008_collection_items.sql",
             "009_add_recent_searches.sql",
             "010_community_schema.sql",
+            "011_soft_delete.sql",
         ]);
         std::fs::write(dir.join("001_init.sql"), include_str!("../migrations/001_init.sql")).unwrap();
         std::fs::write(dir.join("002_add_url_validation.sql"), include_str!("../migrations/002_add_url_validation.sql")).unwrap();
@@ -1805,6 +1806,7 @@ END;",
         std::fs::write(dir.join("008_collection_items.down.sql"), include_str!("../migrations/008_collection_items.down.sql")).unwrap();
         std::fs::write(dir.join("009_add_recent_searches.sql"), include_str!("../migrations/009_add_recent_searches.sql")).unwrap();
         std::fs::write(dir.join("010_community_schema.sql"), include_str!("../migrations/010_community_schema.sql")).unwrap();
+        std::fs::write(dir.join("011_soft_delete.sql"), include_str!("../migrations/011_soft_delete.sql")).unwrap();
 
         let runner = MigrationRunner::new(pool.clone(), dir.clone());
         runner.run().await.unwrap();
@@ -1814,7 +1816,7 @@ END;",
     #[tokio::test]
     async fn migration_010_creates_community_tables() {
         let pool = make_memory_pool().await;
-        apply_full_chain_001_to_010(&pool).await;
+        apply_full_chain_001_to_011(&pool).await;
 
         // Verify each community table exists by querying it
         let r: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM community_users").fetch_one(&pool).await.unwrap();
@@ -1838,7 +1840,7 @@ END;",
     #[tokio::test]
     async fn migration_010_community_users_has_expected_columns() {
         let pool = make_memory_pool().await;
-        apply_full_chain_001_to_010(&pool).await;
+        apply_full_chain_001_to_011(&pool).await;
 
         let columns: Vec<(i64, String, String)> = sqlx::query_as("PRAGMA table_info(community_users)")
             .fetch_all(&pool)
@@ -1856,7 +1858,7 @@ END;",
     #[tokio::test]
     async fn migration_010_community_lessons_has_expected_columns() {
         let pool = make_memory_pool().await;
-        apply_full_chain_001_to_010(&pool).await;
+        apply_full_chain_001_to_011(&pool).await;
 
         let columns: Vec<(i64, String, String)> = sqlx::query_as("PRAGMA table_info(community_lessons)")
             .fetch_all(&pool)
@@ -1874,7 +1876,7 @@ END;",
     #[tokio::test]
     async fn migration_010_community_users_accepts_insert() {
         let pool = make_memory_pool().await;
-        apply_full_chain_001_to_010(&pool).await;
+        apply_full_chain_001_to_011(&pool).await;
 
         sqlx::query(
             "INSERT INTO community_users (id, username, email, password_hash, created_at)
@@ -1894,7 +1896,7 @@ END;",
     #[tokio::test]
     async fn migration_010_community_lessons_accepts_insert() {
         let pool = make_memory_pool().await;
-        apply_full_chain_001_to_010(&pool).await;
+        apply_full_chain_001_to_011(&pool).await;
 
         sqlx::query(
             "INSERT INTO community_users (id, username, email, password_hash, created_at)
@@ -1920,9 +1922,9 @@ END;",
     }
 
     #[tokio::test]
-    async fn migration_010_db_version_reaches_10() {
+    async fn migration_011_db_version_reaches_11() {
         let pool = make_memory_pool().await;
-        apply_full_chain_001_to_010(&pool).await;
+        apply_full_chain_001_to_011(&pool).await;
 
         let version: String = sqlx::query_scalar(
             "SELECT value FROM schema_meta WHERE key = 'db_version'",
@@ -1930,13 +1932,13 @@ END;",
         .fetch_one(&pool)
         .await
         .unwrap();
-        assert_eq!(version, "10", "db_version should be 10 after full chain including 010");
+        assert_eq!(version, "11", "db_version should be 11 after full chain including 011");
     }
 
     #[tokio::test]
-    async fn migration_010_is_idempotent() {
+    async fn migration_011_is_idempotent() {
         let pool = make_memory_pool().await;
-        apply_full_chain_001_to_010(&pool).await;
+        apply_full_chain_001_to_011(&pool).await;
 
         // Re-run should not fail
         let dir = temp_dir_with_files(&[
@@ -1944,6 +1946,7 @@ END;",
             "004_add_price_source.sql", "005_add_settings.sql", "006_wishlist_schema.sql",
             "007_price_drop_notifications.sql", "008_collection_items.down.sql",
             "008_collection_items.sql", "009_add_recent_searches.sql", "010_community_schema.sql",
+            "011_soft_delete.sql",
         ]);
         std::fs::write(dir.join("001_init.sql"), include_str!("../migrations/001_init.sql")).unwrap();
         std::fs::write(dir.join("002_add_url_validation.sql"), include_str!("../migrations/002_add_url_validation.sql")).unwrap();
@@ -1956,6 +1959,7 @@ END;",
         std::fs::write(dir.join("008_collection_items.down.sql"), include_str!("../migrations/008_collection_items.down.sql")).unwrap();
         std::fs::write(dir.join("009_add_recent_searches.sql"), include_str!("../migrations/009_add_recent_searches.sql")).unwrap();
         std::fs::write(dir.join("010_community_schema.sql"), include_str!("../migrations/010_community_schema.sql")).unwrap();
+        std::fs::write(dir.join("011_soft_delete.sql"), include_str!("../migrations/011_soft_delete.sql")).unwrap();
 
         let runner = MigrationRunner::new(pool.clone(), dir);
         runner.run().await.unwrap();
@@ -1966,6 +1970,6 @@ END;",
         .fetch_one(&pool)
         .await
         .unwrap();
-        assert_eq!(version, "10");
+        assert_eq!(version, "11");
     }
 }

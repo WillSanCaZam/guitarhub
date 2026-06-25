@@ -17,7 +17,7 @@ fn temp_dir_with_files(files: &[&str]) -> PathBuf {
     dir
 }
 
-/// Apply the full migration chain 001→009 plus the community schema 010.
+/// Apply the full migration chain 001→011 including soft-delete columns.
 async fn apply_full_chain(pool: &sqlx::SqlitePool) -> PathBuf {
     let dir = temp_dir_with_files(&[
         "001_init.sql",
@@ -31,6 +31,7 @@ async fn apply_full_chain(pool: &sqlx::SqlitePool) -> PathBuf {
         "008_collection_items.sql",
         "009_add_recent_searches.sql",
         "010_community_schema.sql",
+        "011_soft_delete.sql",
     ]);
     std::fs::write(dir.join("001_init.sql"), include_str!("../migrations/001_init.sql")).unwrap();
     std::fs::write(dir.join("002_add_url_validation.sql"), include_str!("../migrations/002_add_url_validation.sql")).unwrap();
@@ -43,6 +44,7 @@ async fn apply_full_chain(pool: &sqlx::SqlitePool) -> PathBuf {
     std::fs::write(dir.join("008_collection_items.down.sql"), include_str!("../migrations/008_collection_items.down.sql")).unwrap();
     std::fs::write(dir.join("009_add_recent_searches.sql"), include_str!("../migrations/009_add_recent_searches.sql")).unwrap();
     std::fs::write(dir.join("010_community_schema.sql"), include_str!("../repository/sqlite/migrations/010_community_schema.sql")).unwrap();
+    std::fs::write(dir.join("011_soft_delete.sql"), include_str!("../migrations/011_soft_delete.sql")).unwrap();
 
     let runner = MigrationRunner::new(pool.clone(), dir.clone());
     runner.run().await.unwrap();
@@ -272,7 +274,7 @@ async fn migration_010_community_cache_accepts_insert() {
 }
 
 #[tokio::test]
-async fn migration_010_db_version_reaches_10() {
+async fn migration_011_db_version_reaches_11() {
     let pool = make_memory_pool().await;
     apply_full_chain(&pool).await;
 
@@ -282,13 +284,51 @@ async fn migration_010_db_version_reaches_10() {
     .fetch_one(&pool)
     .await
     .unwrap();
-    assert_eq!(version, "10", "db_version should be 10 after full chain including 010");
+    assert_eq!(version, "11", "db_version should be 11 after full chain including 011");
 }
 
 #[tokio::test]
-async fn migration_010_is_idempotent() {
+async fn migration_011_soft_delete_adds_columns() {
     let pool = make_memory_pool().await;
     apply_full_chain(&pool).await;
+
+    // Verify columns exist
+    let columns: Vec<(i64, String, String)> = sqlx::query_as("PRAGMA table_info(products_meta)")
+        .fetch_all(&pool)
+        .await
+        .unwrap();
+
+    let col_names: Vec<&str> = columns.iter().map(|(_, name, _)| name.as_str()).collect();
+    assert!(col_names.contains(&"is_active"), "missing is_active column");
+    assert!(col_names.contains(&"delisted_at"), "missing delisted_at column");
+
+    // Verify defaults
+    let col_row: Vec<(i64, String, String, String, Option<i64>, Option<i64>)> = sqlx::query_as(
+        "PRAGMA table_info(products_meta)",
+    )
+    .fetch_all(&pool)
+    .await
+    .unwrap();
+
+    for (_, name, _, dflt, _, _) in &col_row {
+        if name == "is_active" {
+            assert_eq!(dflt.as_deref(), Some("1"), "is_active should default to 1");
+        }
+    }
+}
+
+#[tokio::test]
+async fn migration_011_is_idempotent() {
+    let pool = make_memory_pool().await;
+    apply_full_chain(&pool).await;
+
+    let version: String = sqlx::query_scalar(
+        "SELECT value FROM schema_meta WHERE key = 'db_version'",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(version, "11", "db_version should be 11 after full chain");
 
     // Re-run should not fail
     let dir = temp_dir_with_files(&[
@@ -296,6 +336,7 @@ async fn migration_010_is_idempotent() {
         "004_add_price_source.sql", "005_add_settings.sql", "006_wishlist_schema.sql",
         "007_price_drop_notifications.sql", "008_collection_items.down.sql",
         "008_collection_items.sql", "009_add_recent_searches.sql", "010_community_schema.sql",
+        "011_soft_delete.sql",
     ]);
     std::fs::write(dir.join("001_init.sql"), include_str!("../migrations/001_init.sql")).unwrap();
     std::fs::write(dir.join("002_add_url_validation.sql"), include_str!("../migrations/002_add_url_validation.sql")).unwrap();
@@ -308,6 +349,7 @@ async fn migration_010_is_idempotent() {
     std::fs::write(dir.join("008_collection_items.down.sql"), include_str!("../migrations/008_collection_items.down.sql")).unwrap();
     std::fs::write(dir.join("009_add_recent_searches.sql"), include_str!("../migrations/009_add_recent_searches.sql")).unwrap();
     std::fs::write(dir.join("010_community_schema.sql"), include_str!("../repository/sqlite/migrations/010_community_schema.sql")).unwrap();
+    std::fs::write(dir.join("011_soft_delete.sql"), include_str!("../migrations/011_soft_delete.sql")).unwrap();
 
     let runner = MigrationRunner::new(pool.clone(), dir);
     runner.run().await.unwrap();
@@ -318,5 +360,5 @@ async fn migration_010_is_idempotent() {
     .fetch_one(&pool)
     .await
     .unwrap();
-    assert_eq!(version, "10");
+    assert_eq!(version, "11");
 }
