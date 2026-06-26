@@ -119,6 +119,16 @@ pub enum AppError {
     SyncInProgress,
     #[error("IO error: {0}")]
     Io(String),
+    #[error("token invalid")]
+    TokenInvalid,
+    #[error("failed to store token: {0}")]
+    TokenStorage(String),
+    #[error("unknown store: {0}")]
+    StoreNotFound(String),
+    #[error("already connected to this store")]
+    ConnectionExists,
+    #[error("rate limited, retry later")]
+    RateLimited,
 }
 
 impl serde::Serialize for AppError {
@@ -226,5 +236,35 @@ mod tests {
             "got: {}",
             app_err
         );
+    }
+
+    #[test]
+    fn app_error_token_invalid_display() {
+        let err = AppError::TokenInvalid;
+        assert_eq!(err.to_string(), "token invalid");
+    }
+
+    #[test]
+    fn app_error_token_storage_display() {
+        let err = AppError::TokenStorage("keyring failure".into());
+        assert_eq!(err.to_string(), "failed to store token: keyring failure");
+    }
+
+    #[test]
+    fn app_error_store_not_found_display() {
+        let err = AppError::StoreNotFound("ebay".into());
+        assert_eq!(err.to_string(), "unknown store: ebay");
+    }
+
+    #[test]
+    fn app_error_connection_exists_display() {
+        let err = AppError::ConnectionExists;
+        assert_eq!(err.to_string(), "already connected to this store");
+    }
+
+    #[test]
+    fn app_error_rate_limited_display() {
+        let err = AppError::RateLimited;
+        assert_eq!(err.to_string(), "rate limited, retry later");
     }
 }
