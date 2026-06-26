@@ -11,6 +11,7 @@ pub mod product_command;
 pub mod profile_command;
 pub mod settings_command;
 pub mod search_command;
+pub mod store_command;
 pub mod sync_command;
 pub mod url_command;
 pub mod wishlist_command;

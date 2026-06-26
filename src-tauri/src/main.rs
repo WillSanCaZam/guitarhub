@@ -30,6 +30,12 @@ async fn main() -> anyhow::Result<()> {
             guitarhub_lib::commands::export_command::export_data,
             guitarhub_lib::commands::sync_command::sync_catalog,
             guitarhub_lib::commands::sync_command::sync_local_catalog_file,
+            // ── Store commands ───────────────────────────────────────────
+            guitarhub_lib::commands::store_command::connect_store,
+            guitarhub_lib::commands::store_command::disconnect_store,
+            guitarhub_lib::commands::store_command::list_connections,
+            guitarhub_lib::commands::store_command::validate_store_token,
+            guitarhub_lib::commands::store_command::sync_user_listings,
             guitarhub_lib::commands::url_command::open_url,
             guitarhub_lib::commands::product_command::get_featured_products,
             guitarhub_lib::commands::product_command::get_price_drops,

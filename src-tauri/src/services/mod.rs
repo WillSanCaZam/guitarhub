@@ -13,3 +13,4 @@ pub mod product_query;
 pub mod search;
 pub mod store_registry;
 pub mod sync;
+pub mod user_sync;
