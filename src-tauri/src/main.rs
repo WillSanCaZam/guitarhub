@@ -29,6 +29,7 @@ async fn main() -> anyhow::Result<()> {
             guitarhub_lib::commands::settings_command::test_alert_channel,
             guitarhub_lib::commands::export_command::export_data,
             guitarhub_lib::commands::sync_command::sync_catalog,
+            guitarhub_lib::commands::sync_command::sync_local_catalog_file,
             guitarhub_lib::commands::url_command::open_url,
             guitarhub_lib::commands::product_command::get_featured_products,
             guitarhub_lib::commands::product_command::get_price_drops,

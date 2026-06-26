@@ -9,6 +9,21 @@ use crate::AppState;
 use tauri::{AppHandle, State};
 use tauri_plugin_notification::NotificationExt;
 
+/// Read a local catalog JSON file and upsert all products into the database.
+#[tauri::command]
+pub async fn sync_local_catalog_file(
+    app: AppHandle,
+    path: String,
+    state: State<'_, AppState>,
+) -> Result<SyncResult, crate::AppError> {
+    let service = CatalogSyncService::new(state.pool.clone(), state.http_client.clone());
+    let mut result = service.sync_local_catalog(&path).await?;
+
+    dispatch_price_drops(&mut result, &app, &state.pool, &state.http_client).await;
+
+    Ok(result)
+}
+
 /// Fetch a remote catalog JSON and upsert all products into the database.
 #[tauri::command]
 pub async fn sync_catalog(
