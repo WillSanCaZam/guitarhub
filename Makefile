@@ -111,6 +111,23 @@ audit:
 
 # ── Scrape Targets ──────────────────────────────────────────────────────────
 
+## Ensure artifacts directory exists
+artifacts:
+	mkdir -p artifacts
+
+## Scrape Reverb catalog and save to artifacts/catalog.json
+scrape-reverb: artifacts
+	@if [ -d "$(SCRAPER_DIR)" ]; then \
+		if [ -d ".venv" ]; then \
+			source .venv/bin/activate && python -m scraper --adapter reverb --output artifacts/catalog.json; \
+		else \
+			python3 -m scraper --adapter reverb --output artifacts/catalog.json; \
+		fi; \
+		echo "Scraped to artifacts/catalog.json"; \
+	else \
+		echo "No $(SCRAPER_DIR)/ directory found — skipping"; \
+	fi
+
 ## Scrape Guitar Center catalog (requires GC_ALGOLIA_* env vars)
 scrape-guitarcenter:
 	@if [ -d "$(SCRAPER_DIR)" ]; then \
