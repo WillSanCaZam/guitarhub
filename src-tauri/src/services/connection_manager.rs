@@ -21,6 +21,7 @@ const NONCE_SIZE: usize = 12; // AES-GCM standard nonce
 /// Uses AES-256-GCM for token encryption with a key derived from the OS keyring.
 /// Falls back to a machine-ID-based derivation if the keyring is unavailable
 /// (e.g., CI/headless environments).
+#[derive(Clone)]
 pub struct ConnectionManager {
     pool: SqlitePool,
     cipher: Aes256Gcm,
@@ -190,7 +191,7 @@ impl ConnectionManager {
 /// Encrypt a plaintext token with AES-256-GCM.
 ///
 /// Returns hex-encoded nonce + ciphertext.
-fn encrypt_token(cipher: &Aes256Gcm, plaintext: &str) -> Result<String, aes_gcm::Error> {
+pub(crate) fn encrypt_token(cipher: &Aes256Gcm, plaintext: &str) -> Result<String, aes_gcm::Error> {
     let mut nonce_bytes = [0u8; NONCE_SIZE];
     rand::rng().fill_bytes(&mut nonce_bytes);
     let nonce = Nonce::from_slice(&nonce_bytes);
@@ -206,7 +207,7 @@ fn encrypt_token(cipher: &Aes256Gcm, plaintext: &str) -> Result<String, aes_gcm:
 }
 
 /// Decrypt a hex-encoded nonce + ciphertext.
-fn decrypt_token_inner(cipher: &Aes256Gcm, encrypted: &[u8]) -> Result<String, aes_gcm::Error> {
+pub(crate) fn decrypt_token_inner(cipher: &Aes256Gcm, encrypted: &[u8]) -> Result<String, aes_gcm::Error> {
     if encrypted.len() < NONCE_SIZE {
         return Err(aes_gcm::Error);
     }
@@ -219,30 +220,38 @@ fn decrypt_token_inner(cipher: &Aes256Gcm, encrypted: &[u8]) -> Result<String, a
 
 /// Derive the encryption key for AES-256-GCM.
 ///
+/// The key is cached in a `OnceLock` after the first call, ensuring ALL
+/// callers (including `ConnectionManager::new` and tests in sibling modules)
+/// use the IDENTICAL key. This avoids non-determinism when the OS keyring
+/// behaves differently across calls in headless/CI environments.
+///
 /// Priority:
 /// 1. OS keyring (via `keyring` crate) — production path
 /// 2. Machine ID + hardcoded seed — CI/headless development fallback
 ///
 /// Logs a warning when falling back to the development-only derivation.
-fn derive_encryption_key() -> [u8; CIPHER_KEY_SIZE] {
-    // Try OS keyring first
-    if let Some(key) = keyring_get_key() {
-        return key;
-    }
+pub(crate) fn derive_encryption_key() -> [u8; CIPHER_KEY_SIZE] {
+    static CACHED_KEY: std::sync::OnceLock<[u8; CIPHER_KEY_SIZE]> = std::sync::OnceLock::new();
+    *CACHED_KEY.get_or_init(|| {
+        // Try OS keyring first
+        if let Some(key) = keyring_get_key() {
+            return key;
+        }
 
-    tracing::warn!(
-        "OS keyring unavailable; falling back to dev-only key derivation. \
-         Tokens will be encrypted with a key derived from machine ID + hardcoded seed. \
-         This is NOT production-safe."
-    );
+        tracing::warn!(
+            "OS keyring unavailable; falling back to dev-only key derivation. \
+             Tokens will be encrypted with a key derived from machine ID + hardcoded seed. \
+             This is NOT production-safe."
+        );
 
-    // Fallback: derive from machine ID + hardcoded seed
-    let machine_id = get_machine_id();
-    let seed = format!("{HARDCODED_SEED}:{machine_id}");
-    let hash = sha2::Sha256::digest(seed.as_bytes());
-    let mut key = [0u8; CIPHER_KEY_SIZE];
-    key.copy_from_slice(&hash);
-    key
+        // Fallback: derive from machine ID + hardcoded seed
+        let machine_id = get_machine_id();
+        let seed = format!("{HARDCODED_SEED}:{machine_id}");
+        let hash = sha2::Sha256::digest(seed.as_bytes());
+        let mut key = [0u8; CIPHER_KEY_SIZE];
+        key.copy_from_slice(&hash);
+        key
+    })
 }
 
 /// Try to get or create an encryption key from the OS keyring.

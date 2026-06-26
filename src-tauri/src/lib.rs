@@ -8,6 +8,7 @@ pub mod services;
 use repository::settings::SettingsRepository;
 use repository::sqlite::migrations::MigrationRunner;
 use repository::sqlite::settings::SqliteSettingsRepository;
+use services::connection_manager::ConnectionManager;
 use services::image_cache::ImageCacheService;
 use services::product_query::ProductQueryService;
 use services::sync::CatalogSyncService;
@@ -24,6 +25,7 @@ pub struct AppState {
     pub image_cache_service: ImageCacheService,
     pub http_client: reqwest::Client,
     pub product_query: ProductQueryService,
+    pub connection_manager: ConnectionManager,
 }
 
 /// Initialize the database connection, run pending migrations, and
@@ -73,6 +75,8 @@ pub async fn initialize_database(db_path: &str) -> anyhow::Result<AppState> {
         .build()
         .map_err(|e| anyhow::anyhow!("Failed to build HTTP client: {e}"))?;
 
+    let connection_manager = ConnectionManager::new(pool.clone()).await;
+
     // Auto-import a local catalog file if GUITARHUB_AUTO_IMPORT is set.
     if let Ok(path) = std::env::var("GUITARHUB_AUTO_IMPORT") {
         if !path.is_empty() {
@@ -95,6 +99,7 @@ pub async fn initialize_database(db_path: &str) -> anyhow::Result<AppState> {
         image_cache_service,
         product_query,
         http_client,
+        connection_manager,
     })
 }
 
