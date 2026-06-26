@@ -140,6 +140,10 @@ scrape-guitarcenter:
 		echo "No $(SCRAPER_DIR)/ directory found — skipping"; \
 	fi
 
+## Scrape + Dev in one step: populate data, then start the app
+dev-with-data: scrape-reverb
+	GUITARHUB_AUTO_IMPORT=artifacts/catalog.json cargo tauri dev
+
 # ── Help ─────────────────────────────────────────────────────────────────────
 
 ## Show this help message

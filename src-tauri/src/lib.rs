@@ -10,6 +10,7 @@ use repository::sqlite::migrations::MigrationRunner;
 use repository::sqlite::settings::SqliteSettingsRepository;
 use services::image_cache::ImageCacheService;
 use services::product_query::ProductQueryService;
+use services::sync::CatalogSyncService;
 use sqlx::sqlite::SqlitePoolOptions;
 use std::sync::Arc;
 
@@ -71,6 +72,23 @@ pub async fn initialize_database(db_path: &str) -> anyhow::Result<AppState> {
         .user_agent("GuitarHub/0.2.0")
         .build()
         .map_err(|e| anyhow::anyhow!("Failed to build HTTP client: {e}"))?;
+
+    // Auto-import a local catalog file if GUITARHUB_AUTO_IMPORT is set.
+    if let Ok(path) = std::env::var("GUITARHUB_AUTO_IMPORT") {
+        if !path.is_empty() {
+            tracing::info!("Auto-importing catalog from: {path}");
+            let sync_service = CatalogSyncService::new(pool.clone(), http_client.clone());
+            match sync_service.sync_local_catalog(&path).await {
+                Ok(result) => tracing::info!(
+                    "Auto-import complete: {} products loaded, {} updated, {} delisted",
+                    result.products_loaded,
+                    result.products_updated,
+                    result.delisted,
+                ),
+                Err(e) => tracing::warn!("Auto-import failed: {e}"),
+            }
+        }
+    }
 
     Ok(AppState {
         pool,
