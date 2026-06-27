@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invoke } from '@tauri-apps/api/core'
   import { onMount } from 'svelte'
-  import { storeDefs } from './+page'
+  import { storeDefs } from '$lib/data/store-defs'
   import StoresGrid from '$lib/components/stores/StoresGrid.svelte'
   import ConnectModal from '$lib/components/stores/ConnectModal.svelte'
   import type { Connection } from '$lib/types/stores'
