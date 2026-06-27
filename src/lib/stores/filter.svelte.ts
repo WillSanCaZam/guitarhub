@@ -15,6 +15,7 @@ export interface FilterState {
   source: string | null;
   condition: string | null;
   listing_currency: string | null;
+  store_connection_id: string | null;
   sort: SortOrder;
 }
 
@@ -25,6 +26,7 @@ export const DEFAULT_FILTERS: FilterState = {
   source: null,
   condition: null,
   listing_currency: null,
+  store_connection_id: null,
   sort: 'relevance',
 };
 
@@ -66,6 +68,7 @@ export function filtersToParams(filters: FilterState): URLSearchParams {
   if (filters.source !== null) params.set('source', filters.source);
   if (filters.condition !== null) params.set('condition', filters.condition);
   if (filters.listing_currency !== null) params.set('listing_currency', filters.listing_currency);
+  if (filters.store_connection_id !== null) params.set('store_connection_id', filters.store_connection_id);
   // sort is always non-null per FilterState
   if (filters.sort !== 'relevance') params.set('sort', filters.sort);
 
@@ -90,6 +93,7 @@ export function paramsToFilters(params: URLSearchParams): FilterState {
     source: params.get('source') ?? null,
     condition: params.get('condition') ?? null,
     listing_currency: params.get('listing_currency') ?? null,
+    store_connection_id: params.get('store_connection_id') ?? null,
     sort,
   };
 }

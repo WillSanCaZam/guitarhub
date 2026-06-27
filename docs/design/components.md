@@ -65,6 +65,21 @@ Last updated: 2026-06-22
 | ProductDetail | `ProductDetail.svelte` | Full product detail view |
 | StoreComparison | `StoreComparison.svelte` | Cross-store price comparison |
 
+## Stores (`src/lib/components/stores/`)
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| ConnectModal | `ConnectModal.svelte` | Modal for connecting a store account via PAT |
+| StoreCard | `StoreCard.svelte` | Individual store card with status and connect/disconnect |
+| StoreIcon | `StoreIcon.svelte` | SVG icon per store (Reverb "R", generic fallback) |
+| StoresGrid | `StoresGrid.svelte` | Grid of store cards with connection state |
+
+## Shared (`src/lib/components/`)
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| SourceBadge | `SourceBadge.svelte` | Source store pill badge (Reverb, Guitar Center, Your Listing) |
+
 ## Root Components (`src/lib/components/`)
 
 | Component | File | Purpose |

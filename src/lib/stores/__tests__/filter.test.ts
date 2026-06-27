@@ -17,6 +17,7 @@ const FULL_FILTERS: FilterState = {
   source: 'Reverb',
   condition: 'excellent',
   listing_currency: 'USD',
+  store_connection_id: null,
   sort: 'price_asc',
 };
 
@@ -27,6 +28,7 @@ const EMPTY_FILTERS: FilterState = {
   source: null,
   condition: null,
   listing_currency: null,
+  store_connection_id: null,
   sort: 'relevance',
 };
 
@@ -210,6 +212,7 @@ describe('filter runes store', () => {
         source: 'eBay',
         condition: null,
         listing_currency: null,
+        store_connection_id: null,
         sort: 'price_asc',
       };
       const params = filtersToParams(partial);

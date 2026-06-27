@@ -61,7 +61,8 @@ async fn setup_integration_db() -> SqlitePool {
             location     TEXT,
             synced_at    INTEGER NOT NULL,
             is_active    INTEGER DEFAULT 1,
-            delisted_at  INTEGER
+            delisted_at  INTEGER,
+            user_id      TEXT
         )",
     )
     .execute(&pool)
@@ -109,6 +110,14 @@ async fn setup_integration_db() -> SqlitePool {
             INSERT INTO products_fts(rowid, sku, source_id, name, brand, model, category, subcategory, specs_json)
             VALUES (new.rowid, new.sku, new.source_id, new.name, new.brand, new.model, new.category, new.subcategory, new.specs_json);
         END",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // user_id index (migration 012)
+    sqlx::query(
+        "CREATE INDEX IF NOT EXISTS idx_products_meta_user_id ON products_meta(user_id)",
     )
     .execute(&pool)
     .await

@@ -24,6 +24,7 @@ vi.mock('$lib/stores/wishlist.svelte', async (importOriginal) => {
 
 const mockProduct = {
   sku: 'test-sku',
+  source_id: 'reverb',
   name: 'Test Guitar',
   brand: 'Test Brand',
   price: 999,

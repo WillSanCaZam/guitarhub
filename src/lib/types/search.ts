@@ -12,10 +12,12 @@ export interface SearchFilters {
   source: string | null;
   condition: string | null;
   listing_currency: string | null;
+  store_connection_id: string | null;
 }
 
 export interface RawProduct {
   sku: string;
+  source_id: string;
   name: string;
   brand: string;
   model: string;
@@ -30,6 +32,7 @@ export interface RawProduct {
   specs_json: string;
   seller: string;
   location: string;
+  user_id?: string | null;
   rating?: number;
 }
 

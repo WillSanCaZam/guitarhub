@@ -82,6 +82,11 @@ pub struct SearchFilters {
     pub condition: Option<String>,
     pub listing_currency: Option<String>,
     pub include_inactive: bool,
+    /// If `Some("public")`, only public products (`user_id IS NULL`).
+    /// If `Some(connection_id)`, only products from that connection.
+    /// If `None`, all products returned (no filter).
+    #[serde(default)]
+    pub store_connection_id: Option<String>,
 }
 
 /// Sort order for product search results.
@@ -122,6 +127,8 @@ pub struct CatalogFile {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RawProduct {
     pub sku: String,
+    #[serde(default)]
+    pub source_id: String,
     pub name: String,
     pub brand: String,
     pub model: String,
@@ -137,6 +144,8 @@ pub struct RawProduct {
     pub specs_json: String,
     pub seller: String,
     pub location: String,
+    #[serde(default)]
+    pub user_id: Option<String>,
 }
 
 /// Normalize a condition string to the 4-value vocabulary (new/used/refurbished/unknown).
@@ -464,6 +473,7 @@ mod tests {
             condition: Some("excellent".into()),
             listing_currency: Some("USD".into()),
             include_inactive: true,
+            store_connection_id: None,
         };
         let json = serde_json::to_string(&filters).unwrap();
         let restored: SearchFilters = serde_json::from_str(&json).unwrap();
@@ -474,6 +484,7 @@ mod tests {
         assert_eq!(restored.condition.unwrap(), "excellent");
         assert_eq!(restored.listing_currency.unwrap(), "USD");
         assert!(restored.include_inactive, "include_inactive must survive JSON round-trip");
+        assert_eq!(restored.store_connection_id, None, "default store_connection_id must be None");
     }
 
     // ── SortOrder ───────────────────────────────────────────────────────
@@ -541,6 +552,7 @@ mod tests {
     fn sanitize_preserves_condition_original_in_specs_json() {
         let mut product = RawProduct {
             sku: "T-1".into(),
+            source_id: String::new(),
             name: "Test".into(),
             brand: "B".into(),
             model: "M".into(),
@@ -555,6 +567,7 @@ mod tests {
             specs_json: "{}".into(),
             seller: "Seller".into(),
             location: "Loc".into(),
+            user_id: None,
         };
         product.sanitize();
         assert_eq!(product.condition, "new");
@@ -567,6 +580,7 @@ mod tests {
     fn sanitize_leaves_existing_condition_original_intact() {
         let mut product = RawProduct {
             sku: "T-1".into(),
+            source_id: String::new(),
             name: "Test".into(),
             brand: "B".into(),
             model: "M".into(),
@@ -581,6 +595,7 @@ mod tests {
             specs_json: r#"{"condition_original":"Open Box"}"#.into(),
             seller: "Seller".into(),
             location: "Loc".into(),
+            user_id: None,
         };
         product.sanitize();
         assert_eq!(product.condition, "new");
@@ -593,6 +608,7 @@ mod tests {
     fn sanitize_trims_whitespace() {
         let mut product = RawProduct {
             sku: "  SKU-123  ".to_string(),
+            source_id: String::new(),
             name: "  Fender Strat  ".to_string(),
             brand: "  Fender  ".to_string(),
             model: "  Stratocaster  ".to_string(),
@@ -607,6 +623,7 @@ mod tests {
             specs_json: "  {}  ".to_string(),
             seller: "  Guitar Center  ".to_string(),
             location: "  New York  ".to_string(),
+            user_id: None,
         };
 
         product.sanitize();
@@ -623,6 +640,7 @@ mod tests {
     fn sanitize_normalizes_negative_price() {
         let mut product = RawProduct {
             sku: "SKU-1".to_string(),
+            source_id: String::new(),
             name: "Test".to_string(),
             brand: "Brand".to_string(),
             model: "Model".to_string(),
@@ -637,6 +655,7 @@ mod tests {
             specs_json: "{}".to_string(),
             seller: "Seller".to_string(),
             location: "Location".to_string(),
+            user_id: None,
         };
 
         product.sanitize();
@@ -648,6 +667,7 @@ mod tests {
     fn sanitize_fills_empty_required_fields() {
         let mut product = RawProduct {
             sku: "SKU-1".to_string(),
+            source_id: String::new(),
             name: "Test".to_string(),
             brand: "".to_string(),
             model: "Model".to_string(),
@@ -662,6 +682,7 @@ mod tests {
             specs_json: "{}".to_string(),
             seller: "Seller".to_string(),
             location: "Location".to_string(),
+            user_id: None,
         };
 
         product.sanitize();

@@ -275,6 +275,7 @@ pub(crate) fn map_listing_to_product(listing: &ReverbListing) -> RawProduct {
 
     RawProduct {
         sku: format!("reverb-user-{}", listing.id),
+        source_id: String::new(), // overwritten during batch upsert
         name: listing.title.clone(),
         brand,
         model,
@@ -293,6 +294,7 @@ pub(crate) fn map_listing_to_product(listing: &ReverbListing) -> RawProduct {
         specs_json: "{}".to_string(),
         seller: "Reverb".to_string(),
         location: String::new(),
+        user_id: None, // set during batch upsert
     }
 }
 

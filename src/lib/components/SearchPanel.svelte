@@ -12,6 +12,7 @@
   import type { FilterState } from '$lib/stores/filter.svelte';
   import { dashboardState } from '$lib/stores/dashboard.svelte';
   import type { CollectionStore } from '$lib/stores/collection.svelte';
+  import type { Connection } from '$lib/types/stores';
 
   interface Props {
     filterState: FilterState;
@@ -29,6 +30,30 @@
   let loading = $state(false);
   let error: string | null = $state(null);
   let searched = $state(false);
+
+  // Store connection filter
+  let connections = $state<Connection[]>([])
+  let loadingConnections = $state(true)
+
+  onMount(async () => {
+    // Load user connections for the source filter
+    try {
+      connections = await invoke<Connection[]>('list_connections')
+    } catch {
+      connections = []
+    } finally {
+      loadingConnections = false
+    }
+
+    if (scrollContainer) {
+      resizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          containerWidth = entry.contentRect.width;
+        }
+      });
+      resizeObserver.observe(scrollContainer);
+    }
+  });
 
   // Virtual scrolling state
   let scrollContainer: HTMLElement | undefined = $state(undefined);
@@ -74,18 +99,6 @@
     onfeaturedChange?.(results.length > 0 ? results[0] : null);
   });
 
-  // Observe container width for responsive column calculation
-  onMount(() => {
-    if (scrollContainer) {
-      resizeObserver = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          containerWidth = entry.contentRect.width;
-        }
-      });
-      resizeObserver.observe(scrollContainer);
-    }
-  });
-
   onDestroy(() => {
     resizeObserver?.disconnect();
   });
@@ -112,6 +125,7 @@
           source: currentFilters.source,
           condition: currentFilters.condition,
           listing_currency: currentFilters.listing_currency,
+          store_connection_id: currentFilters.store_connection_id,
         },
         sort: currentFilters.sort,
         page: targetPage,
@@ -192,6 +206,38 @@
     </div>
   {/if}
 
+  <!-- Source / Store Filter -->
+  {#if !loadingConnections}
+    <div class="source-filter">
+      <span class="source-filter-label">Source:</span>
+      <div class="source-filter-options">
+        <button
+          class="source-chip"
+          class:active={filterState.store_connection_id === null}
+          onclick={() => { filterState.store_connection_id = null }}
+        >
+          All
+        </button>
+        <button
+          class="source-chip"
+          class:active={filterState.store_connection_id === 'public'}
+          onclick={() => { filterState.store_connection_id = 'public' }}
+        >
+          Public
+        </button>
+        {#each connections as conn (conn.id)}
+          <button
+            class="source-chip"
+            class:active={filterState.store_connection_id === String(conn.id)}
+            onclick={() => { filterState.store_connection_id = String(conn.id) }}
+          >
+            My Stores
+          </button>
+        {/each}
+      </div>
+    </div>
+  {/if}
+
   <FilterBar />
 
   <DashboardCell title="Search" icon="🔍" loading={false} empty={false}>
@@ -260,6 +306,50 @@
   .search-panel {
     display: flex;
     flex-direction: column;
+  }
+
+  .source-filter {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+    flex-wrap: wrap;
+  }
+
+  .source-filter-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .source-filter-options {
+    display: flex;
+    gap: var(--space-1);
+    flex-wrap: wrap;
+  }
+
+  .source-chip {
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-subtle);
+    background: transparent;
+    color: var(--text-warm);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+  }
+
+  .source-chip:hover {
+    background: var(--void-hover);
+    border-color: var(--border-hover);
+  }
+
+  .source-chip.active {
+    background: var(--glow-primary);
+    color: var(--void-deep);
+    border-color: var(--glow-primary);
   }
 
   .recent-searches {

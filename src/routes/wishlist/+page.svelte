@@ -41,6 +41,7 @@
         <GearCard
           product={{
             sku: item.sku ?? `wishlist-${item.id}`,
+            source_id: '',
             name: item.name ?? item.sku ?? 'Unknown',
             brand: item.brand ?? '',
             price: item.price ?? 0,
