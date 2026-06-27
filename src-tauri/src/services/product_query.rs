@@ -31,12 +31,14 @@ struct ProductQueryRow {
     seller: String,
     location: String,
     synced_at: i64,
+    user_id: Option<String>,
 }
 
 /// Convert a `ProductQueryRow` into a `RawProduct` for IPC serialisation.
 fn row_to_product(row: ProductQueryRow) -> RawProduct {
     RawProduct {
         sku: row.sku,
+        source_id: row.source_id,
         name: row.name,
         brand: row.brand,
         model: row.model,
@@ -51,6 +53,7 @@ fn row_to_product(row: ProductQueryRow) -> RawProduct {
         specs_json: row.specs_json,
         seller: row.seller,
         location: row.location,
+        user_id: row.user_id,
     }
 }
 
@@ -69,20 +72,31 @@ impl ProductQueryService {
     }
 
     /// Return N random active products.
-    pub async fn get_featured(&self, limit: u32) -> Result<Vec<RawProduct>, AppError> {
+    ///
+    /// When `user_id` is `Some(id)`, includes both public products (`user_id IS NULL`)
+    /// and products belonging to that connection. When `None`, returns only public products.
+    pub async fn get_featured(&self, limit: u32, user_id: Option<String>) -> Result<Vec<RawProduct>, AppError> {
         let limit = limit as i64;
-        let rows = sqlx::query_as::<_, ProductQueryRow>(
+        let mut sql = String::from(
             "SELECT sku, source_id, name, brand, model, category, subcategory, \
                     price, currency, condition, availability, url, image_url, \
-                    specs_json, seller, location, synced_at \
+                    specs_json, seller, location, synced_at, user_id \
              FROM products_meta \
-             WHERE is_active = 1 \
-             ORDER BY RANDOM() \
-             LIMIT ?",
-        )
-        .bind(limit)
-        .fetch_all(&self.pool)
-        .await?;
+             WHERE is_active = 1",
+        );
+        if user_id.is_some() {
+            sql.push_str(" AND (user_id IS NULL OR user_id = ?)");
+        } else {
+            sql.push_str(" AND user_id IS NULL");
+        }
+        sql.push_str(" ORDER BY RANDOM() LIMIT ?");
+
+        let mut query = sqlx::query_as::<_, ProductQueryRow>(sqlx::AssertSqlSafe(sql.as_str()));
+        if let Some(ref uid) = user_id {
+            query = query.bind(uid);
+        }
+        query = query.bind(limit);
+        let rows = query.fetch_all(&self.pool).await?;
 
         Ok(rows.into_iter().map(row_to_product).collect())
     }
@@ -92,12 +106,13 @@ impl ProductQueryService {
     /// Uses a correlated-subquery approach: for each unique SKU in
     /// `price_history`, computes first and last recorded prices, then
     /// filters to only those where `last_price < first_price`.
-    pub async fn get_price_drops(&self, limit: u32) -> Result<Vec<RawProduct>, AppError> {
+    /// When `user_id` is `Some(id)`, includes user products alongside public ones.
+    pub async fn get_price_drops(&self, limit: u32, user_id: Option<String>) -> Result<Vec<RawProduct>, AppError> {
         let limit = limit as i64;
-        let rows = sqlx::query_as::<_, ProductQueryRow>(
+        let mut sql = String::from(
             "SELECT m.sku, m.source_id, m.name, m.brand, m.model, m.category, \
                     m.subcategory, m.price, m.currency, m.condition, m.availability, \
-                    m.url, m.image_url, m.specs_json, m.seller, m.location, m.synced_at \
+                    m.url, m.image_url, m.specs_json, m.seller, m.location, m.synced_at, m.user_id \
              FROM products_meta m \
              JOIN ( \
                  SELECT ph.sku, \
@@ -109,32 +124,50 @@ impl ProductQueryService {
                  GROUP BY ph.sku \
                  HAVING last_price < first_price \
              ) drops ON m.sku = drops.sku \
-             WHERE m.is_active = 1 \
-             ORDER BY (drops.first_price - drops.last_price) DESC \
-             LIMIT ?",
-        )
-        .bind(limit)
-        .fetch_all(&self.pool)
-        .await?;
+             WHERE m.is_active = 1",
+        );
+        if user_id.is_some() {
+            sql.push_str(" AND (m.user_id IS NULL OR m.user_id = ?)");
+        } else {
+            sql.push_str(" AND m.user_id IS NULL");
+        }
+        sql.push_str(" ORDER BY (drops.first_price - drops.last_price) DESC LIMIT ?");
+
+        let mut query = sqlx::query_as::<_, ProductQueryRow>(sqlx::AssertSqlSafe(sql.as_str()));
+        if let Some(ref uid) = user_id {
+            query = query.bind(uid);
+        }
+        query = query.bind(limit);
+        let rows = query.fetch_all(&self.pool).await?;
 
         Ok(rows.into_iter().map(row_to_product).collect())
     }
 
     /// Return active products ordered by most recently synced.
-    pub async fn get_new_arrivals(&self, limit: u32) -> Result<Vec<RawProduct>, AppError> {
+    ///
+    /// When `user_id` is `Some(id)`, includes user products alongside public ones.
+    pub async fn get_new_arrivals(&self, limit: u32, user_id: Option<String>) -> Result<Vec<RawProduct>, AppError> {
         let limit = limit as i64;
-        let rows = sqlx::query_as::<_, ProductQueryRow>(
+        let mut sql = String::from(
             "SELECT sku, source_id, name, brand, model, category, subcategory, \
                     price, currency, condition, availability, url, image_url, \
-                    specs_json, seller, location, synced_at \
+                    specs_json, seller, location, synced_at, user_id \
              FROM products_meta \
-             WHERE is_active = 1 \
-             ORDER BY synced_at DESC \
-             LIMIT ?",
-        )
-        .bind(limit)
-        .fetch_all(&self.pool)
-        .await?;
+             WHERE is_active = 1",
+        );
+        if user_id.is_some() {
+            sql.push_str(" AND (user_id IS NULL OR user_id = ?)");
+        } else {
+            sql.push_str(" AND user_id IS NULL");
+        }
+        sql.push_str(" ORDER BY synced_at DESC LIMIT ?");
+
+        let mut query = sqlx::query_as::<_, ProductQueryRow>(sqlx::AssertSqlSafe(sql.as_str()));
+        if let Some(ref uid) = user_id {
+            query = query.bind(uid);
+        }
+        query = query.bind(limit);
+        let rows = query.fetch_all(&self.pool).await?;
 
         Ok(rows.into_iter().map(row_to_product).collect())
     }
@@ -151,7 +184,7 @@ impl ProductQueryService {
         let row = sqlx::query_as::<_, ProductQueryRow>(
             "SELECT sku, source_id, name, brand, model, category, subcategory, \
                     price, currency, condition, availability, url, image_url, \
-                    specs_json, seller, location, synced_at \
+                    specs_json, seller, location, synced_at, user_id \
              FROM products_meta \
              WHERE LOWER(sku) = LOWER(?) \
                AND is_active = 1",
@@ -209,7 +242,8 @@ mod tests {
                 location     TEXT,
                 synced_at    INTEGER NOT NULL,
                 is_active    INTEGER DEFAULT 1,
-                delisted_at  INTEGER
+                delisted_at  INTEGER,
+                user_id      TEXT
             )",
         )
         .execute(&pool)
@@ -297,7 +331,7 @@ mod tests {
         let pool = setup_db().await;
         let svc = ProductQueryService::new(pool);
 
-        let result = svc.get_featured(6).await.unwrap();
+        let result = svc.get_featured(6, None).await.unwrap();
         assert!(result.is_empty(), "expected empty result for empty catalog");
     }
 
@@ -320,7 +354,7 @@ mod tests {
         }
 
         let svc = ProductQueryService::new(pool.clone());
-        let result = svc.get_featured(3).await.unwrap();
+        let result = svc.get_featured(3, None).await.unwrap();
         assert_eq!(result.len(), 3, "expected 3 products with limit=3");
     }
 
@@ -332,7 +366,7 @@ mod tests {
         seed_product(&pool, "SKU-B", "Beta", "Brand", "Guitars", 200.0, 1001, true).await;
 
         let svc = ProductQueryService::new(pool.clone());
-        let result = svc.get_featured(6).await.unwrap();
+        let result = svc.get_featured(6, None).await.unwrap();
         assert_eq!(result.len(), 2, "expected both products when fewer than limit");
     }
 
@@ -344,7 +378,7 @@ mod tests {
         seed_product(&pool, "SKU-INACTIVE", "Inactive Guitar", "Gibson", "Guitars", 2499.99, 1001, false).await;
 
         let svc = ProductQueryService::new(pool.clone());
-        let result = svc.get_featured(10).await.unwrap();
+        let result = svc.get_featured(10, None).await.unwrap();
         assert_eq!(result.len(), 1, "expected only the active product");
         assert_eq!(result[0].sku, "SKU-ACTIVE");
     }
@@ -356,7 +390,7 @@ mod tests {
         let pool = setup_db().await;
         let svc = ProductQueryService::new(pool);
 
-        let result = svc.get_price_drops(6).await.unwrap();
+        let result = svc.get_price_drops(6, None).await.unwrap();
         assert!(result.is_empty(), "expected empty result for empty catalog");
     }
 
@@ -386,7 +420,7 @@ mod tests {
         seed_price(&pool, "SKU-DROP-C", 300.0, 300).await;
 
         let svc = ProductQueryService::new(pool.clone());
-        let result = svc.get_price_drops(5).await.unwrap();
+        let result = svc.get_price_drops(5, None).await.unwrap();
         assert_eq!(result.len(), 3, "expected all 3 products with drops");
         // Biggest drop first (A: 500 > both 200)
         assert_eq!(result[0].sku, "SKU-DROP-A", "biggest drop should be first");
@@ -400,7 +434,7 @@ mod tests {
         seed_product(&pool, "SKU-NO-HISTORY", "No History", "Brand", "Guitars", 100.0, 1000, true).await;
 
         let svc = ProductQueryService::new(pool.clone());
-        let result = svc.get_price_drops(5).await.unwrap();
+        let result = svc.get_price_drops(5, None).await.unwrap();
         assert!(result.is_empty(), "expected no drops when no price history exists");
     }
 
@@ -414,7 +448,7 @@ mod tests {
         seed_price(&pool, "SKU-NO-DROP", 800.0, 300).await; // price went UP
 
         let svc = ProductQueryService::new(pool.clone());
-        let result = svc.get_price_drops(5).await.unwrap();
+        let result = svc.get_price_drops(5, None).await.unwrap();
         assert!(result.is_empty(), "expected no drops when prices have not dropped");
     }
 
@@ -427,7 +461,7 @@ mod tests {
         seed_price(&pool, "SKU-INACTIVE-DROP", 500.0, 300).await;
 
         let svc = ProductQueryService::new(pool.clone());
-        let result = svc.get_price_drops(5).await.unwrap();
+        let result = svc.get_price_drops(5, None).await.unwrap();
         assert!(result.is_empty(), "expected no drops from inactive products");
     }
 
@@ -438,7 +472,7 @@ mod tests {
         let pool = setup_db().await;
         let svc = ProductQueryService::new(pool);
 
-        let result = svc.get_new_arrivals(6).await.unwrap();
+        let result = svc.get_new_arrivals(6, None).await.unwrap();
         assert!(result.is_empty(), "expected empty result for empty catalog");
     }
 
@@ -452,7 +486,7 @@ mod tests {
         seed_product(&pool, "SKU-N-C", "New Arrival", "Brand", "Guitars", 300.0, 3000, true).await;
 
         let svc = ProductQueryService::new(pool.clone());
-        let result = svc.get_new_arrivals(6).await.unwrap();
+        let result = svc.get_new_arrivals(6, None).await.unwrap();
         assert_eq!(result.len(), 3, "expected all 3 products");
         assert_eq!(result[0].sku, "SKU-N-C", "newest should be first");
         assert_eq!(result[1].sku, "SKU-N-B", "middle should be second");
@@ -467,7 +501,7 @@ mod tests {
         seed_product(&pool, "SKU-INACTIVE-NEW", "Inactive", "Brand", "Guitars", 200.0, 3000, false).await;
 
         let svc = ProductQueryService::new(pool.clone());
-        let result = svc.get_new_arrivals(6).await.unwrap();
+        let result = svc.get_new_arrivals(6, None).await.unwrap();
         assert_eq!(result.len(), 1, "expected only the active product");
         assert_eq!(result[0].sku, "SKU-ACTIVE-NEW");
     }

@@ -3,12 +3,14 @@
   import { onMount } from 'svelte';
   import StarRating from './ui/StarRating.svelte';
   import PriceDisplay from './ui/PriceDisplay.svelte';
+  import SourceBadge from './SourceBadge.svelte';
   import { addToCollection } from '$lib/stores/collection.svelte';
   import { wishlistState, addToWishlist, removeFromWishlist } from '$lib/stores/wishlist.svelte';
   import type { PriceInsight } from '$lib/types/price';
 
   export interface GearCardProduct {
     sku: string;
+    source_id: string;
     name: string;
     brand: string;
     model?: string;
@@ -27,6 +29,7 @@
     viewers_count?: number;
     in_stock?: boolean;
     is_best_price?: boolean;
+    user_id?: string | null;
   }
 
   interface Props {
@@ -146,6 +149,11 @@
     {#if product.category}
       <span class="category-pill">{product.category}</span>
     {/if}
+
+    <!-- Source Badge (bottom-left) -->
+    <span class="source-badge-wrapper">
+      <SourceBadge sourceId={product.source_id} userId={product.user_id} />
+    </span>
 
     <!-- Deal Badge (absolute top-right) -->
     {#if product.discount_pct && product.discount_pct > 0}
@@ -382,6 +390,14 @@
     color: white;
     font-size: 0.7rem;
     font-weight: 700;
+  }
+
+  /* Source Badge Wrapper */
+  .source-badge-wrapper {
+    position: absolute;
+    bottom: var(--space-2);
+    left: var(--space-2);
+    z-index: 1;
   }
 
   /* Artist Badge */

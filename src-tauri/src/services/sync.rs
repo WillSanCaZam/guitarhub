@@ -685,6 +685,7 @@ mod tests {
     fn raw_product(sku: &str, price: f64) -> RawProduct {
         RawProduct {
             sku: sku.to_string(),
+            source_id: "test-source".to_string(),
             name: format!("Test {sku}"),
             brand: "TestBrand".to_string(),
             model: "TM-100".to_string(),
@@ -699,6 +700,7 @@ mod tests {
             specs_json: "{}".to_string(),
             seller: "Test Seller".to_string(),
             location: "USA".to_string(),
+            user_id: None,
         }
     }
 
@@ -738,7 +740,8 @@ mod tests {
                 location     TEXT,
                 synced_at    INTEGER NOT NULL,
                 is_active    INTEGER DEFAULT 1,
-                delisted_at  INTEGER
+                delisted_at  INTEGER,
+                user_id      TEXT
             )",
         )
         .execute(&pool)

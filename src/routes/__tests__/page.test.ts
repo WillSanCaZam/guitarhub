@@ -24,6 +24,7 @@ describe('Dashboard Page', () => {
 
     // Default mock for all invoke calls
     vi.mocked(invoke).mockImplementation((cmd) => {
+      if (cmd === 'list_connections') return Promise.resolve([]);
       if (cmd === 'get_featured_products') return Promise.resolve([]);
       if (cmd === 'get_price_drops') return Promise.resolve([]);
       if (cmd === 'get_new_arrivals') return Promise.resolve([]);
@@ -68,11 +69,12 @@ describe('Dashboard Page', () => {
 
   it('renders product cards when data is available', async () => {
     vi.mocked(invoke).mockImplementation((cmd) => {
+      if (cmd === 'list_connections') return Promise.resolve([]);
       if (cmd === 'get_featured_products') return Promise.resolve([
-        { sku: 'sku1', name: 'Test Guitar', brand: 'Fender', model: 'Strat', category: 'Guitar', subcategory: 'Electric', price: 999, currency: 'USD', condition: 'new', availability: 'In Stock', url: 'https://example.com', image_url: '', specs_json: '{}', seller: 'Test', location: 'US' },
+        { sku: 'sku1', source_id: 'reverb', name: 'Test Guitar', brand: 'Fender', model: 'Strat', category: 'Guitar', subcategory: 'Electric', price: 999, currency: 'USD', condition: 'new', availability: 'In Stock', url: 'https://example.com', image_url: '', specs_json: '{}', seller: 'Test', location: 'US' },
       ]);
       if (cmd === 'get_price_drops') return Promise.resolve([
-        { sku: 'sku2', name: 'Price Drop Pedal', brand: 'Boss', model: 'DS-1', category: 'Pedal', subcategory: 'Distortion', price: 49, currency: 'USD', condition: 'new', availability: 'In Stock', url: 'https://example.com', image_url: '', specs_json: '{}', seller: 'Test', location: 'US' },
+        { sku: 'sku2', source_id: 'guitarcenter', name: 'Price Drop Pedal', brand: 'Boss', model: 'DS-1', category: 'Pedal', subcategory: 'Distortion', price: 49, currency: 'USD', condition: 'new', availability: 'In Stock', url: 'https://example.com', image_url: '', specs_json: '{}', seller: 'Test', location: 'US' },
       ]);
       if (cmd === 'get_new_arrivals') return Promise.resolve([]);
       if (cmd === 'get_collection') return Promise.resolve([]);

@@ -10,6 +10,7 @@
   import { collectionState } from '$lib/stores/collection.svelte';
   import { filterState, restoreFiltersFromUrl } from '$lib/stores/filter.svelte';
   import type { RawProduct } from '$lib/types/search';
+  import type { Connection } from '$lib/types/stores';
 
   let featuredProducts = $state<RawProduct[]>([]);
   let priceDropProducts = $state<RawProduct[]>([]);
@@ -30,12 +31,23 @@
     const restored = restoreFiltersFromUrl();
     Object.assign(filterState, restored);
 
+    // Load connections to pass user_id to discovery commands
+    let connections: Connection[] = []
+    try {
+      const result = await invoke<Connection[]>('list_connections')
+      connections = result ?? []
+    } catch {
+      // No connections — ignore
+    }
+    // Use the first active connection's id as user context
+    const userId = connections.length > 0 ? String(connections[0].id) : null
+
     // Load discovery data
     try {
       const [featured, drops, newItems] = await Promise.all([
-        invoke<RawProduct[]>('get_featured_products', { limit: 6 }).catch(() => []),
-        invoke<RawProduct[]>('get_price_drops', { limit: 6 }).catch(() => []),
-        invoke<RawProduct[]>('get_new_arrivals', { limit: 6 }).catch(() => []),
+        invoke<RawProduct[]>('get_featured_products', { limit: 6, userId }).catch(() => []),
+        invoke<RawProduct[]>('get_price_drops', { limit: 6, userId }).catch(() => []),
+        invoke<RawProduct[]>('get_new_arrivals', { limit: 6, userId }).catch(() => []),
       ]);
       featuredProducts = featured;
       priceDropProducts = drops;

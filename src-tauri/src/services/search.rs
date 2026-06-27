@@ -106,7 +106,7 @@ impl FtsSearchService {
             "SELECT m.sku, m.source_id, m.name, m.brand, m.model,
                     m.category, m.subcategory, m.price, m.currency,
                     m.condition, m.availability, m.url, m.image_url,
-                    m.seller, m.location, m.synced_at
+                    m.seller, m.location, m.synced_at, m.user_id
              FROM (
                SELECT rowid, rank FROM products_fts WHERE products_fts MATCH ?
              ) fts
@@ -139,6 +139,17 @@ impl FtsSearchService {
             data_sql.push_str(" AND m.currency = ?");
         }
 
+        // user_id / connection filter
+        if let Some(ref conn_id) = filters.store_connection_id {
+            if conn_id == "public" {
+                count_sql.push_str(" AND m.user_id IS NULL");
+                data_sql.push_str(" AND m.user_id IS NULL");
+            } else {
+                count_sql.push_str(" AND m.user_id = ?");
+                data_sql.push_str(" AND m.user_id = ?");
+            }
+        }
+
         // Soft-delete filter: exclude inactive products unless explicitly asked
         if !filters.include_inactive {
             count_sql.push_str(" AND m.is_active = 1");
@@ -169,6 +180,11 @@ impl FtsSearchService {
         if let Some(ref listing_currency) = filters.listing_currency {
             count_query = count_query.bind(listing_currency);
         }
+        if let Some(ref conn_id) = filters.store_connection_id {
+            if conn_id != "public" {
+                count_query = count_query.bind(conn_id);
+            }
+        }
 
         let (total,): (i64,) = count_query
             .fetch_one(&self.pool)
@@ -196,6 +212,11 @@ impl FtsSearchService {
         if let Some(ref listing_currency) = filters.listing_currency {
             data_query = data_query.bind(listing_currency);
         }
+        if let Some(ref conn_id) = filters.store_connection_id {
+            if conn_id != "public" {
+                data_query = data_query.bind(conn_id);
+            }
+        }
         data_query = data_query.bind(limit).bind(offset);
 
         let rows: Vec<RawProductRow> = data_query
@@ -207,6 +228,7 @@ impl FtsSearchService {
             .into_iter()
             .map(|r| RawProduct {
                 sku: r.sku,
+                source_id: r.source_id,
                 name: r.name,
                 brand: r.brand,
                 model: r.model,
@@ -221,6 +243,7 @@ impl FtsSearchService {
                 specs_json: String::new(),
                 seller: r.seller,
                 location: r.location,
+                user_id: r.user_id,
             })
             .collect();
 
@@ -253,6 +276,7 @@ struct RawProductRow {
     seller: String,
     location: String,
     synced_at: i64,
+    user_id: Option<String>,
 }
 
 #[cfg(test)]
@@ -300,7 +324,8 @@ mod tests {
                 location     TEXT,
                 synced_at    INTEGER NOT NULL,
                 is_active    INTEGER DEFAULT 1,
-                delisted_at  INTEGER
+                delisted_at  INTEGER,
+                user_id      TEXT
             )",
         )
         .execute(&pool)
@@ -489,6 +514,7 @@ mod tests {
             condition: None,
             listing_currency: None,
             include_inactive: false,
+            store_connection_id: None,
         };
         let result = svc.search("guitar", &filters, SortOrder::Relevance, 1, 20).await.unwrap();
         assert_eq!(result.total, 1, "expected 1 product in Electric Guitars");
@@ -515,6 +541,7 @@ mod tests {
             condition: None,
             listing_currency: None,
             include_inactive: false,
+            store_connection_id: None,
         };
         let result = svc.search("guitar", &filters, SortOrder::Relevance, 1, 20).await.unwrap();
         assert_eq!(result.total, 1, "expected 1 product in price range 150-400");
@@ -540,6 +567,7 @@ mod tests {
             condition: None,
             listing_currency: None,
             include_inactive: false,
+            store_connection_id: None,
         };
         let result = svc.search("guitar", &filters, SortOrder::Relevance, 1, 20).await.unwrap();
         assert_eq!(result.total, 1, "expected 1 product from reverb");
@@ -565,6 +593,7 @@ mod tests {
             condition: None,
             listing_currency: None,
             include_inactive: false,
+            store_connection_id: None,
         };
         let result = svc.search("fender", &filters, SortOrder::Relevance, 1, 20).await.unwrap();
         assert_eq!(result.total, 1, "expected 1 product matching all filters");
@@ -611,6 +640,7 @@ mod tests {
             condition: Some("new".into()),
             listing_currency: None,
             include_inactive: false,
+            store_connection_id: None,
         };
         let result = svc.search("guitar", &filters, SortOrder::Relevance, 1, 20)
             .await
@@ -660,6 +690,7 @@ mod tests {
             condition: None,
             listing_currency: Some("EUR".into()),
             include_inactive: false,
+            store_connection_id: None,
         };
         let result = svc.search("guitar", &filters, SortOrder::Relevance, 1, 20)
             .await
@@ -721,6 +752,7 @@ mod tests {
             condition: Some("new".into()),
             listing_currency: Some("EUR".into()),
             include_inactive: false,
+            store_connection_id: None,
         };
         let result = svc.search("guitar", &filters, SortOrder::Relevance, 1, 20)
             .await
@@ -999,6 +1031,7 @@ mod tests {
             condition: None,
             listing_currency: None,
             include_inactive: false,
+            store_connection_id: None,
         };
         let result = svc.search("guitar", &default_filters, SortOrder::Relevance, 1, 20).await.unwrap();
         assert_eq!(result.total, 1, "expected 1 active product");
@@ -1028,6 +1061,7 @@ mod tests {
             condition: None,
             listing_currency: None,
             include_inactive: true,
+            store_connection_id: None,
         };
         let result = svc.search("guitar", &inclusive_filters, SortOrder::Relevance, 1, 20).await.unwrap();
         assert_eq!(result.total, 2, "expected both products");

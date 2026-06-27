@@ -9,12 +9,14 @@ use tauri::State;
 ///
 /// Defaults to 6 products when no limit is specified.
 /// Returns an empty array when no active products exist (not an error).
+/// When `userId` is provided, includes user-connected products alongside public ones.
 #[tauri::command]
 pub async fn get_featured_products(
     state: State<'_, AppState>,
     limit: Option<u32>,
+    user_id: Option<String>,
 ) -> Result<Vec<RawProduct>, AppError> {
-    state.product_query.get_featured(limit.unwrap_or(6)).await
+    state.product_query.get_featured(limit.unwrap_or(6), user_id).await
 }
 
 /// Return active products with the largest absolute price drops.
@@ -23,23 +25,27 @@ pub async fn get_featured_products(
 /// `first_recorded_price - last_recorded_price`. Defaults to 6 products.
 /// Only products whose current price is strictly less than the first
 /// recorded price are included.
+/// When `userId` is provided, includes user-connected products alongside public ones.
 #[tauri::command]
 pub async fn get_price_drops(
     state: State<'_, AppState>,
     limit: Option<u32>,
+    user_id: Option<String>,
 ) -> Result<Vec<RawProduct>, AppError> {
-    state.product_query.get_price_drops(limit.unwrap_or(6)).await
+    state.product_query.get_price_drops(limit.unwrap_or(6), user_id).await
 }
 
 /// Return the most recently synced active products.
 ///
 /// Ordered by `synced_at DESC`. Defaults to 6 products.
+/// When `userId` is provided, includes user-connected products alongside public ones.
 #[tauri::command]
 pub async fn get_new_arrivals(
     state: State<'_, AppState>,
     limit: Option<u32>,
+    user_id: Option<String>,
 ) -> Result<Vec<RawProduct>, AppError> {
-    state.product_query.get_new_arrivals(limit.unwrap_or(6)).await
+    state.product_query.get_new_arrivals(limit.unwrap_or(6), user_id).await
 }
 
 /// Return a single product by SKU (case-insensitive).
