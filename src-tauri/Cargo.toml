@@ -29,7 +29,7 @@ tauri-plugin-shell = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-updater = "2"
 async-trait = "0.1"
-aes-gcm = "0.10"
+aes-gcm = "0.11"
 keyring = "4"
 rand = "0.9"
 
